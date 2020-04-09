@@ -29,6 +29,9 @@ using Cookie = IoStatementState *;
 using ExternalUnit = int;
 using AsynchronousId = int;
 static constexpr ExternalUnit DefaultUnit{-1}; // READ(*), WRITE(*), PRINT
+} // namespace Fortran::runtime::io
+
+namespace Fortran::runtime::io {
 
 // INQUIRE specifiers are encoded as simple base-26 packings of
 // the spellings of their keywords.
@@ -323,4 +326,5 @@ enum Iostat IONAME(EndIoStatement)(Cookie);
 
 } // extern "C"
 } // namespace Fortran::runtime::io
+
 #endif

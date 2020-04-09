@@ -27,6 +27,12 @@ configure_lit_site_cfg(
   PATHS
   ${PATHS_FOR_PLUGINS}
 )
+configure_lit_site_cfg(
+  ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg.py
+  MAIN_CONFIG
+  ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.cfg.py
+  )
 
 configure_lit_site_cfg(
   ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.py.in
@@ -39,8 +45,16 @@ set(FLANG_TEST_PARAMS
   flang_site_config=${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg.py)
 
 set(FLANG_TEST_DEPENDS
-  flang-new FileCheck count not module_files fir-opt tco
+  f18 FileCheck count not module_files
+  opt llc
+  tco bbc
+  fir-opt
+  FortranRuntime FortranDecimal
 )
+
+if (FLANG_BUILD_NEW_DRIVER)
+  list(APPEND FLANG_TEST_DEPENDS flang-new)
+endif()
 
 if (FLANG_INCLUDE_TESTS)
   if (FLANG_GTEST_AVAIL)
