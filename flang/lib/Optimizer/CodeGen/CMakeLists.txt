@@ -1,6 +1,10 @@
+
 add_flang_library(FIRCodeGen
   CGOps.cpp
+  CodeGen.cpp
   PreCGRewrite.cpp
+  Target.cpp
+  TargetRewrite.cpp
 
   DEPENDS
   FIRDialect
