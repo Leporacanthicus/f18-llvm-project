@@ -404,6 +404,7 @@ ConversionToDecimalResult ConvertLongDoubleToDecimal(char *buffer,
 #endif
 }
 
+#if 0
 template <int PREC, int LOG10RADIX>
 template <typename STREAM>
 STREAM &BigRadixFloatingPointNumber<PREC, LOG10RADIX>::Dump(STREAM &o) const {
@@ -421,4 +422,6 @@ STREAM &BigRadixFloatingPointNumber<PREC, LOG10RADIX>::Dump(STREAM &o) const {
   }
   return o;
 }
+#endif
+
 } // namespace Fortran::decimal
