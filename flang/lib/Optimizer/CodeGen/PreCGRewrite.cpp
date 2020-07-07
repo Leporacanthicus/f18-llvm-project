@@ -19,6 +19,22 @@
 
 using namespace fir;
 
+static void populateShape(llvm::SmallVectorImpl<mlir::Value> &vec,
+                          ShapeOp shape) {
+  vec.append(shape.extents().begin(), shape.extents().end());
+}
+
+// Operands of fir.shape_shift split into two vectors.
+static void populateShapeAndShift(llvm::SmallVectorImpl<mlir::Value> &shapeVec,
+                                  llvm::SmallVectorImpl<mlir::Value> &shiftVec,
+                                  ShapeShiftOp shift) {
+  auto endIter = shift.pairs().end();
+  for (auto i = shift.pairs().begin(); i != endIter;) {
+    shiftVec.push_back(*i++);
+    shapeVec.push_back(*i++);
+  }
+}
+
 namespace {
 
 /// Convert fir.embox to the extended form where necessary.
@@ -139,7 +155,7 @@ public:
     target.addLegalDialect<FIROpsDialect, mlir::StandardOpsDialect>();
     target.addIllegalOp<ArrayCoorOp>();
     target.addDynamicallyLegalOp<EmboxOp>(
-        [](EmboxOp embox) { return !embox.getDims(); });
+        [](EmboxOp embox) { return !embox.getShape(); });
 
     // Do the conversions.
     if (mlir::failed(mlir::applyPartialConversion(getFunction(), target,
@@ -169,21 +185,32 @@ public:
   }
 
   void maybeEraseOp(mlir::Operation *op) {
+    if (!op)
+      return;
+
     // Erase any embox that was replaced.
-    if (auto embox = dyn_cast_or_null<EmboxOp>(op))
-      if (embox.getDims()) {
+    if (auto embox = dyn_cast<EmboxOp>(op))
+      if (embox.getShape()) {
         assert(op->use_empty());
         opsToErase.push_back(op);
       }
 
     // Erase all fir.array_coor.
-    if (auto arrCoor = dyn_cast_or_null<ArrayCoorOp>(op)) {
+    if (isa<ArrayCoorOp>(op)) {
       assert(op->use_empty());
       opsToErase.push_back(op);
     }
 
-    // Erase all fir.gendims ops.
-    if (auto genDims = dyn_cast_or_null<GenDimsOp>(op)) {
+    // Erase all fir.shape, fir.shape_shift, and fir.slice ops.
+    if (isa<ShapeOp>(op)) {
+      assert(op->use_empty());
+      opsToErase.push_back(op);
+    }
+    if (isa<ShapeShiftOp>(op)) {
+      assert(op->use_empty());
+      opsToErase.push_back(op);
+    }
+    if (isa<SliceOp>(op)) {
       assert(op->use_empty());
       opsToErase.push_back(op);
     }
