@@ -24,6 +24,7 @@ configure_file(config.h.cmake config.h)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR})
 
 add_flang_library(FortranRuntime
+  Fortran_main.c
   ISO_Fortran_binding.cpp
   allocatable.cpp
   assign.cpp
@@ -71,7 +72,6 @@ add_flang_library(FortranRuntime
   type-info.cpp
   unit.cpp
   unit-map.cpp
-  fortran_main.c
 
   LINK_LIBS
   FortranDecimal
