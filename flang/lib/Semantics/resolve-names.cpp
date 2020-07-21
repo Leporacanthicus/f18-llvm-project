@@ -3173,6 +3173,7 @@ void SubprogramVisitor::Post(const parser::EntryStmt &stmt) {
           ApplyImplicitRules(*dummy);
         }
       }
+      ApplyImplicitRules(*dummy);
       entryDetails.add_dummyArg(*dummy);
     } else {
       if (inFunction) { // C1573
