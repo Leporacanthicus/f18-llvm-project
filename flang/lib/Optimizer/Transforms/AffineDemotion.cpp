@@ -5,16 +5,6 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-//
-// This transformation is a prototype that demote affine dialects operations
-// after optimizations to FIR loops operations.
-// It is used after the AffinePromotion pass.
-// It is not part of the production pipeline and would need more work in order
-// to be used in production.
-// More information can be found in this presentation:
-// https://slides.com/rajanwalia/deck
-//
-//===----------------------------------------------------------------------===//
 
 #include "PassDetail.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
@@ -23,10 +13,8 @@
 #include "flang/Optimizer/Transforms/Passes.h"
 #include "mlir/Conversion/AffineToStandard/AffineToStandard.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Attributes.h"
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/IR/Visitors.h"
 #include "mlir/Pass/Pass.h"
@@ -34,8 +22,6 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
-
 #define DEBUG_TYPE "flang-affine-demotion"
 
 using namespace fir;
@@ -48,7 +34,7 @@ public:
 
   LogicalResult matchAndRewrite(mlir::AffineLoadOp op,
                                 PatternRewriter &rewriter) const override {
-    SmallVector<Value> indices(op.getMapOperands());
+    SmallVector<Value, 8> indices(op.getMapOperands());
     auto maybeExpandedMap =
         expandAffineMap(rewriter, op.getLoc(), op.getAffineMap(), indices);
     if (!maybeExpandedMap)
@@ -69,7 +55,7 @@ public:
 
   LogicalResult matchAndRewrite(mlir::AffineStoreOp op,
                                 PatternRewriter &rewriter) const override {
-    SmallVector<Value> indices(op.getMapOperands());
+    SmallVector<Value, 8> indices(op.getMapOperands());
     auto maybeExpandedMap =
         expandAffineMap(rewriter, op.getLoc(), op.getAffineMap(), indices);
     if (!maybeExpandedMap)
@@ -91,43 +77,11 @@ public:
   matchAndRewrite(fir::ConvertOp op,
                   mlir::PatternRewriter &rewriter) const override {
     if (op.res().getType().isa<mlir::MemRefType>()) {
-      // due to index calculation moving to affine maps we still need to
-      // add converts for sequence types this has a side effect of losing
-      // some information about arrays with known dimensions by creating:
-      // fir.convert %arg0 : (!fir.ref<!fir.array<5xi32>>) ->
-      // !fir.ref<!fir.array<?xi32>>
-      if (auto refTy = op.value().getType().dyn_cast<fir::ReferenceType>())
-        if (auto arrTy = refTy.getEleTy().dyn_cast<fir::SequenceType>()) {
-          fir::SequenceType::Shape flatShape = {
-              fir::SequenceType::getUnknownExtent()};
-          auto flatArrTy = fir::SequenceType::get(flatShape, arrTy.getEleTy());
-          auto flatTy = fir::ReferenceType::get(flatArrTy);
-          rewriter.replaceOpWithNewOp<fir::ConvertOp>(op, flatTy, op.value());
-          return success();
-        }
-      rewriter.startRootUpdate(op->getParentOp());
+      rewriter.startRootUpdate(op.getParentOp());
       op.getResult().replaceAllUsesWith(op.value());
-      rewriter.finalizeRootUpdate(op->getParentOp());
+      rewriter.finalizeRootUpdate(op.getParentOp());
       rewriter.eraseOp(op);
     }
-    return success();
-  }
-};
-
-mlir::Type convertMemRef(mlir::MemRefType type) {
-  return fir::SequenceType::get(
-      SmallVector<int64_t>(type.getShape().begin(), type.getShape().end()),
-      type.getElementType());
-}
-
-class StdAllocConversion : public mlir::OpRewritePattern<memref::AllocOp> {
-public:
-  using OpRewritePattern::OpRewritePattern;
-  mlir::LogicalResult
-  matchAndRewrite(memref::AllocOp op,
-                  mlir::PatternRewriter &rewriter) const override {
-    rewriter.replaceOpWithNewOp<fir::AllocaOp>(op, convertMemRef(op.getType()),
-                                               op.memref());
     return success();
   }
 };
@@ -141,20 +95,17 @@ public:
     LLVM_DEBUG(llvm::dbgs() << "AffineDemotion: running on function:\n";
                function.print(llvm::dbgs()););
 
-    mlir::OwningRewritePatternList patterns(context);
+    mlir::OwningRewritePatternList patterns;
     patterns.insert<ConvertConversion>(context);
     patterns.insert<AffineLoadConversion>(context);
     patterns.insert<AffineStoreConversion>(context);
-    patterns.insert<StdAllocConversion>(context);
-    mlir::ConversionTarget target(*context);
-    target.addIllegalOp<memref::AllocOp>();
+    mlir::ConversionTarget target = *context;
     target.addDynamicallyLegalOp<fir::ConvertOp>([](fir::ConvertOp op) {
       if (op.res().getType().isa<mlir::MemRefType>())
         return false;
       return true;
     });
     target.addLegalDialect<FIROpsDialect, mlir::scf::SCFDialect,
-                           mlir::arith::ArithmeticDialect,
                            mlir::StandardOpsDialect>();
 
     if (mlir::failed(mlir::applyPartialConversion(function, target,
