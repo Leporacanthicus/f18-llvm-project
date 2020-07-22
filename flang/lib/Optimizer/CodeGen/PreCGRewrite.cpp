@@ -42,7 +42,6 @@ class EmboxConversion : public mlir::OpRewritePattern<EmboxOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
 
-
   mlir::LogicalResult
   matchAndRewrite(EmboxOp embox,
                   mlir::PatternRewriter &rewriter) const override {
@@ -154,8 +153,11 @@ public:
     mlir::ConversionTarget target(context);
     target.addLegalDialect<FIROpsDialect, mlir::StandardOpsDialect>();
     target.addIllegalOp<ArrayCoorOp>();
-    target.addDynamicallyLegalOp<EmboxOp>(
-        [](EmboxOp embox) { return !embox.getShape(); });
+    target.addDynamicallyLegalOp<EmboxOp>([](EmboxOp embox) {
+      return !(
+          embox.getShape() ||
+          embox.getType().cast<BoxType>().getEleTy().isa<fir::SequenceType>());
+    });
 
     // Do the conversions.
     if (mlir::failed(mlir::applyPartialConversion(getFunction(), target,
