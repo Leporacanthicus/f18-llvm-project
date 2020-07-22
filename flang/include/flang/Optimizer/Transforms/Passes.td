@@ -7,33 +7,14 @@
 //===----------------------------------------------------------------------===//
 //
 // This file contains definitions for passes within the Optimizer/Transforms/
-// directory.
+//  directory.
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FLANG_OPTIMIZER_TRANSFORMS_PASSES
-#define FLANG_OPTIMIZER_TRANSFORMS_PASSES
+#ifndef FORTRAN_OPTIMIZER_TRANSFORMS_FIR_PASSES
+#define FORTRAN_OPTIMIZER_TRANSFORMS_FIR_PASSES
 
 include "mlir/Pass/PassBase.td"
-
-def AbstractResultOpt : Pass<"abstract-result-opt", "mlir::FuncOp"> {
-  let summary = "Convert fir.array, fir.box and fir.rec function result to "
-                "function argument";
-  let description = [{
-    This pass is required before code gen to the LLVM IR dialect,
-    including the pre-cg rewrite pass.
-  }];
-  let constructor = "::fir::createAbstractResultOptPass()";
-  let dependentDialects = [
-    "fir::FIROpsDialect", "mlir::StandardOpsDialect"
-  ];
-  let options = [
-    Option<"passResultAsBox", "abstract-result-as-box",
-           "bool", /*default=*/"false",
-           "Pass fir.array<T> result as fir.box<fir.array<T>> argument instead"
-           " of fir.ref<fir.array<T>>.">
-  ];
-}
 
 def AffineDialectPromotion : FunctionPass<"promote-to-affine"> {
   let summary = "Promotes `fir.{do_loop,if}` to `affine.{for,if}`.";
@@ -56,7 +37,7 @@ def AffineDialectPromotion : FunctionPass<"promote-to-affine"> {
   }];
   let constructor = "::fir::createPromoteToAffinePass()";
   let dependentDialects = [
-    "fir::FIROpsDialect", "mlir::StandardOpsDialect", "mlir::AffineDialect"
+    "fir::FIROpsDialect", "mlir::StandardOpsDialect", "mlir::AffineDialect"    
   ];
 }
 
@@ -69,27 +50,44 @@ def AffineDialectDemotion : FunctionPass<"demote-affine"> {
     `fir.load` and `fir.store` with `!fir.ref<?>` types is required.
   }];
   let constructor = "::fir::createAffineDemotionPass()";
-  let dependentDialects = [
-    "fir::FIROpsDialect", "mlir::StandardOpsDialect", "mlir::AffineDialect"
-  ];
 }
 
-def CharacterConversion : Pass<"character-conversion"> {
-  let summary = "Convert CHARACTER entities with different KINDs";
+def FirLoopResultOpt : FunctionPass<"fir-loop-result-opt"> {
+  let summary = "Optimizes `fir.do_loop` by removing unused final iteration values.";
   let description = [{
-    Translates entities of one CHARACTER KIND to another.
-
-    By default the translation is to naively zero-extend or truncate a code
-    point to fit the destination size.
+    TODO - do we need this if we overhaul fir.do_loop a bit?
   }];
-  let constructor = "::fir::createCharacterConversionPass()";
-  let dependentDialects = [ "fir::FIROpsDialect" ];
-  let options = [
-    Option<"useRuntimeCalls", "use-runtime-calls",
-           "std::string", /*default=*/"std::string{}",
-           "Generate runtime calls to a named set of conversion routines. "
-           "By default, the conversions may produce unexpected results.">
-  ];
+  let constructor = "::fir::createFirLoopResultOptPass()";
+}
+
+def MemRefDataFlowOpt : FunctionPass<"fir-memref-dataflow-opt"> {
+  let summary = "Perform store/load forwarding and potentially removing dead stores.";
+  let description = [{
+    This pass performs store to load forwarding to eliminate memory accesses and
+    potentially the entire allocation if all the accesses are forwarded.
+  }];
+  let constructor = "::fir::createMemDataFlowOptPass()";
+}
+
+def BasicCSE : FunctionPass<"basic-cse"> {
+  let summary = "Basic common sub-expression elimination.";
+  let description = [{
+     Perform common subexpression elimination on FIR operations. This pass
+     differs from the MLIR CSE pass in that it is FIR/Fortran semantics aware.
+  }];
+  let constructor = "::fir::createCSEPass()";
+}
+
+def ControlFlowLowering : FunctionPass<"lower-control-flow"> {
+  let summary = "Convert affine dialect, fir.select_type to standard dialect.";
+  let description = [{
+    This converts the affine dialect back to standard dialect. It also converts
+    `fir.select_type` to more primitive operations. This pass is required before
+    code gen to the LLVM IR dialect.
+
+    TODO: Should the affine rewriting by moved to AffineDialectDemotion?
+  }];
+  let constructor = "::fir::createControlFlowLoweringPass()";
 }
 
 def CFGConversion : FunctionPass<"cfg-conversion"> {
@@ -102,22 +100,25 @@ def CFGConversion : FunctionPass<"cfg-conversion"> {
     This pass is required before code gen to the LLVM IR dialect.
   }];
   let constructor = "::fir::createFirToCfgPass()";
-  let dependentDialects = [
-    "fir::FIROpsDialect", "mlir::StandardOpsDialect"
-  ];
-  let options = [
-    Option<"forceLoopToExecuteOnce", "always-execute-loop-body", "bool",
-           /*default=*/"false",
-           "force the body of a loop to execute at least once">
-  ];
 }
 
-def ExternalNameConversion : Pass<"external-name-interop", "mlir::ModuleOp"> {
-  let summary = "Convert name for external interoperability";
+def ArrayValueCopy : FunctionPass<"array-value-copy"> {
+  let summary = "Convert array value operations to memory operations.";
   let description = [{
-    Demangle FIR internal name and mangle them for external interoperability.
+    Transform the set of array value primitives to a memory-based array
+    representation.
+
+    The Ops `array_load`, `array_store`, `array_fetch`, and `array_update` are
+    used to manage abstract aggregate array values. A simple analysis is done
+    to determine if there are potential dependences between these operations.
+    If not, these array operations can be lowered to work directly on the memory
+    representation. If there is a potential conflict, a temporary is created
+    along with appropriate copy-in/copy-out operations. Here, a more refined
+    analysis might be deployed, such as using the affine framework.
+
+    This pass is required before code gen to the LLVM IR dialect.
   }];
-  let constructor = "::fir::createExternalNameConversionPass()";
+  let constructor = "::fir::createArrayValueCopyPass()";
 }
 
-#endif // FLANG_OPTIMIZER_TRANSFORMS_PASSES
+#endif // FORTRAN_OPTIMIZER_TRANSFORMS_FIR_PASSES
