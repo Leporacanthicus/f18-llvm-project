@@ -5,6 +5,10 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+//
+// Coding style: https://mlir.llvm.org/getting_started/DeveloperGuide/
+//
+//===----------------------------------------------------------------------===//
 
 #include "PassDetail.h"
 #include "flang/Optimizer/CodeGen/CodeGen.h"
@@ -16,6 +20,8 @@
 #include "mlir/Transforms/DialectConversion.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
+
+#define DEBUG_TYPE "flang-codegen-rewrite"
 
 using namespace fir;
 
