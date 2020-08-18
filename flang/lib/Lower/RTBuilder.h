@@ -144,7 +144,6 @@ template <>
 constexpr TypeBuilderFunc getModel<unsigned long long>() {
   return [](mlir::MLIRContext *context) -> mlir::Type {
     return mlir::IntegerType::get(context, 8 * sizeof(unsigned long long));
->>>>>>> f97c932814ff... make the distinction between "long" and "long long" explicit. fixes compilation on MacOS.
   };
 }
 template <>
@@ -208,18 +207,6 @@ template <>
 constexpr TypeBuilderFunc getModel<c_double_complex_t>() {
   return [](mlir::MLIRContext *context) -> mlir::Type {
     return fir::ComplexType::get(context, sizeof(double));
-  };
-}
-template <>
-constexpr TypeBuilderFunc getModel<c_float_complex_t>() {
-  return [](mlir::MLIRContext *context) -> mlir::Type {
-    return fir::CplxType::get(context, sizeof(float));
-  };
-}
-template <>
-constexpr TypeBuilderFunc getModel<c_double_complex_t>() {
-  return [](mlir::MLIRContext *context) -> mlir::Type {
-    return fir::CplxType::get(context, sizeof(double));
   };
 }
 template <>
