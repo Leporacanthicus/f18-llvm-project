@@ -53,6 +53,21 @@ static void populateShapeAndShift(llvm::SmallVectorImpl<mlir::Value> &shapeVec,
 namespace {
 
 /// Convert fir.embox to the extended form where necessary.
+///
+/// The embox operation can take arguments that specify multidimensional array
+/// properties at runtime. These properties may be shared between distinct
+/// objects that have the same properties. Before we lower these small DAGs to
+/// LLVM-IR, we gather all the information into a single extended operation. For
+/// example,
+/// ```
+/// %1 = fir.shape_shift %4, %5 : (index, index) -> !fir.shapeshift<1>
+/// %2 = fir.slice %6, %7, %8 : (index, index, index) -> !fir.slice<1>
+/// %3 = fir.embox %0 (%1) [%2] : (!fir.ref<!fir.array<?xi32>>, !fir.shapeshift<1>, !fir.slice<1>) -> !fir.box<!fir.array<?xi32>>
+/// ```
+/// can be rewritten as
+/// ```
+/// %1 = fircg.ext_embox %0(%5) origin %4[%6, %7, %8] : (!fir.ref<!fir.array<?xi32>>, index, index, index, index, index) -> !fir.box<!fir.array<?xi32>>
+/// ```
 class EmboxConversion : public mlir::OpRewritePattern<EmboxOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
@@ -120,7 +135,17 @@ public:
   }
 };
 
+
 /// Convert all fir.array_coor to the extended form.
+///
+/// For example,
+/// ```
+///  %4 = fir.array_coor %addr (%1) [%2] %0 : (!fir.ref<!fir.array<?xi32>>, !fir.shapeshift<1>, !fir.slice<1>, index) -> !fir.ref<i32>
+/// ```
+/// converted to
+/// ```
+/// %40 = fircg.ext_array_coor %addr(%9) origin %8[%4, %5, %6<%39> : (!fir.ref<!fir.array<?xi32>>, index, index, index, index, index, index) -> !fir.ref<i32>
+/// ```
 class ArrayCoorConversion : public mlir::OpRewritePattern<ArrayCoorOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
@@ -480,7 +505,7 @@ public:
       assert(callOp.callee().hasValue() && "indirect call not implemented");
       auto newCall = rewriter->create<A>(loc, callOp.callee().getValue(),
                                          newResTys, newOpers);
-      LLVM_DEBUG(llvm::errs() << "replacing call with " << newCall << '\n');
+      LLVM_DEBUG(llvm::dbgs() << "replacing call with " << newCall << '\n');
       if (wrap.hasValue())
         replaceOp(callOp, (*wrap)(newCall.getOperation()));
       else
@@ -583,13 +608,13 @@ public:
     for (auto ty : func.getResults())
       if ((ty.isa<BoxCharType>() && !noCharacterConversion) ||
           (isa_complex(ty) && !noComplexConversion)) {
-        LLVM_DEBUG(llvm::errs() << "rewrite " << signature << " for target\n");
+        LLVM_DEBUG(llvm::dbgs() << "rewrite " << signature << " for target\n");
         return false;
       }
     for (auto ty : func.getInputs())
       if ((ty.isa<BoxCharType>() && !noCharacterConversion) ||
           (isa_complex(ty) && !noComplexConversion)) {
-        LLVM_DEBUG(llvm::errs() << "rewrite " << signature << " for target\n");
+        LLVM_DEBUG(llvm::dbgs() << "rewrite " << signature << " for target\n");
         return false;
       }
     return true;
@@ -708,7 +733,7 @@ public:
           mlir::Value load = rewriter->create<fir::LoadOp>(loc, cast);
           func.getArgument(fixup.index + 1).replaceAllUsesWith(load);
           func.front().eraseArgument(fixup.index + 1);
-          LLVM_DEBUG(llvm::errs()
+          LLVM_DEBUG(llvm::dbgs()
                      << "old argument: " << oldArgTy.getEleTy()
                      << ", repl: " << load << ", new argument: "
                      << func.getArgument(fixup.index).getType() << '\n');
@@ -807,7 +832,7 @@ public:
     newInTys.insert(newInTys.end(), trailingTys.begin(), trailingTys.end());
     auto newFuncTy =
         mlir::FunctionType::get(newInTys, newResTys, func.getContext());
-    LLVM_DEBUG(llvm::errs() << "new func: " << newFuncTy << '\n');
+    LLVM_DEBUG(llvm::dbgs() << "new func: " << newFuncTy << '\n');
     func.setType(newFuncTy);
 
     for (auto &fixup : fixups)
