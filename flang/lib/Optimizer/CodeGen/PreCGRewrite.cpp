@@ -135,7 +135,6 @@ public:
   }
 };
 
-
 /// Convert all fir.array_coor to the extended form.
 ///
 /// For example,
