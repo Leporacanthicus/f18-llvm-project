@@ -9,6 +9,7 @@
 #include "flang/Lower/Mangler.h"
 #include "flang/Common/reference.h"
 #include "flang/Lower/Utils.h"
+#include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Semantics/tools.h"
@@ -17,8 +18,6 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
-
-#define TODO() llvm_unreachable("not implemented")
 
 // recursively build the vector of module scopes
 static void moduleNames(const Fortran::semantics::Scope &scope,
@@ -123,7 +122,7 @@ Fortran::lower::mangle::mangleName(fir::NameUniquer &uniquer,
             assert(false);
             return {};
           },
-          [](const auto &) -> std::string { TODO(); },
+          [](const auto &) -> std::string { TODO(""); },
       },
       ultimateSymbol.details());
 }
