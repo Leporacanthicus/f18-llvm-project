@@ -12,6 +12,8 @@
 #include "flang/Lower/CharacterExpr.h"
 #include "flang/Lower/FIRBuilder.h"
 #include "flang/Runtime/character.h"
+#include "flang/Lower/Support/BoxValue.h"
+#include "flang/Lower/Todo.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
 using namespace Fortran::runtime;
@@ -85,10 +87,11 @@ static int discoverKind(mlir::Type ty) {
 // Lower character operations
 //===----------------------------------------------------------------------===//
 
-mlir::Value Fortran::lower::genRawCharCompare(
-    Fortran::lower::AbstractConverter &converter, mlir::Location loc,
-    mlir::arith::CmpIPredicate cmp, mlir::Value lhsBuff, mlir::Value lhsLen,
-    mlir::Value rhsBuff, mlir::Value rhsLen) {
+mlir::Value
+Fortran::lower::genRawCharCompare(Fortran::lower::AbstractConverter &converter,
+                                  mlir::Location loc, mlir::CmpIPredicate cmp,
+                                  mlir::Value lhsBuff, mlir::Value lhsLen,
+                                  mlir::Value rhsBuff, mlir::Value rhsLen) {
   auto &builder = converter.getFirOpBuilder();
   mlir::FuncOp beginFunc;
   switch (discoverKind(lhsBuff.getType())) {
@@ -112,16 +115,26 @@ mlir::Value Fortran::lower::genRawCharCompare(
   llvm::SmallVector<mlir::Value, 4> args = {lptr, rptr, llen, rlen};
   auto tri = builder.create<fir::CallOp>(loc, beginFunc, args).getResult(0);
   auto zero = builder.createIntegerConstant(loc, tri.getType(), 0);
-  return builder.create<mlir::arith::CmpIOp>(loc, cmp, tri, zero);
+  return builder.create<mlir::CmpIOp>(loc, cmp, tri, zero);
 }
 
-mlir::Value Fortran::lower::genBoxCharCompare(
-    Fortran::lower::AbstractConverter &converter, mlir::Location loc,
-    mlir::arith::CmpIPredicate cmp, mlir::Value lhs, mlir::Value rhs) {
+mlir::Value
+Fortran::lower::genCharCompare(Fortran::lower::AbstractConverter &converter,
+                               mlir::Location loc, mlir::CmpIPredicate cmp,
+                               const fir::ExtendedValue &lhs,
+                               const fir::ExtendedValue &rhs) {
   auto &builder = converter.getFirOpBuilder();
-  Fortran::lower::CharacterExprHelper helper{builder, loc};
-  auto lhsPair = helper.materializeCharacter(lhs);
-  auto rhsPair = helper.materializeCharacter(rhs);
-  return genRawCharCompare(converter, loc, cmp, lhsPair.first, lhsPair.second,
-                           rhsPair.first, rhsPair.second);
+  if (lhs.getBoxOf<fir::BoxValue>() || rhs.getBoxOf<fir::BoxValue>())
+    TODO("character compare from descriptors");
+  auto allocateIfNotInMemory = [&](mlir::Value base) -> mlir::Value {
+    if (fir::isa_ref_type(base.getType()))
+      return base;
+    auto mem = builder.create<fir::AllocaOp>(loc, base.getType());
+    builder.create<fir::StoreOp>(loc, base, mem);
+    return mem;
+  };
+  auto lhsBuffer = allocateIfNotInMemory(fir::getBase(lhs));
+  auto rhsBuffer = allocateIfNotInMemory(fir::getBase(rhs));
+  return genRawCharCompare(converter, loc, cmp, lhsBuffer, fir::getLen(lhs),
+                           rhsBuffer, fir::getLen(rhs));
 }
