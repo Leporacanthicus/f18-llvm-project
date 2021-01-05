@@ -233,8 +233,8 @@ constexpr TypeBuilderFunc getModel<Fortran::runtime::Descriptor *>() {
 template <>
 constexpr TypeBuilderFunc getModel<Fortran::common::TypeCategory>() {
   return [](mlir::MLIRContext *context) -> mlir::Type {
-    return mlir::IntegerType::get(sizeof(Fortran::common::TypeCategory) * 8,
-                                  context);
+    return mlir::IntegerType::get(context,
+                                  sizeof(Fortran::common::TypeCategory) * 8);
   };
 }
 template <>
