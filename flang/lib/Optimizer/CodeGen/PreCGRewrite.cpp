@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "CGOps.h"
 #include "PassDetail.h"
 #include "flang/Optimizer/CodeGen/CodeGen.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
@@ -183,7 +184,8 @@ public:
     auto &context = getContext();
     mlir::OpBuilder rewriter(&context);
     mlir::ConversionTarget target(context);
-    target.addLegalDialect<FIROpsDialect, mlir::StandardOpsDialect>();
+    target.addLegalDialect<FIROpsDialect, FIRCodeGenDialect,
+                           mlir::StandardOpsDialect>();
     target.addIllegalOp<ArrayCoorOp>();
     target.addDynamicallyLegalOp<EmboxOp>([](EmboxOp embox) {
       return !(embox.getShape() ||
