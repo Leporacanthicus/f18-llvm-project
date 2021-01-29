@@ -4,13 +4,12 @@ get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 
 target_link_libraries(fir-opt PRIVATE
   FIRDialect
+  FIRAnalysis
   FIRSupport
   FIRTransforms
   FIRCodeGen
+  FIRBuilder
   ${dialect_libs}
-
-  # TODO: these should be transitive dependencies from a target providing
-  # "registerFIRPasses()"
   MLIRIR
   MLIRLLVMIR
   MLIRPass
@@ -24,5 +23,4 @@ target_link_libraries(fir-opt PRIVATE
   MLIRSupport
   MLIRVectorToLLVM
   MLIROptLib
-
 )

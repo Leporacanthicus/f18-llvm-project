@@ -1,6 +1,10 @@
-// FIR ops diagnotic tests
-
 // RUN: fir-opt -split-input-file -verify-diagnostics %s
+
+// expected-error@+2{{expected integer value}}
+// expected-error@+1{{kind value expected}}
+func private @it1() -> !fir.int<A>
+
+// -----
 
 // expected-error@+1{{custom op 'fir.string_lit' must have character type}}
 %0 = fir.string_lit "Hello, World!"(13) : !fir.int<32>
