@@ -45,6 +45,11 @@ static void populateShapeAndShift(llvm::SmallVectorImpl<mlir::Value> &shapeVec,
   }
 }
 
+static void populateShift(llvm::SmallVectorImpl<mlir::Value> &vec,
+                          ShiftOp shift) {
+  vec.append(shift.origins().begin(), shift.origins().end());
+}
+
 namespace {
 
 /// Convert fir.embox to the extended form where necessary.
@@ -244,12 +249,16 @@ public:
       opsToErase.push_back(op);
     }
 
-    // Erase all fir.shape, fir.shape_shift, and fir.slice ops.
+    // Erase all fir.shape, fir.shape_shift, fir.shift, and fir.slice ops.
     if (isa<ShapeOp>(op)) {
       assert(op->use_empty());
       opsToErase.push_back(op);
     }
     if (isa<ShapeShiftOp>(op)) {
+      assert(op->use_empty());
+      opsToErase.push_back(op);
+    }
+    if (isa<ShiftOp>(op)) {
       assert(op->use_empty());
       opsToErase.push_back(op);
     }
