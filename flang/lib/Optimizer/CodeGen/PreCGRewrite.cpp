@@ -135,16 +135,55 @@ public:
   }
 };
 
-/// Convert all fir.array_coor to the extended form.
+/// Convert fir.rebox to the extended form where necessary.
 ///
 /// For example,
 /// ```
-///  %4 = fir.array_coor %addr (%1) [%2] %0 : (!fir.ref<!fir.array<?xi32>>, !fir.shapeshift<1>, !fir.slice<1>, index) -> !fir.ref<i32>
+/// %5 = fir.rebox %3(%1) : (!fir.box<!fir.array<?xi32>>, !fir.shapeshift<1>) -> !fir.box<!fir.array<?xi32>>
 /// ```
 /// converted to
 /// ```
-/// %40 = fircg.ext_array_coor %addr(%9) origin %8[%4, %5, %6<%39> : (!fir.ref<!fir.array<?xi32>>, index, index, index, index, index, index) -> !fir.ref<i32>
+/// %5 = fircg.ext_rebox %3(%13) origin %12 : (!fir.box<!fir.array<?xi32>>, index, index) -> !fir.box<!fir.array<?xi32>>
 /// ```
+class ReboxConversion : public mlir::OpRewritePattern<ReboxOp> {
+public:
+  using OpRewritePattern::OpRewritePattern;
+
+  mlir::LogicalResult
+  matchAndRewrite(ReboxOp rebox,
+                  mlir::PatternRewriter &rewriter) const override {
+    auto loc = rebox.getLoc();
+    llvm::SmallVector<mlir::Value> shapeOpers;
+    llvm::SmallVector<mlir::Value> shiftOpers;
+    if (auto shapeVal = rebox.shape()) {
+      if (auto shapeOp = dyn_cast<ShapeOp>(shapeVal.getDefiningOp()))
+        populateShape(shapeOpers, shapeOp);
+      else if (auto shiftOp = dyn_cast<ShapeShiftOp>(shapeVal.getDefiningOp()))
+        populateShapeAndShift(shapeOpers, shiftOpers, shiftOp);
+      else if (auto shiftOp = dyn_cast<ShiftOp>(shapeVal.getDefiningOp()))
+        populateShift(shiftOpers, shiftOp);
+      else
+        return mlir::failure();
+    }
+    llvm::SmallVector<mlir::Value> sliceOpers;
+    llvm::SmallVector<mlir::Value> subcompOpers;
+    if (auto s = rebox.slice())
+      if (auto sliceOp = dyn_cast_or_null<SliceOp>(s.getDefiningOp())) {
+        sliceOpers.append(sliceOp.triples().begin(), sliceOp.triples().end());
+        subcompOpers.append(sliceOp.fields().begin(), sliceOp.fields().end());
+      }
+
+    auto xRebox = rewriter.create<cg::XReboxOp>(
+        loc, rebox.getType(), rebox.box(), shapeOpers, shiftOpers, sliceOpers,
+        subcompOpers);
+    LLVM_DEBUG(llvm::dbgs()
+               << "rewriting " << rebox << " to " << xRebox << '\n');
+    rewriter.replaceOp(rebox, xRebox.getOperation()->getResults());
+    return mlir::success();
+  }
+};
+
+/// Convert all fir.array_coor to the extended form.
 class ArrayCoorConversion : public mlir::OpRewritePattern<ArrayCoorOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
@@ -192,12 +231,14 @@ public:
     target.addLegalDialect<FIROpsDialect, FIRCodeGenDialect,
                            mlir::StandardOpsDialect>();
     target.addIllegalOp<ArrayCoorOp>();
+    target.addIllegalOp<ReboxOp>();
     target.addDynamicallyLegalOp<EmboxOp>([](EmboxOp embox) {
       return !(embox.getShape() ||
                embox.getType().cast<BoxType>().getEleTy().isa<SequenceType>());
     });
     mlir::OwningRewritePatternList patterns(&context);
-    patterns.insert<EmboxConversion, ArrayCoorConversion>(&context);
+    patterns.insert<EmboxConversion, ArrayCoorConversion, ReboxConversion>(
+        &context);
     if (mlir::failed(
             mlir::applyPartialConversion(op, target, std::move(patterns)))) {
       mlir::emitError(mlir::UnknownLoc::get(&context),
@@ -245,6 +286,12 @@ public:
 
     // Erase all fir.array_coor.
     if (isa<ArrayCoorOp>(op)) {
+      assert(op->use_empty());
+      opsToErase.push_back(op);
+    }
+
+    // Erase all fir.rebox.
+    if (isa<ReboxOp>(op)) {
       assert(op->use_empty());
       opsToErase.push_back(op);
     }
