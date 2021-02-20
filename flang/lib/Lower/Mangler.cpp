@@ -63,6 +63,16 @@ findInterfaceIfSeperateMP(const Fortran::semantics::Symbol &symbol) {
   return nullptr;
 }
 
+static std::vector<std::int64_t>
+kindValues(const Fortran::semantics::Symbol &symbol) {
+  for (const auto &param :
+       Fortran::semantics::OrderParameterDeclarations(symbol))
+    if (param->get<Fortran::semantics::TypeParamDetails>().attr() ==
+        Fortran::common::TypeParamAttr::Kind)
+      TODO("type with a KIND parameter");
+  return {};
+}
+
 // Mangle the name of `symbol` to make it unique within FIR's symbol table using
 // the FIR name mangler, `mangler`
 std::string
