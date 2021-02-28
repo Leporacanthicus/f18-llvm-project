@@ -1,3 +1,9 @@
+// FIR ops diagnotics test for the following ops:
+// fir.rebox
+// fir.array_coor
+// fir.array_load
+//
+
 // RUN: fir-opt -split-input-file -verify-diagnostics %s
 
 // expected-error@+1{{custom op 'fir.string_lit' must have character type}}
