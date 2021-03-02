@@ -850,7 +850,7 @@ mlir::LogicalResult fir::VectorType::verify(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError, uint64_t len,
     mlir::Type eleTy) {
   if (!(fir::isa_real(eleTy) || fir::isa_integer(eleTy)))
-    return emitError << "cannot build a vector of type " << eleTy << '\n';
+    return emitError() << "cannot build a vector of type " << eleTy << '\n';
   return mlir::success();
 }
 
