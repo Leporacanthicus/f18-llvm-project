@@ -184,6 +184,15 @@ public:
 };
 
 /// Convert all fir.array_coor to the extended form.
+///
+/// For example,
+/// ```
+///  %4 = fir.array_coor %addr (%1) [%2] %0 : (!fir.ref<!fir.array<?xi32>>, !fir.shapeshift<1>, !fir.slice<1>, index) -> !fir.ref<i32>
+/// ```
+/// converted to
+/// ```
+/// %40 = fircg.ext_array_coor %addr(%9) origin %8[%4, %5, %6<%39> : (!fir.ref<!fir.array<?xi32>>, index, index, index, index, index, index) -> !fir.ref<i32>
+/// ```
 class ArrayCoorConversion : public mlir::OpRewritePattern<ArrayCoorOp> {
 public:
   using OpRewritePattern::OpRewritePattern;
