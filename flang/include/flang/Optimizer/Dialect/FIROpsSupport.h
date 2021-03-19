@@ -65,6 +65,8 @@ constexpr llvm::StringRef getContiguousAttrName() { return "fir.contiguous"; }
 constexpr llvm::StringRef getOptionalAttrName() { return "fir.optional"; }
 /// Attribute to mark Fortran entities with the TARGET attribute.
 constexpr llvm::StringRef getTargetAttrName() { return "fir.target"; }
+/// Attribute to keep track of Fortran scoping information for a symbol.
+constexpr llvm::StringRef getSymbolAttrName() { return "fir.sym_name"; }
 
 /// Attribute to mark Fortran entities with the TARGET attribute.
 static constexpr llvm::StringRef getTargetAttrName() { return "fir.target"; }
