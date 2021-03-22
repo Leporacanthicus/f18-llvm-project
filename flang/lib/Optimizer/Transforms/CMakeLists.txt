@@ -9,7 +9,6 @@ add_flang_library(FIRTransforms
   CSE.cpp
   ExternalNameConversion.cpp
   FirLoopResultOpt.cpp
-  Inliner.cpp
   MemDataFlowOpt.cpp
   MemToReg.cpp
   RewriteLoop.cpp
