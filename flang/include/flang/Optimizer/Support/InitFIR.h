@@ -13,7 +13,6 @@
 #ifndef FORTRAN_OPTIMIZER_SUPPORT_INITFIR_H
 #define FORTRAN_OPTIMIZER_SUPPORT_INITFIR_H
 
-#include "flang/Optimizer/CodeGen/CodeGen.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/Affine/Passes.h"
@@ -22,22 +21,30 @@
 #include "mlir/Pass/PassRegistry.h"
 #include "mlir/Transforms/LocationSnapshot.h"
 #include "mlir/Transforms/Passes.h"
+#include "flang/Optimizer/CodeGen/CodeGen.h"
 
 namespace fir::support {
 
 #define FLANG_NONCODEGEN_DIALECT_LIST                                          \
   mlir::AffineDialect, FIROpsDialect, mlir::acc::OpenACCDialect,               \
       mlir::omp::OpenMPDialect, mlir::scf::SCFDialect,                         \
-      mlir::arith::ArithmeticDialect, mlir::StandardOpsDialect,                \
-      mlir::vector::VectorDialect
+      mlir::StandardOpsDialect, mlir::vector::VectorDialect
 
 // The definitive list of dialects used by flang.
 #define FLANG_DIALECT_LIST                                                     \
   FLANG_NONCODEGEN_DIALECT_LIST, FIRCodeGenDialect, mlir::LLVM::LLVMDialect
 
+inline void registerNonCodegenDialects(mlir::DialectRegistry &registry) {
+  registry.insert<FLANG_NONCODEGEN_DIALECT_LIST>();
+}
+
 /// Register all the dialects used by flang.
 inline void registerDialects(mlir::DialectRegistry &registry) {
   registry.insert<FLANG_DIALECT_LIST>();
+}
+
+inline void loadNonCodegenDialects(mlir::MLIRContext &context) {
+  context.loadDialect<FLANG_NONCODEGEN_DIALECT_LIST>();
 }
 
 /// Forced load of all the dialects used by flang.  Lowering is not an MLIR
@@ -73,6 +80,9 @@ inline void registerMLIRPassesForFortranTools() {
   mlir::registerAffineDataCopyGenerationPass();
 
   mlir::registerConvertAffineToStandardPass();
+
+  // Flang passes
+  fir::registerOptCodeGenPasses();
 }
 
 /// Register the interfaces needed to lower to LLVM IR.
