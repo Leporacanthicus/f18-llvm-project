@@ -413,6 +413,7 @@ parseLinearClause(OpAsmParser &parser,
 /// sched-wo-chunk ::=  `auto` | `runtime`
 static ParseResult
 parseScheduleClause(OpAsmParser &parser, SmallString<8> &schedule,
+                    SmallVectorImpl<SmallString<12>> &modifiers,
                     Optional<OpAsmParser::OperandType> &chunkSize) {
   if (parser.parseLParen())
     return failure();
@@ -436,13 +437,38 @@ parseScheduleClause(OpAsmParser &parser, SmallString<8> &schedule,
     return parser.emitError(parser.getNameLoc()) << " expected schedule kind";
   }
 
+  // If there is a comma, we have one or more modifiers..
+  if (succeeded(parser.parseOptionalComma())) {
+    StringRef mod;
+    if (parser.parseKeyword(&mod))
+      return failure();
+    modifiers.push_back(mod);
+  }
+
   if (parser.parseRParen())
     return failure();
 
   return success();
 }
 
-/// reduction-init ::= `reduction` `(` reduction-entry-list `)`
+/// Print schedule clause
+static void printScheduleClause(OpAsmPrinter &p, StringRef &sched,
+                                llvm::Optional<StringRef> modifier,
+                                Value scheduleChunkVar) {
+  std::string schedLower = sched.lower();
+  p << "(" << schedLower;
+  if (scheduleChunkVar)
+    p << " = " << scheduleChunkVar;
+  if (modifier && modifier.getValue() != "none")
+    p << ", " << modifier;
+  p << ") ";
+}
+
+//===----------------------------------------------------------------------===//
+// Parser, printer and verifier for ReductionVarList
+//===----------------------------------------------------------------------===//
+
+/// reduction ::= `reduction` `(` reduction-entry-list `)`
 /// reduction-entry-list ::= reduction-entry
 ///                        | reduction-entry-list `,` reduction-entry
 /// reduction-entry ::= symbol-ref `->` ssa-id `:` type
@@ -531,6 +557,7 @@ static ParseResult parseWsLoopOp(OpAsmParser &parser, OperationState &result) {
   SmallVector<OpAsmParser::OperandType> reductionVars;
   SmallVector<Type> reductionVarTypes;
   SmallString<8> schedule;
+  SmallVector<SmallString<12>> modifiers;
   Optional<OpAsmParser::OperandType> scheduleChunkSize;
 
   const StringRef opName = result.name.getStringRef();
@@ -577,12 +604,30 @@ static ParseResult parseWsLoopOp(OpAsmParser &parser, OperationState &result) {
         return allowedOnce(parser, "linear", opName);
       if (parseLinearClause(parser, linears, linearTypes, linearSteps))
         return failure();
+<<<<<<< HEAD
       segments[linearClausePos] = linears.size();
       segments[linearStepPos] = linearSteps.size();
     } else if (keyword == "schedule") {
       if (!schedule.empty())
         return allowedOnce(parser, "schedule", opName);
       if (parseScheduleClause(parser, schedule, scheduleChunkSize))
+=======
+      clauseSegments[pos[reductionClause]] = reductionVars.size();
+    } else if (clauseKeyword == "nowait") {
+      if (checkAllowed(nowaitClause))
+        return failure();
+      auto attr = UnitAttr::get(parser.getBuilder().getContext());
+      result.addAttribute("nowait", attr);
+    } else if (clauseKeyword == "linear") {
+      if (checkAllowed(linearClause) ||
+          parseLinearClause(parser, linears, linearTypes, linearSteps))
+        return failure();
+      clauseSegments[pos[linearClause]] = linears.size();
+      clauseSegments[pos[linearClause] + 1] = linearSteps.size();
+    } else if (clauseKeyword == "schedule") {
+      if (checkAllowed(scheduleClause) ||
+          parseScheduleClause(parser, schedule, modifiers, scheduleChunkSize))
+>>>>>>> 9eedc8377d49... [mlir][OpenMP]Support for modifiers in workshare loops
         return failure();
       if (scheduleChunkSize) {
         segments[scheduleClausePos] = 1;
@@ -669,6 +714,10 @@ static ParseResult parseWsLoopOp(OpAsmParser &parser, OperationState &result) {
     schedule[0] = llvm::toUpper(schedule[0]);
     auto attr = parser.getBuilder().getStringAttr(schedule);
     result.addAttribute("schedule_val", attr);
+    if (modifiers.size() > 0) {
+      auto mod = parser.getBuilder().getStringAttr(modifiers[0]);
+      result.addAttribute("schedule_modifier", mod);
+    }
     if (scheduleChunkSize) {
       auto chunkSizeType = parser.getBuilder().getI32Type();
       parser.resolveOperand(*scheduleChunkSize, chunkSizeType, result.operands);
@@ -722,12 +771,18 @@ static void printWsLoopOp(OpAsmPrinter &p, WsLoopOp op) {
   }
 
   if (auto sched = op.schedule_val()) {
+<<<<<<< HEAD
     auto schedLower = sched->lower();
     p << " schedule(" << schedLower;
     if (auto chunk = op.schedule_chunk_var()) {
       p << " = " << chunk;
     }
     p << ")";
+=======
+    p << "schedule";
+    printScheduleClause(p, sched.getValue(), op.schedule_modifier(),
+                        op.schedule_chunk_var());
+>>>>>>> 9eedc8377d49... [mlir][OpenMP]Support for modifiers in workshare loops
   }
 
   if (auto collapse = op.collapse_val())
