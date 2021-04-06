@@ -2,13 +2,13 @@
 
 ! RUN: bbc -fopenmp -emit-fir %s -o - | \
 ! RUN:   FileCheck %s --check-prefix=FIRDialect
-! RUN: bbc -fopenmp %s -o - | \
+! RUN: bbc -fopenmp -emit-fir %s -o - | \
 ! RUN:   tco --disable-llvm --print-ir-after=fir-to-llvm-ir 2>&1 | \
 ! RUN:   FileCheck %s --check-prefix=LLVMIRDialect
 ! RUN: bbc -fopenmp -emit-fir %s -o - | \
 ! RUN:   tco | FileCheck %s --check-prefix=LLVMIR
 
-program wsloop
+program wsloop_dynamic
         integer :: i
 !FIRDialect: func @_QQmain()
 !LLVMIRDialect: func @_QQmain()
@@ -23,15 +23,15 @@ program wsloop
 
 !LLVMIR: omp_parallel:                                     ; preds = %0
 !LLVMIR:   @__kmpc_fork_call
-!$OMP DO SCHEDULE(static)
+!$OMP DO SCHEDULE(dynamic)
 !FIRDialect:     %[[WS_LB:.*]] = constant 1 : i32
 !FIRDialect:     %[[WS_UB:.*]] = constant 9 : i32
 !FIRDialect:     %[[WS_STEP:.*]] = constant 1 : i32
-!FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(static, none) nowait inclusive
+!FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(dynamic, none) nowait inclusive
 
 !LLVMIRDialect:  %[[WS_UB:.*]] = llvm.mlir.constant(9 : i32) : i32
 !LLVMIRDialect:  %[[WS_LB_STEP:.*]] = llvm.mlir.constant(1 : i32) : i32
-!LLVMIRDialect:  omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB_STEP]]) to (%[[WS_UB]]) step (%[[WS_LB_STEP]]) schedule(static, none) nowait inclusive
+!LLVMIRDialect:  omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB_STEP]]) to (%[[WS_UB]]) step (%[[WS_LB_STEP]]) schedule(dynamic, none) nowait inclusive
 
 !LLVMIR:  define internal void @_QQmain..omp_par
 !LLVMIR:  omp.par.entry:
@@ -44,10 +44,18 @@ program wsloop
 !LLVMIR:    br label %omp_loop.preheader
 !LLVMIR:  omp_loop.preheader:                               ; preds = %omp.par.region1
 !LLVMIR:    @__kmpc_global_thread_num
-!LLVMIR:    @__kmpc_for_static_init_4u
-!LLVMIR:    br label %omp_loop.header
-!LLVMIR:  omp_loop.header:                                  ; preds = %omp_loop.inc, %omp_loop.preheader
-!LLVMIR:    %omp_loop.iv = phi i32 [ 0, %omp_loop.preheader ], [ %omp_loop.next, %omp_loop.inc ]
+!LLVMIR:    @__kmpc_dispatch_init_4u(%struct.ident_t* @{{.*}}, i32 %omp_global_thread_num{{.*}}, i32 35, i32 {{.*}}, i32 {{.*}}, i32 {{.*}}, i32 {{.*}})
+!LLVMIR:    br label %omp_loop.preheader.outer.cond
+!LLVMIR:  omp_loop.preheader.outer.cond:
+!LLVMIR:    @__kmpc_dispatch_next_4u
+!LLVMIR:    %{{.*}} = icmp ne i32 %{{.*}}, 0
+!LLVMIR:    %{{.*}} = load i32, i32* %p.lowerbound, align 4
+!LLVMIR:    %{{.*}} = sub i32 %{{.*}}, 1
+!LLVMIR:    br i1 %{{.*}}, label %omp_loop.header, label %omp_loop.exit
+!LLVMIR:  omp_loop.exit:                                  ; preds = %omp_loop.preheader.outer.cond
+!LLVMIR:   br label %omp_loop.after
+!LLVMIR:  omp_loop.header:                                  ; preds = %omp_loop.preheader.outer.cond, %omp_loop.inc
+!LLVMIR:    %omp_loop.iv = phi i32 [ %lb, %omp_loop.preheader.outer.cond ], [ %omp_loop.next, %omp_loop.inc ]
 
 do i=1, 9
 print*, i
@@ -58,18 +66,16 @@ print*, i
 
 
 !LLVMIRDialect:     llvm.call @_FortranAioBeginExternalListOutput(%{{.*}}, %{{.*}}, %{{.*}}) : (i32, !llvm.ptr<i8>, i32) -> !llvm.ptr<i8>
-!LLVMIRDialect:     %{{.*}} = llvm.sext %[[I]] : i32 to i64
+!LLVMIRDialect:     %{{.*}} = llvm.sext %arg0 : i32 to i64
 !LLVMIRDialect:     llvm.call @_FortranAioOutputInteger64(%{{.*}}, %{{.*}}) : (!llvm.ptr<i8>, i64) -> i1
 !LLVMIRDialect:     llvm.call @_FortranAioEndIoStatement(%{{.*}}) : (!llvm.ptr<i8>) -> i32
 
 !LLVMIR:   br label %omp_loop.cond
 !LLVMIR: omp_loop.cond:                                    ; preds = %omp_loop.header
+!LLVMIR    %{{.*}} = load i32, i32* %{{.*}}, aling {{.*}}
 !LLVMIR:   %omp_loop.cmp = icmp ult i32 %{{.*}}, %{{.*}}
-!LLVMIR:   br i1 %omp_loop.cmp, label %omp_loop.body, label %omp_loop.exit
-!LLVMIR: omp_loop.exit:                                    ; preds = %omp_loop.cond
-!LLVMIR:   call void @__kmpc_for_static_fini(%struct.ident_t* @{{.*}}, i32 %omp_global_thread_num2)
+!LLVMIR:   br i1 %omp_loop.cmp, label %omp_loop.body, label %omp_loop.preheader.outer.cond
 !LLVMIR: omp_loop.body:                                    ; preds = %omp_loop.cond
-!LLVMIR:   %{{.*}} = add i32 %{{.*}}, %{{.*}}
 !LLVMIR:   %{{.*}} = mul i32 %{{.*}}, 1
 !LLVMIR:   %{{.*}} = add i32 %{{.*}}, 1
 !LLVMIR:   br label %omp.wsloop.region

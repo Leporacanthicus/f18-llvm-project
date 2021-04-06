@@ -707,8 +707,27 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
       break;
     }
 
+    if (loop.schedule_modifiers().hasValue()) {
+      omp::ScheduleModifier modifier =
+          *omp::symbolizeScheduleModifier(
+              loop.schedule_modifiers().getValue());
+      switch (modifier) {
+      case omp::ScheduleModifier::monotonic:
+        schedType |= llvm::omp::OMPScheduleType::ModifierMonotonic;
+        break;
+      case omp::ScheduleModifier::nonmonotonic:
+        schedType |= llvm::omp::OMPScheduleType::ModifierNonmonotonic;
+        break;
+      default:
+        // Nothing to do here.
+        break;
+      }
+    }
+
     ompBuilder->applyDynamicWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
                                           schedType, !loop.nowait(), chunk);
+    afterIP = ompBuilder->createDynamicWorkshareLoop(
+        ompLoc, loopInfo, allocaIP, schedType, !loop.nowait(), chunk);
   }
 
   // Continue building IR after the loop. Note that the LoopInfo returned by

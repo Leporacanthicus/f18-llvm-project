@@ -336,6 +336,35 @@ genOMP(Fortran::lower::AbstractConverter &converter,
   }
 }
 
+static mlir::omp::ScheduleModifier
+translateModifier(const Fortran::parser::OmpScheduleModifierType &m) {
+  switch (m.v) {
+  case Fortran::parser::OmpScheduleModifierType::ModType::Monotonic:
+    return mlir::omp::ScheduleModifier::monotonic;
+  case Fortran::parser::OmpScheduleModifierType::ModType::Nonmonotonic:
+    return mlir::omp::ScheduleModifier::nonmonotonic;
+  default:
+    llvm_unreachable("Unknown case");
+  }
+  return mlir::omp::ScheduleModifier::none;
+}
+
+static mlir::omp::ScheduleModifier
+getScheduleModifiers(const Fortran::parser::OmpScheduleClause &x) {
+  const auto &modifier =
+      std::get<std::optional<Fortran::parser::OmpScheduleModifier>>(x.t);
+  if (modifier) {
+    const auto &modType1 =
+        std::get<Fortran::parser::OmpScheduleModifier::Modifier1>(modifier->t);
+    // TODO: Add support for SIMD, which means modType2 gets used.
+    // const auto &modType2 = std::get<
+    //    std::optional<Fortran::parser::OmpScheduleModifier::Modifier2>>(
+    //    modifier->t);
+    return translateModifier(modType1.v);
+  }
+  return mlir::omp::ScheduleModifier::none;
+}
+
 static void genOMP(Fortran::lower::AbstractConverter &converter,
                    Fortran::lower::pft::Evaluation &eval,
                    const Fortran::parser::OpenMPLoopConstruct &loopConstruct) {
@@ -479,6 +508,9 @@ static void genOMP(Fortran::lower::AbstractConverter &converter,
                 omp::ClauseScheduleKind::Runtime)));
         break;
       }
+      wsLoopOp.schedule_modifiersAttr(
+          firOpBuilder.getStringAttr(omp::stringifyScheduleModifier(
+              getScheduleModifiers(scheduleClause->v))));
     }
   }
   // In FORTRAN `nowait` clause occur at the end of `omp do` directive.
