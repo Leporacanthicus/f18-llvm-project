@@ -127,6 +127,7 @@ compileFIR(const mlir::PassPipelineCLParser &passPipeline) {
     pm.addPass(mlir::createCanonicalizerPass());
     fir::addCSE(pm);
 
+    pm.addNestedPass<mlir::FuncOp>(fir::createAbstractResultOptPass());
     // pm.addPass(fir::createMemToRegPass());
     fir::addCodeGenRewritePass(pm);
     fir::addTargetRewritePass(pm);

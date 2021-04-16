@@ -1,4 +1,4 @@
-//===- AbstractResult.cpp - Conversion of Abstract Function Result --------===//
+//===- AbstractResult.cpp - Conversion of Abstract Function Result    ---*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -45,7 +45,8 @@ static mlir::Type getResultArgumentType(mlir::Type resultType,
           [&](mlir::Type type) -> mlir::Type {
             if (options.boxResult)
               return fir::BoxType::get(type);
-            return fir::ReferenceType::get(type);
+            else
+              return fir::ReferenceType::get(type);
           })
       .Case<fir::BoxType>([](mlir::Type type) -> mlir::Type {
         return fir::ReferenceType::get(type);
@@ -100,7 +101,7 @@ public:
     if (mustEmboxResult(result.getType(), options))
       arg = rewriter.create<fir::EmboxOp>(
           loc, argType, buffer, saveResult.shape(), /*slice*/ mlir::Value{},
-          saveResult.typeparams());
+          saveResult.lenParams());
 
     llvm::SmallVector<mlir::Type> newResultTypes;
     if (callOp.callee()) {
@@ -161,12 +162,12 @@ public:
     rewriter.setInsertionPoint(ret);
     auto returnedValue = ret.getOperand(0);
     bool replacedStorage = false;
-    if (auto *op = returnedValue.getDefiningOp())
+    if (auto op = returnedValue.getDefiningOp())
       if (auto load = mlir::dyn_cast<fir::LoadOp>(op)) {
         auto resultStorage = load.memref();
         load.memref().replaceAllUsesWith(options.newArg);
         replacedStorage = true;
-        if (auto *alloc = resultStorage.getDefiningOp())
+        if (auto alloc = resultStorage.getDefiningOp())
           if (alloc->use_empty())
             rewriter.eraseOp(alloc);
       }
@@ -216,10 +217,10 @@ public:
     auto *context = &getContext();
     auto func = getOperation();
     auto loc = func.getLoc();
-    mlir::OwningRewritePatternList patterns(context);
+    mlir::OwningRewritePatternList patterns;
     mlir::ConversionTarget target = *context;
     AbstractResultOptions options{passResultAsBox.getValue(),
-                                  /*newArg=*/{}};
+                                  /*newArg*/ {}};
 
     // Convert function type itself if it has an abstract result
     auto funcTy = func.getType().cast<mlir::FunctionType>();
@@ -248,8 +249,7 @@ public:
       return;
 
     // Convert the calls and, if needed,  the ReturnOp in the function body.
-    target.addLegalDialect<fir::FIROpsDialect, mlir::arith::ArithmeticDialect,
-                           mlir::StandardOpsDialect>();
+    target.addLegalDialect<fir::FIROpsDialect, mlir::StandardOpsDialect>();
     target.addIllegalOp<fir::SaveResultOp>();
     target.addDynamicallyLegalOp<fir::CallOp>([](fir::CallOp call) {
       return !mustConvertCallOrFunc(call.getFunctionType());

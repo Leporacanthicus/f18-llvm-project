@@ -680,6 +680,7 @@ func @test_rebox(%arg0: !fir.box<!fir.array<?xf32>>) {
   return
 }
 
+func private @array_func() -> !fir.array<?x!fir.char<1,?>>
 // CHECK-LABEL: @test_save_result(
 func @test_save_result(%buffer: !fir.ref<!fir.array<?x!fir.char<1,?>>>) {
   %c100 = arith.constant 100 : index
