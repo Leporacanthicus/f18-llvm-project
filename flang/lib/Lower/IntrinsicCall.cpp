@@ -1898,7 +1898,7 @@ mlir::Value IntrinsicLibrary::genSign(mlir::Type resultType,
   auto zero = builder.createRealZeroConstant(loc, resultType);
   auto neg = builder.create<fir::NegfOp>(loc, abs);
   auto cmp =
-      builder.create<fir::CmpfOp>(loc, mlir::CmpFPredicate::OLT, args[1], zero);
+      builder.create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OLT, args[1], zero);
   return builder.create<mlir::SelectOp>(loc, cmp, neg, abs);
 }
 

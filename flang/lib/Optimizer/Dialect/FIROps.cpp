@@ -728,6 +728,12 @@ mlir::ParseResult fir::parseCmpcOp(mlir::OpAsmParser &parser,
   return parseCmpOp<fir::CmpcOp>(parser, result);
 }
 
+mlir::CmpFPredicate fir::CmpcOp::getPredicateByName(llvm::StringRef name) {
+  auto pred = mlir::symbolizeCmpFPredicate(name);
+  assert(pred.hasValue() && "invalid predicate name");
+  return pred.getValue();
+}
+
 //===----------------------------------------------------------------------===//
 // ConstcOp
 //===----------------------------------------------------------------------===//
