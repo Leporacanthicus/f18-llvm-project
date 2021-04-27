@@ -133,7 +133,7 @@ static mlir::ParseResult parseAllocatableOp(FN wrapResultType,
 
 template <typename OP>
 static void printAllocatableOp(mlir::OpAsmPrinter &p, OP &op) {
-  p << ' ' << op.in_type();
+  p << op.getOperationName() << ' ' << op.in_type();
   if (!op.typeparams().empty()) {
     p << '(' << op.typeparams() << " : " << op.typeparams().getTypes() << ')';
   }
@@ -360,6 +360,8 @@ static mlir::LogicalResult verify(fir::ArrayCoorOp op) {
 // ArrayLoadOp
 //===----------------------------------------------------------------------===//
 
+/// Return the element type, adjusting for reference types (interior to the
+/// array value).
 static mlir::Type adjustedElementType(mlir::Type t) {
   if (auto ty = t.dyn_cast<fir::ReferenceType>()) {
     auto eleTy = ty.getEleTy();
@@ -1140,6 +1142,10 @@ static mlir::LogicalResult verify(fir::GenTypeDescOp &op) {
 //===----------------------------------------------------------------------===//
 // GlobalOp
 //===----------------------------------------------------------------------===//
+
+mlir::Type fir::GlobalOp::resultType() {
+  return wrapAllocaResultType(getType());
+}
 
 static ParseResult parseGlobalOp(OpAsmParser &parser, OperationState &result) {
   // Parse the optional linkage
@@ -2927,14 +2933,14 @@ void fir::StringLitOp::build(mlir::OpBuilder &builder, OperationState &result,
                              llvm::Optional<int64_t> len) {
   auto valAttr =
       builder.getNamedAttr(xlist(), convertToArrayAttr(builder, vlist));
-  std::int64_t length = len.hasValue() ? len.getValue() : inType.getLen();
+  std::int64_t length = len.hasValue() ? len.getValue() : in_type.getLen();
   auto lenAttr = mkNamedIntegerAttr(builder, size(), length);
   result.addAttributes({valAttr, lenAttr});
-  result.addTypes(inType);
+  result.addTypes(in_type);
 }
 
 void fir::StringLitOp::build(mlir::OpBuilder &builder, OperationState &result,
-                             fir::CharacterType inType,
+                             fir::CharacterType in_type,
                              llvm::ArrayRef<char32_t> vlist,
                              llvm::Optional<int64_t> len) {
   auto valAttr =

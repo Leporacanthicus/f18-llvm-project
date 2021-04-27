@@ -1,4 +1,4 @@
-//===- CharacterConversion.cpp -- convert between character encodings -----===//
+//===- CharacterConversion.cpp -- convert between character encodings ---*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -17,7 +17,6 @@
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "flang-character-conversion"
 
@@ -43,11 +42,11 @@ public:
                << "running character conversion on " << conv << '\n');
 
     // Establish a loop that executes count iterations.
-    auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
-    auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
+    auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
+    auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
     auto idxTy = rewriter.getIndexType();
     auto castCnt = rewriter.create<fir::ConvertOp>(loc, idxTy, conv.count());
-    auto countm1 = rewriter.create<mlir::arith::SubIOp>(loc, castCnt, one);
+    auto countm1 = rewriter.create<mlir::SubIOp>(loc, castCnt, one);
     auto loop = rewriter.create<fir::DoLoopOp>(loc, zero, countm1, one);
     auto insPt = rewriter.saveInsertionPoint();
     rewriter.setInsertionPointToStart(loop.getBody());
@@ -83,8 +82,7 @@ public:
     mlir::Value icast =
         (fromBits >= toBits)
             ? rewriter.create<fir::ConvertOp>(loc, toTy, load).getResult()
-            : rewriter.create<mlir::arith::ExtUIOp>(loc, toTy, load)
-                  .getResult();
+            : rewriter.create<mlir::ZeroExtendIOp>(loc, toTy, load).getResult();
     rewriter.replaceOpWithNewOp<fir::StoreOp>(conv, icast, toi);
     rewriter.restoreInsertionPoint(insPt);
     return mlir::success();
@@ -100,12 +98,11 @@ public:
     CharacterConversionOptions clOpts{useRuntimeCalls.getValue()};
     if (clOpts.runtimeName.empty()) {
       auto *context = &getContext();
-      auto *func = getOperation();
-      mlir::OwningRewritePatternList patterns(context);
+      auto func = getOperation();
+      mlir::OwningRewritePatternList patterns;
       patterns.insert<CharacterConvertConversion>(context);
       mlir::ConversionTarget target(*context);
       target.addLegalDialect<mlir::AffineDialect, fir::FIROpsDialect,
-                             mlir::arith::ArithmeticDialect,
                              mlir::StandardOpsDialect>();
 
       // apply the patterns

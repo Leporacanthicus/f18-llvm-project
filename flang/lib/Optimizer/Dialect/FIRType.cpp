@@ -245,7 +245,6 @@ bool hasDynamicSize(mlir::Type t) {
     return hasDynamicSize(rec);
   return false;
 }
-
 } // namespace fir
 
 namespace {

@@ -123,9 +123,7 @@ inline bool isa_complex(mlir::Type t) {
   return t.isa<fir::ComplexType>() || t.isa<mlir::ComplexType>();
 }
 
-inline bool isa_char(mlir::Type t) {
-   return t.isa<fir::CharacterType>();
-}
+inline bool isa_char(mlir::Type t) { return t.isa<fir::CharacterType>(); }
 
 /// Is `t` a trivial intrinsic type? CHARACTER is <em>excluded</em> because it
 /// is a dependent type.

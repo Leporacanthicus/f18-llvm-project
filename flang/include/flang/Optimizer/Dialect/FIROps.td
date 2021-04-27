@@ -265,6 +265,28 @@ def fir_FreeMemOp : fir_Op<"freemem", [MemoryEffects<[MemFree]>]> {
   let assemblyFormat = "$heapref attr-dict `:` type($heapref)";
 }
 
+def fir_FreeMemOp : fir_Op<"freemem", [MemoryEffects<[MemFree]>]> {
+  let summary = "free a heap object";
+
+  let description = [{
+    Deallocates a heap memory reference that was allocated by an `allocmem`.
+    The memory object that is deallocated is placed in an undefined state
+    after `fir.freemem`.  Optimizations may treat the loading of an object
+    in the undefined state as undefined behavior.  This includes aliasing
+    references, such as the result of an `fir.embox`.
+
+    ```mlir
+      %21 = fir.allocmem !fir.type<ZT(p:i32){field:i32}>
+      ...
+      fir.freemem %21 : !fir.heap<!fir.type<ZT>>
+    ```
+  }];
+
+  let arguments = (ins Arg<fir_HeapType, "", [MemFree]>:$heapref);
+
+  let assemblyFormat = "$heapref attr-dict `:` type($heapref)";
+}
+
 def fir_LoadOp : fir_OneResultOp<"load"> {
   let summary = "load a value from a memory reference";
   let description = [{
@@ -417,22 +439,26 @@ def fir_SaveResultOp : fir_Op<"save_result", [AttrSizedOperandSegments]> {
 }
 
 def fir_SaveResultOp : fir_Op<"save_result", [AttrSizedOperandSegments]> {
-  let summary = "save an array, box, or record function result SSA-value to a memory location";
+  let summary = [{
+    save an array, box, or record function result SSA-value to a memory location
+  }];
 
   let description = [{
     Save the result of a function returning an array, box, or record type value
     into a memory location given the shape and length parameters of the result.
 
-    Function results of type fir.box, fir.array, or fir.rec are abstract values that
-    require a storage to be manipulated on the caller side. This operation allows
-    associating such abstract result to a storage. In later lowering of the function
-    interfaces, this storage might be used to pass the result in memory.
+    Function results of type fir.box, fir.array, or fir.rec are abstract values
+    that require a storage to be manipulated on the caller side. This operation
+    allows associating such abstract result to a storage. In later lowering of
+    the function interfaces, this storage might be used to pass the result in
+    memory.
     
-    For arrays, result, it is required to provide the shape of the result. For character arrays
-    and derived types with length parameters, the length parameter values must be provided.
+    For arrays, result, it is required to provide the shape of the result. For
+    character arrays and derived types with length parameters, the length
+    parameter values must be provided.
 
-    The fir.save_result associated to a function call must immediately follow the call and be
-    in the same block.  
+    The fir.save_result associated to a function call must immediately follow
+    the call and be in the same block.  
 
     ```mlir
       %buffer = fir.alloca fir.array<?xf32>, %c100
@@ -451,15 +477,53 @@ def fir_SaveResultOp : fir_Op<"save_result", [AttrSizedOperandSegments]> {
   let arguments = (ins AnyType:$value,
                    Arg<AnyReferenceLike, "", [MemWrite]>:$memref,
                    Optional<AnyShapeType>:$shape,
-                   Variadic<AnyIntegerType>:$lenParams);
+                   Variadic<AnyIntegerType>:$typeparams);
 
   let assemblyFormat = [{
-    $value `to` $memref (`(` $shape^ `)`)? (`typeparams` $lenParams^)?
+    $value `to` $memref (`(` $shape^ `)`)? (`typeparams` $typeparams^)?
     attr-dict `:` type(operands)
   }];
 
   let verifier = [{ return ::verify(*this); }];
+}
 
+def fir_CharConvertOp : fir_Op<"char_convert", []> {
+  let summary = [{
+    Primitive to convert an entity of type CHARACTER from one KIND to a
+    different KIND.
+  }];
+
+  let description = [{
+    Copy a CHARACTER (must be in memory) of KIND _k1_ to a CHARACTER (also must
+    be in memory) of KIND _k2_ where _k1_ != _k2_ and the buffers do not
+    overlap. This latter restriction is unchecked, as the Fortran language
+    definition eliminates the overlapping in memory case.
+
+    The number of code points copied is specified explicitly as the second
+    argument. The length of the !fir.char type is ignored.
+
+    ```mlir
+      fir.char_convert %1 for %2 to %3 : !fir.ref<!fir.char<1,?>>, i32, !fir.ref<!fir.char<2,20>>
+    ```
+
+    Should future support for encodings other than ASCII be supported, codegen
+    can generate a call to a runtime helper routine which will map the code
+    points from UTF-8 to UCS-2, for example. Such remappings may not always
+    be possible as they may involve the creation of more code points than the
+    `count` limit. These details are left as future to-dos.
+  }];
+
+  let arguments = (ins
+    Arg<AnyReferenceLike, "", [MemRead]>:$from,
+    AnyIntegerType:$count,
+    Arg<AnyReferenceLike, "", [MemWrite]>:$to
+  );
+
+  let assemblyFormat = [{
+    $from `for` $count `to` $to attr-dict `:` type(operands)
+  }];
+
+  let verifier = [{ return ::verify(*this); }];
 }
 
 def fir_UndefOp : fir_OneResultOp<"undefined", [NoSideEffect]> {
@@ -652,7 +716,8 @@ class fir_IntegralSwitchTerminatorOp<string mnemonic,
     p << ' ';
     p.printOperand(getSelector());
     p << " : " << getSelector().getType() << " [";
-    auto cases = (*this)->getAttrOfType<mlir::ArrayAttr>(getCasesAttr()).getValue();
+    auto cases =
+      (*this)->getAttrOfType<mlir::ArrayAttr>(getCasesAttr()).getValue();
     auto count = getNumConditions();
     for (decltype(count) i = 0; i != count; ++i) {
       if (i)
@@ -666,8 +731,9 @@ class fir_IntegralSwitchTerminatorOp<string mnemonic,
       printSuccessorAtIndex(p, i);
     }
     p << ']';
-    p.printOptionalAttrDict((*this)->getAttrs(), {getCasesAttr(), getCompareOffsetAttr(),
-        getTargetOffsetAttr(), getOperandSegmentSizeAttr()});
+    p.printOptionalAttrDict((*this)->getAttrs(), {getCasesAttr(),
+        getCompareOffsetAttr(), getTargetOffsetAttr(),
+        getOperandSegmentSizeAttr()});
   }];
 
   let verifier = [{
@@ -1434,7 +1500,6 @@ def fir_ArrayLoadOp : fir_Op<"array_load", [AttrSizedOperandSegments]> {
 
 def fir_ArrayFetchOp : fir_Op<"array_fetch", [AttrSizedOperandSegments,
     NoSideEffect]> {
-
   let summary = "Fetch the value of an element of an array value";
 
   let description = [{
@@ -1480,7 +1545,6 @@ def fir_ArrayFetchOp : fir_Op<"array_fetch", [AttrSizedOperandSegments,
 
 def fir_ArrayUpdateOp : fir_Op<"array_update", [AttrSizedOperandSegments,
     NoSideEffect]> {
-
   let summary = "Update the value of an element of an array value";
 
   let description = [{
@@ -1586,7 +1650,6 @@ def fir_ArrayModifyOp : fir_Op<"array_modify", [AttrSizedOperandSegments,
   let assemblyFormat = [{
     $sequence `,` $indices (`typeparams` $typeparams^)? attr-dict
       `:` functional-type(operands, results)
-  }];
 
   let verifier = [{ return ::verify(*this); }];
 }
@@ -2488,6 +2551,30 @@ def fir_StringLitOp : fir_Op<"string_lit", [NoSideEffect]> {
       CArg<"llvm::Optional<int64_t>", "{}">:$len)>];
 
   let verifier = "return ::verify(*this);";
+    OpBuilder<(ins "fir::CharacterType":$in_type,
+      "llvm::StringRef":$value,
+      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
+    OpBuilder<(ins "fir::CharacterType":$in_type,
+      "llvm::ArrayRef<char>":$xlist,
+      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
+    OpBuilder<(ins "fir::CharacterType":$in_type,
+      "llvm::ArrayRef<char16_t>":$xlist,
+      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
+    OpBuilder<(ins "fir::CharacterType":$in_type,
+      "llvm::ArrayRef<char32_t>":$xlist,
+      CArg<"llvm::Optional<int64_t>", "{}">:$len)>];
+
+  let verifier = [{
+    if (getSize().cast<mlir::IntegerAttr>().getValue().isNegative())
+      return emitOpError("size must be non-negative");
+    if (auto xl = (*this)->getAttr(xlist())) {
+      auto xList = xl.cast<mlir::ArrayAttr>();
+      for (auto a : xList)
+        if (!a.isa<mlir::IntegerAttr>())
+	    return emitOpError("values in list must be integers");
+    }
+    return mlir::success();
+  }];
 
   let extraClassDeclaration = [{
     static constexpr const char *size() { return "size"; }
