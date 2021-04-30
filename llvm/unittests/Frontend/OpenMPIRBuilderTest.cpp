@@ -1922,7 +1922,7 @@ TEST_P(OpenMPIRBuilderTestWithParams, DynamicWorkShareLoop) {
   ASSERT_NE(InitCall, nullptr);
   EXPECT_EQ(InitCall->getCalledFunction()->getName(),
             "__kmpc_dispatch_init_4u");
-  EXPECT_EQ(InitCall->arg_size(), 7U);
+  EXPECT_EQ(InitCall->getNumArgOperands(), 7U);
   EXPECT_EQ(InitCall->getArgOperand(6), ConstantInt::get(LCTy, ChunkSize));
   ConstantInt *SchedVal = cast<ConstantInt>(InitCall->getArgOperand(2));
   EXPECT_EQ(SchedVal->getValue(), static_cast<uint64_t>(SchedType));
