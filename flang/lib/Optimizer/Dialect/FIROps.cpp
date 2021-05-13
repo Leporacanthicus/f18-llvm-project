@@ -3218,11 +3218,9 @@ bool fir::valueHasFirAttribute(mlir::Value value,
           return true;
     return false;
   }
-
   if (auto definingOp = value.getDefiningOp()) {
     // If this is an allocated value, look at the allocation attributes.
-    if (mlir::isa<fir::AllocMemOp>(definingOp) ||
-        mlir::isa<AllocaOp>(definingOp))
+    if (mlir::isa<fir::AllocMemOp, fir::AllocaOp, mlir::FuncOp>(definingOp))
       return definingOp->hasAttr(attributeName);
     // If this is an imported global, look at AddrOfOp and GlobalOp attributes.
     // Both operations are looked at because use/host associated variable (the
