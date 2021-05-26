@@ -3173,7 +3173,6 @@ void SubprogramVisitor::Post(const parser::EntryStmt &stmt) {
           ApplyImplicitRules(*dummy);
         }
       }
-      ApplyImplicitRules(*dummy);
       entryDetails.add_dummyArg(*dummy);
     } else {
       if (inFunction) { // C1573
@@ -3206,7 +3205,7 @@ void SubprogramVisitor::Post(const parser::EntryStmt &stmt) {
   entrySymbol.set_details(std::move(entryDetails));
   SetBindNameOn(entrySymbol);
   entrySymbol.set(subpFlag);
-  name.symbol = &entrySymbol;
+  Resolve(name, entrySymbol);
 }
 
 // A subprogram declared with MODULE PROCEDURE
