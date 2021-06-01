@@ -3292,12 +3292,15 @@ public:
                   // Normalize `e` by subtracting the declared lbound.
                   mlir::Value ivAdj =
                       builder.create<mlir::SubIOp>(loc, idxTy, iv, lb);
-                  // Add lbound adjusted value of `e` to the iteration vector.
-                  pc = [=](IterSpace iters) {
-                    IterationSpace newIters = currentPC(iters);
-                    newIters.insertIndexValue(dim, ivAdj);
-                    return newIters;
-                  };
+                  // Add lbound adjusted value of `e` to the iteration vector
+                  // (except when creating a box because the iteration vector is
+                  // empty).
+                  if (!isBoxValue())
+                    pc = [=](IterSpace iters) {
+                      IterationSpace newIters = currentPC(iters);
+                      newIters.insertIndexValue(dim, ivAdj);
+                      return newIters;
+                    };
                 }
               }},
           sub.value().u);
@@ -3367,7 +3370,7 @@ public:
                     .getResult()
               : builder
                     .create<fir::EmboxOp>(loc, boxTy, memref, shape, slice,
-                                          /*lenParams=*/llvm::None)
+                                          fir::getTypeParams(extMemref))
                     .getResult();
       return [=](IterSpace) -> ExtValue { return fir::BoxValue(embox); };
     }
