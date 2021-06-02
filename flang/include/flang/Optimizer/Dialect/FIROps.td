@@ -1656,7 +1656,6 @@ def fir_ArrayModifyOp : fir_Op<"array_modify", [AttrSizedOperandSegments,
 
 def fir_ArrayMergeStoreOp : fir_Op<"array_merge_store",
     [AttrSizedOperandSegments]> {
-
   let summary = "Store merged array value to memory.";
 
   let description = [{

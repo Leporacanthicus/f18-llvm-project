@@ -636,6 +636,7 @@ func @test_misc_ops(%arr1 : !fir.ref<!fir.array<?x?xf32>>, %m : index, %n : inde
   %av2 = fir.array_update %av1, %f, %i10, %j20 : (!fir.array<?x?xf32>, f32, index, index) -> !fir.array<?x?xf32>
   fir.array_merge_store %av1, %av2 to %arr1 : !fir.array<?x?xf32>, !fir.array<?x?xf32>, !fir.ref<!fir.array<?x?xf32>>
 
+
   // CHECK: [[AV3:%.*]] = fir.array_load [[ARR1]]([[SHAPE]]) : (!fir.ref<!fir.array<?x?xf32>>, !fir.shapeshift<2>) -> !fir.array<?x?xf32>
   // CHECK: [[FVAL2:%.*]] = fir.array_fetch [[AV3]], [[I10]], [[J20]] : (!fir.array<?x?xf32>, index, index) -> f32
   // CHECK: [[AV4:%.*]]:2 = fir.array_modify [[AV3]], [[I10]], [[J20]] : (!fir.array<?x?xf32>, index, index) -> (!fir.ref<f32>, !fir.array<?x?xf32>)

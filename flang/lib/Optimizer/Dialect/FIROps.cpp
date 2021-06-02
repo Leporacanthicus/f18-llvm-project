@@ -2269,7 +2269,7 @@ static constexpr llvm::StringRef getTargetOffsetAttr() {
 template <typename A, typename... AdditionalArgs>
 static A getSubOperands(unsigned pos, A allArgs,
                         mlir::DenseIntElementsAttr ranges,
-                        AdditionalArgs &&...additionalArgs) {
+                        AdditionalArgs &&... additionalArgs) {
   unsigned start = 0;
   for (unsigned i = 0; i < pos; ++i)
     start += (*(ranges.begin() + i)).getZExtValue();
@@ -3277,6 +3277,55 @@ mlir::Type fir::applyPathToType(mlir::Type eleTy, mlir::ValueRange path) {
                   return mlir::Type{};
                 })
                 .Default([&](const auto &) { return mlir::Type{}; });
+  }
+  return eleTy;
+}
+
+mlir::Type fir::applyPathToType(mlir::Type rootTy, mlir::ValueRange path) {
+  auto eleTy = rootTy;
+  for (auto i = path.begin(), end = path.end(); eleTy && i != end; ++i) {
+    auto v = *i;
+    eleTy =
+        llvm::TypeSwitch<mlir::Type, mlir::Type>(eleTy)
+            .Case<fir::RecordType>([&](fir::RecordType ty) -> mlir::Type {
+              if (auto op = v.getDefiningOp()) {
+                if (auto off = mlir::dyn_cast<fir::FieldIndexOp>(op))
+                  return ty.getType(off.getFieldName());
+                if (auto off = mlir::dyn_cast<mlir::ConstantOp>(op))
+                  return ty.getType(fir::toInt(off));
+              }
+              return {};
+            })
+            .Case<fir::SequenceType>([&](fir::SequenceType ty) -> mlir::Type {
+              auto rank = ty.getDimension();
+              if (std::distance(i, end) >= rank && rank > 0) {
+                for (auto ii = i, ee = i + rank; ii != ee; ++ii) {
+                  auto vv = *ii;
+                  if (!fir::isa_integer(vv.getType()))
+                    return {};
+                }
+                i += rank - 1;
+                return ty.getEleTy();
+              }
+              return {};
+            })
+            .Case<mlir::TupleType>([&](mlir::TupleType ty) -> mlir::Type {
+              if (auto op = v.getDefiningOp())
+                if (auto off = mlir::dyn_cast<mlir::ConstantOp>(op))
+                  return ty.getType(fir::toInt(off));
+              return {};
+            })
+            .Case<fir::ComplexType>([&](fir::ComplexType ty) -> mlir::Type {
+              if (fir::isa_integer(v.getType()))
+                return ty.getElementType();
+              return {};
+            })
+            .Case<mlir::ComplexType>([&](mlir::ComplexType ty) -> mlir::Type {
+              if (fir::isa_integer(v.getType()))
+                return ty.getElementType();
+              return {};
+            })
+            .Default([&](auto) -> mlir::Type { return {}; });
   }
   return eleTy;
 }
