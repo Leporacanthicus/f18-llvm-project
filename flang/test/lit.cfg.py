@@ -78,14 +78,14 @@ if config.flang_standalone_build:
             llvm_config.with_environment('PATH', config.flang_llvm_tools_dir, append_path=True)
 
 config.substitutions.append(('%B', config.flang_obj_root))
-config.substitutions.append(("%L", config.flang_libs_dir))
+config.substitutions.append(("%L", config.flang_lib_dir))
 config.substitutions.append(("%moddir", config.flang_intrinsic_modules_dir)) 
 if len(config.macos_sysroot) > 0:
   config.substitutions.append(("%CXX", config.cplusplus_executable + " -isysroot " + config.macos_sysroot))
-  config.substitutions.append(("%CC", config.c_executable + " -isysroot " + config.macos_sysroot))
+  config.substitutions.append(("%CC", config.cc + " -isysroot " + config.macos_sysroot))
 else:
   config.substitutions.append(("%CXX", config.cplusplus_executable))
-  config.substitutions.append(("%CC", config.c_executable))
+  config.substitutions.append(("%CC", config.cc))
 
 # For each occurrence of a flang tool name, replace it with the full path to
 # the build directory holding that tool.
@@ -104,6 +104,19 @@ else:
     unresolved='fatal'))
    tools.append(ToolSubst('%flang_fc1', command=FindTool('f18'),
     unresolved='fatal'))
+
+# Define some variables to help us test that the flang runtime doesn't depend on
+# the C++ runtime libraries. For this we need a C compiler. If for some reason
+# we don't have one, we can just disable the test.
+if config.cc:
+    config.available_features.add('c-compiler')
+    tools.append(ToolSubst('%cc', command=config.cc, unresolved='ignore'))
+    tools.append(ToolSubst('%libruntime',
+        command=os.path.join(config.flang_lib_dir, 'libFortranRuntime.a'),
+        unresolved='warn'))
+    tools.append(ToolSubst('%runtimeincludes',
+        command=os.path.join(config.flang_src_dir, 'runtime'),
+        unresolved='warn'))
 
 if config.flang_standalone_build:
     llvm_config.add_tool_substitutions(tools, [config.flang_llvm_tools_dir])
