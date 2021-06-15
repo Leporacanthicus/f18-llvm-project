@@ -885,6 +885,25 @@ isNonContiguousArrayPointer(const Fortran::semantics::Symbol &sym) {
          !sym.attrs().test(Fortran::semantics::Attr::CONTIGUOUS);
 }
 
+/// Is this a local procedure symbol in a procedure that contains internal
+/// procedures ?
+static bool mayBeCapturedInInternalProc(const Fortran::semantics::Symbol &sym) {
+  const auto &owner = sym.owner();
+  auto kind = owner.kind();
+  // Test if this is a procedure scope that contains a subprogram scope that is
+  // not an interface.
+  if (kind == Fortran::semantics::Scope::Kind::Subprogram ||
+      kind == Fortran::semantics::Scope::Kind::MainProgram)
+    for (const auto &childScope : owner.children())
+      if (childScope.kind() == Fortran::semantics::Scope::Kind::Subprogram)
+        if (const auto *childSym = childScope.symbol())
+          if (const auto *details =
+                  childSym->detailsIf<Fortran::semantics::SubprogramDetails>())
+            if (!details->isInterface())
+              return true;
+  return false;
+}
+
 /// In case it is safe to track the properties in variables outside a
 /// descriptor, create the variables to hold the mutable properties of the
 /// entity var. The variables are not initialized here.
@@ -903,11 +922,14 @@ createMutableProperties(Fortran::lower::AbstractConverter &converter,
   // in sync as needed.
   // Pointers to non contiguous arrays need to be represented with a fir.box to
   // account for the discontiguity.
+  // Pointer/Allocatable in internal procedure are descriptors in the host link,
+  // and it would increase complexity to sync this descriptor with the local
+  // values every time the host link is escaping.
   if (var.isGlobal() || Fortran::semantics::IsDummy(sym) ||
       Fortran::semantics::IsFunctionResult(sym) ||
       sym.attrs().test(Fortran::semantics::Attr::VOLATILE) ||
       isNonContiguousArrayPointer(sym) || useAllocateRuntime ||
-      useDescForMutableBox)
+      useDescForMutableBox || mayBeCapturedInInternalProc(sym))
     return {};
   fir::MutableProperties mutableProperties;
   auto name = converter.mangleName(sym);
@@ -1035,28 +1057,18 @@ Fortran::lower::SymbolBox Fortran::lower::genMutableBoxRead(
   return fir::AbstractBox{addr};
 }
 
-/// Generate a test that an address is not null.
-static mlir::Value genIsNonNull(Fortran::lower::FirOpBuilder &builder,
-                                mlir::Location loc, mlir::Value addr) {
-  auto intPtrTy = builder.getIntPtrType();
-  auto ptrToInt = builder.createConvert(loc, intPtrTy, addr);
-  auto c0 = builder.createIntegerConstant(loc, intPtrTy, 0);
-  return builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::ne, ptrToInt,
-                                      c0);
-}
-
 mlir::Value Fortran::lower::genIsAllocatedOrAssociatedTest(
     Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
     const fir::MutableBoxValue &box) {
   auto addr = MutablePropertyReader(builder, loc, box).readBaseAddress();
-  return genIsNonNull(builder, loc, addr);
+  return builder.genIsNotNull(loc, addr);
 }
 
 void Fortran::lower::genFinalization(Fortran::lower::FirOpBuilder &builder,
                                      mlir::Location loc,
                                      const fir::MutableBoxValue &box) {
   auto addr = MutablePropertyReader(builder, loc, box).readBaseAddress();
-  auto isAllocated = genIsNonNull(builder, loc, addr);
+  auto isAllocated = builder.genIsNotNull(loc, addr);
   auto ifOp = builder.create<fir::IfOp>(loc, isAllocated,
                                         /*withElseRegion=*/false);
   auto insPt = builder.saveInsertionPoint();
@@ -1273,7 +1285,7 @@ void Fortran::lower::genReallocIfNeeded(Fortran::lower::FirOpBuilder &builder,
   // Implement 10.2.1.3 point 3 logic when lhs is an array.
   auto reader = MutablePropertyReader(builder, loc, box);
   auto addr = reader.readBaseAddress();
-  auto isAllocated = genIsNonNull(builder, loc, addr);
+  auto isAllocated = builder.genIsNotNull(loc, addr);
   builder.genIfThenElse(loc, isAllocated)
       .genThen([&]() {
         // The box is allocated. Check if it must be reallocated and reallocate.

@@ -270,6 +270,8 @@ public:
 
   /// Helper class to create if-then-else in a structured way:
   /// Usage: genIfOp().then([&](){...}).else([&](){...}).end();
+  /// Alternatively, getResults() can be used instead of end() to end the ifOp
+  /// and get the ifOp results.
   class IfBuilder {
   public:
     IfBuilder(fir::IfOp ifOp, FirOpBuilder &builder)
@@ -288,6 +290,12 @@ public:
       return *this;
     }
     void end() { builder.setInsertionPointAfter(ifOp); }
+
+    /// End the IfOp and return the results if any.
+    mlir::Operation::result_range getResults() {
+      end();
+      return ifOp.getResults();
+    }
 
   private:
     fir::IfOp ifOp;
@@ -315,6 +323,9 @@ public:
     auto op = create<fir::IfOp>(loc, llvm::None, cdt, true);
     return IfBuilder(op, *this);
   }
+
+  /// Generate code testing \p addr is not a null address.
+  mlir::Value genIsNotNull(mlir::Location loc, mlir::Value addr);
 
 private:
   const fir::KindMapping &kindMap;

@@ -345,6 +345,7 @@ BoxProcType::verify(llvm::function_ref<mlir::InFlightDiagnostic()> emitError,
   return emitError() << "invalid type for boxproc" << eleTy << '\n';
 }
 
+<<<<<<< HEAD
 static bool cannotBePointerOrHeapElementType(mlir::Type eleTy) {
   return eleTy.isa<BoxType, BoxCharType, BoxProcType, ShapeType, ShapeShiftType,
                    SliceType, FieldType, LenType, HeapType, PointerType,

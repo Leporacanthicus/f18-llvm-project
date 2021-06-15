@@ -1344,16 +1344,21 @@ struct SymbolDependenceDepth {
     const auto *symTy = sym.GetType();
     assert(symTy && "symbol must have a type");
 
-    // check CHARACTER's length
-    if (symTy->category() == semantics::DeclTypeSpec::Character)
-      if (auto e = symTy->characterTypeSpec().length().GetExplicit()) {
-        // turn variable into a global if this unit is not reentrant
-        global = global || !reentrant;
-        for (const auto &s : evaluate::CollectSymbols(*e))
-          depth = std::max(analyze(s) + 1, depth);
-      }
-
+    // Analyze symbols appearing in object entity specification expression. This
+    // ensures these symbols will be instantiated before the current one.
+    // This is not done for object entities that are host associated because
+    // they must be instantiated from the value of the host symbols (the
+    // specification expressions should not be re-evaluated).
     if (const auto *details = sym.detailsIf<semantics::ObjectEntityDetails>()) {
+      // check CHARACTER's length
+      if (symTy->category() == semantics::DeclTypeSpec::Character)
+        if (auto e = symTy->characterTypeSpec().length().GetExplicit()) {
+          // turn variable into a global if this unit is not reentrant
+          global = global || !reentrant;
+          for (const auto &s : evaluate::CollectSymbols(*e))
+            depth = std::max(analyze(s) + 1, depth);
+        }
+
       auto doExplicit = [&](const auto &bound) {
         if (bound.isExplicit()) {
           semantics::SomeExpr e{*bound.GetExplicit()};

@@ -418,6 +418,14 @@ Fortran::lower::FirOpBuilder::createBox(mlir::Location loc,
       });
 }
 
+mlir::Value Fortran::lower::FirOpBuilder::genIsNotNull(mlir::Location loc,
+                                                       mlir::Value addr) {
+  auto intPtrTy = getIntPtrType();
+  auto ptrToInt = createConvert(loc, intPtrTy, addr);
+  auto c0 = createIntegerConstant(loc, intPtrTy, 0);
+  return create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::ne, ptrToInt, c0);
+}
+
 //===--------------------------------------------------------------------===//
 // ExtendedValue inquiry helper implementation
 //===--------------------------------------------------------------------===//
