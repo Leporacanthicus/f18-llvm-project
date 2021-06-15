@@ -19,6 +19,30 @@ namespace Fortran {
 namespace lower {
 class FirOpBuilder;
 
+/// Generate a call to the ADJUSTL runtime.
+/// This calls the simple runtime entry point that then calls into the more
+/// complex cases handling left or right adjustments.
+///
+/// \p resultBox must be an unallocated allocatable used for the temporary
+/// result.  \p StringBox must be a fir.box describing the adjustl string
+/// argument.
+void genAdjustL(Fortran::lower::FirOpBuilder &builder,
+                mlir::Location loc,
+                mlir::Value resultBox,
+                mlir::Value stringBox);
+
+/// Generate a call to the ADJUSTR runtime.
+/// This calls the simple runtime entry point that then calls into the more
+/// complex cases handling left or right adjustments.
+///
+/// \p resultBox must be an unallocated allocatable used for the temporary
+/// result.  \p StringBox must be a fir.box describing the adjustr string
+/// argument.
+void genAdjustR(Fortran::lower::FirOpBuilder &builder,
+                mlir::Location loc,
+                mlir::Value resultBox,
+                mlir::Value stringBox);
+
 /// Generate call to a character comparison for two ssa-values of type
 /// `boxchar`.
 mlir::Value genCharCompare(FirOpBuilder &builder, mlir::Location loc,

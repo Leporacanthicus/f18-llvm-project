@@ -46,6 +46,33 @@ static int discoverKind(mlir::Type ty) {
 // Lower character operations
 //===----------------------------------------------------------------------===//
 
+
+void Fortran::lower::genAdjustL(Fortran::lower::FirOpBuilder &builder,
+                                mlir::Location loc, mlir::Value resultBox,
+                                mlir::Value stringBox) {
+  auto adjustLFunc = getRuntimeFunc<mkRTKey(Adjustl)>(loc, builder);
+  auto fTy = adjustLFunc.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(3));
+  auto args = Fortran::lower::createArguments(builder, loc, fTy, resultBox,
+                                              stringBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, adjustLFunc, args);
+}
+
+void Fortran::lower::genAdjustR(Fortran::lower::FirOpBuilder &builder,
+                                mlir::Location loc, mlir::Value resultBox,
+                                mlir::Value stringBox) {
+  auto adjustRFunc = getRuntimeFunc<mkRTKey(Adjustr)>(loc, builder);
+  auto fTy = adjustRFunc.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(3));
+  auto args = Fortran::lower::createArguments(builder, loc, fTy, resultBox,
+                                              stringBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, adjustRFunc, args);
+}
+
 mlir::Value
 Fortran::lower::genCharCompare(Fortran::lower::FirOpBuilder &builder,
                                mlir::Location loc, mlir::CmpIPredicate cmp,
