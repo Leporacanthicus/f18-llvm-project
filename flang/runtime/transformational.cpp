@@ -414,9 +414,37 @@ void RTNAME(Reshape)(Descriptor &result, const Descriptor &source,
     }
   }
 
-  // Allocate result descriptor
-  AllocateResult(
-      result, source, resultRank, resultExtent, terminator, "RESHAPE");
+  // Create and populate the result's descriptor.
+  const DescriptorAddendum *sourceAddendum{source.Addendum()};
+  const typeInfo::DerivedType *sourceDerivedType{
+      sourceAddendum ? sourceAddendum->derivedType() : nullptr};
+  OwningPtr<Descriptor> result;
+  if (sourceDerivedType) {
+    result = Descriptor::Create(*sourceDerivedType, nullptr, resultRank,
+        resultExtent, CFI_attribute_allocatable);
+  } else {
+    result = Descriptor::Create(source.type(), elementBytes, nullptr,
+        resultRank, resultExtent,
+        CFI_attribute_allocatable); // TODO rearrange these arguments
+  }
+  DescriptorAddendum *resultAddendum{result->Addendum()};
+  RUNTIME_CHECK(terminator, resultAddendum);
+  resultAddendum->flags() |= DescriptorAddendum::DoNotFinalize;
+  if (sourceDerivedType) {
+    std::size_t lenParameters{sourceAddendum->LenParameters()};
+    for (std::size_t j{0}; j < lenParameters; ++j) {
+      resultAddendum->SetLenParameterValue(
+          j, sourceAddendum->LenParameterValue(j));
+    }
+  }
+  // Allocate storage for the result's data.
+  for (int j{0}; j < resultRank; ++j) {
+    result->GetDimension(j).SetBounds(1, resultExtent[j]);
+  }
+  int status{result->Allocate()};
+  if (status != CFI_SUCCESS) {
+    terminator.Crash("RESHAPE: Allocate failed (error %d)", status);
+  }
 
   // Populate the result's elements.
   SubscriptValue resultSubscript[maxRank];

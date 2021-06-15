@@ -30,10 +30,12 @@ OwningPtr<Descriptor> CreateDescriptor(const std::vector<SubscriptValue> &shape,
 
   OwningPtr<Descriptor> descriptor{Descriptor::Create(sizeof(CHAR), length,
       nullptr, shape.size(), nullptr, CFI_attribute_allocatable)};
-  if ((shape.empty() ? descriptor->Allocate()
-                     : descriptor->Allocate(
-                           std::vector<SubscriptValue>(shape.size(), 1).data(),
-                           shape.data())) != 0) {
+  int rank{static_cast<int>(shape.size())};
+  // Use a weird lower bound of 2 to flush out subscripting bugs
+  for (int j{0}; j < rank; ++j) {
+    descriptor->GetDimension(j).SetBounds(2, shape[j] + 1);
+  }
+  if (descriptor->Allocate() != 0) {
     return nullptr;
   }
 
