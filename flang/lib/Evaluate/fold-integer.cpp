@@ -746,6 +746,10 @@ Expr<Type<TypeCategory::Integer, KIND>> FoldIntrinsicFunction(
     }
   } else if (name == "minloc") {
     return FoldLocation<WhichLocation::Minloc, T>(context, std::move(funcRef));
+  } else if (name == "min") {
+    return FoldMINorMAX(context, std::move(funcRef), Ordering::Less);
+  } else if (name == "min0" || name == "min1") {
+    return RewriteSpecificMINorMAX(context, std::move(funcRef));
   } else if (name == "minval") {
     return FoldMaxvalMinval<T>(
         context, std::move(funcRef), RelationalOperator::LT, T::Scalar::HUGE());
