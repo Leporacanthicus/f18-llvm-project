@@ -16,6 +16,7 @@
 #include "mlir/Support/TypeID.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/TypeName.h"
 
 namespace mlir {
