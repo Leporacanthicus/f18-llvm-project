@@ -450,9 +450,8 @@ const Symbol *RuntimeTableBuilder::DescribeType(Scope &dtScope) {
               [&](const TypeParamDetails &) {
                 // already handled above in declaration order
               },
-              [&](const ObjectEntityDetails &object) {
-                dataComponents.emplace_back(DescribeComponent(
-                    symbol, object, scope, dtScope, distinctName, parameters));
+              [&](const ObjectEntityDetails &) {
+                dataComponentSymbols.push_back(&symbol);
               },
               [&](const ProcEntityDetails &proc) {
                 if (IsProcedurePointer(symbol)) {

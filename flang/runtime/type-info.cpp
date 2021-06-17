@@ -238,16 +238,22 @@ FILE *Component::Dump(FILE *f) const {
   std::fprintf(f, "Component @ 0x%p:\n", reinterpret_cast<const void *>(this));
   std::fputs("    name: ", f);
   DumpScalarCharacter(f, name(), "Component::name");
-  if (genre_ == Genre::Data) {
+  switch (genre_) {
+  case Genre::Data:
     std::fputs("    Data       ", f);
-  } else if (genre_ == Genre::Pointer) {
+    break;
+  case Genre::Pointer:
     std::fputs("    Pointer    ", f);
-  } else if (genre_ == Genre::Allocatable) {
+    break;
+  case Genre::Allocatable:
     std::fputs("    Allocatable", f);
-  } else if (genre_ == Genre::Automatic) {
+    break;
+  case Genre::Automatic:
     std::fputs("    Automatic  ", f);
-  } else {
+    break;
+  default:
     std::fprintf(f, "    (bad genre 0x%x)", static_cast<int>(genre_));
+    break;
   }
   std::fprintf(f, " category %d  kind %d  rank %d  offset 0x%zx\n", category_,
       kind_, rank_, static_cast<std::size_t>(offset_));
