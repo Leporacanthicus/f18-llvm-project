@@ -440,6 +440,7 @@ struct IntrinsicLibrary {
   mlir::Value genMod(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genModulo(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNint(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genNot(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genPresent(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genProduct(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genRandomInit(llvm::ArrayRef<fir::ExtendedValue>);
@@ -645,6 +646,7 @@ static constexpr IntrinsicHandler handlers[]{
     {"mod", &I::genMod},
     {"modulo", &I::genModulo},
     {"nint", &I::genNint},
+    {"not", &I::genNot},
     {"present",
      &I::genPresent,
      {{{"a", asInquired}}},
@@ -2085,6 +2087,14 @@ mlir::Value IntrinsicLibrary::genNint(mlir::Type resultType,
   // Skip optional kind argument to search the runtime; it is already reflected
   // in result type.
   return genRuntimeCall("nint", resultType, {args[0]});
+}
+
+// NOT
+mlir::Value IntrinsicLibrary::genNot(mlir::Type resultType,
+                                     llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 1);
+  auto allOnes = builder.createIntegerConstant(loc, resultType, -1);
+  return builder.create<mlir::XOrOp>(loc, args[0],allOnes);
 }
 
 // PRESENT
