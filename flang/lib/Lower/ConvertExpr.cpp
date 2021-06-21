@@ -3701,7 +3701,8 @@ public:
                   auto ty = fir::dyn_cast_ptrOrBoxEleTy(refTy);
                   return addComponent(exv, ty);
                 }
-              return genSliceIndices(cmptData, r);
+              auto [exv, ty] = genSliceIndices(cmptData, r);
+              return addComponent(exv, ty);
             },
             [&](const Fortran::evaluate::CoarrayRef &r) -> RT {
               TODO(loc, "");
