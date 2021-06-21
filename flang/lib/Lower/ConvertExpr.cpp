@@ -1797,9 +1797,17 @@ public:
             return temp;
           }
           auto baseAddr = genExtAddr(*expr);
-          if (fir::getBase(baseAddr).getType().isa<fir::BoxType>())
-            fir::emitFatalError(
-                loc, "contiguous argument was not lowered to an address");
+          if (const auto *box = baseAddr.getBoxOf<fir::BoxValue>()) {
+            if (!box->isDerived())
+              fir::emitFatalError(
+                  loc, "contiguous argument was not lowered to an address");
+            // Scalar and contiguous derived type array may be lowered to
+            // fir.box<> to deal with potential polymorphism. Here, polymorphism
+            // does not matter (an entity of the declared type is passed, not
+            // one of the dynamic type), so it is safe to unbox it.
+            return builder.create<fir::BoxAddrOp>(loc, box->getMemTy(),
+                                                  fir::getBase(*box));
+          }
           return baseAddr;
         }();
         if (arg.passBy == PassBy::BaseAddress) {

@@ -200,3 +200,33 @@ subroutine test_scalar_substring_does_no_trigger_copy_inout(c, i, j)
   ! CHECK: fir.call @_QPbar_char_2(%[[boxchar]]) : (!fir.boxchar<1>) -> ()
   call bar_char_2(c(i:j))
 end subroutine
+
+! CHECK-LABEL: func @_QPissue871(
+! CHECK-SAME: %[[p:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFissue871Tt{i:i32}>>>>)
+subroutine issue871(p)
+  ! Test passing implicit derived from scalar pointer (no copy-in/out).
+  type t
+    integer :: i
+  end type t
+  type(t), pointer :: p
+  ! CHECK: %[[box_load:.*]] = fir.load %[[p]]
+  ! CHECK: %[[addr:.*]] = fir.box_addr %[[box_load]]
+  ! CHECK: %[[cast:.*]] = fir.convert %[[addr]]
+  ! CHECK: fir.call @_QPbar_derived(%[[cast]])
+  call bar_derived(p)
+end subroutine
+
+! CHECK-LABEL: func @_QPissue871_array(
+! CHECK-SAME: %[[p:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.type<_QFissue871_arrayTt{i:i32}>>>>>
+subroutine issue871_array(p)
+  ! Test passing implicit derived from contiguous pointer (no copy-in/out).
+  type t
+    integer :: i
+  end type t
+  type(t), pointer, contiguous :: p(:)
+  ! CHECK: %[[box_load:.*]] = fir.load %[[p]]
+  ! CHECK: %[[addr:.*]] = fir.box_addr %[[box_load]]
+  ! CHECK: %[[cast:.*]] = fir.convert %[[addr]]
+  ! CHECK: fir.call @_QPbar_derived_array(%[[cast]])
+  call bar_derived_array(p)
+end subroutine
