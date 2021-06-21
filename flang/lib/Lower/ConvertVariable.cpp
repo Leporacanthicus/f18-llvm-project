@@ -1210,8 +1210,7 @@ void Fortran::lower::mapSymbolAttributes(
         mlir::Value local =
             isDummy ? addr
                     : createNewLocal(converter, loc, var, preAlloc, extents);
-        assert(isDummy || Fortran::lower::isExplicitShape(sym) ||
-               Fortran::semantics::IsAllocatableOrPointer(sym));
+        assert(isDummy || Fortran::lower::isExplicitShape(sym));
         symMap.addSymbolWithBounds(sym, local, extents, lbounds, isDummy);
       },
 
@@ -1255,8 +1254,7 @@ void Fortran::lower::mapSymbolAttributes(
           return;
         }
         // local array with computed bounds
-        assert(Fortran::lower::isExplicitShape(sym) ||
-               Fortran::semantics::IsAllocatableOrPointer(sym));
+        assert(Fortran::lower::isExplicitShape(sym));
         auto local = createNewLocal(converter, loc, var, preAlloc, extents);
         symMap.addSymbolWithBounds(sym, local, extents, lbounds);
       },
@@ -1310,11 +1308,8 @@ void Fortran::lower::mapSymbolAttributes(
           return;
         }
         // local CHARACTER array with computed bounds
-        assert(Fortran::lower::isExplicitShape(sym) ||
-               Fortran::semantics::IsAllocatableOrPointer(sym));
-        llvm::SmallVector<mlir::Value> lengths = {len};
-        auto local =
-            createNewLocal(converter, loc, var, preAlloc, extents, lengths);
+        assert(Fortran::lower::isExplicitShape(sym));
+        auto local = createNewLocal(converter, loc, var, preAlloc, extents);
         symMap.addCharSymbolWithBounds(sym, local, len, extents, lbounds);
       },
 
@@ -1383,9 +1378,7 @@ void Fortran::lower::mapSymbolAttributes(
           return;
         }
         // local CHARACTER array with computed bounds
-        assert((!mustBeDummy) &&
-               (Fortran::lower::isExplicitShape(sym) ||
-                Fortran::semantics::IsAllocatableOrPointer(sym)));
+        assert((!mustBeDummy) && (Fortran::lower::isExplicitShape(sym)));
         auto local =
             createNewLocal(converter, loc, var, preAlloc, llvm::None, lengths);
         symMap.addCharSymbolWithBounds(sym, local, len, extents, lbounds);
@@ -1442,8 +1435,7 @@ void Fortran::lower::mapSymbolAttributes(
           return;
         }
         // local CHARACTER array with computed bounds
-        assert(Fortran::lower::isExplicitShape(sym) ||
-               Fortran::semantics::IsAllocatableOrPointer(sym));
+        assert(Fortran::lower::isExplicitShape(sym));
         auto local = createNewLocal(converter, loc, var, preAlloc, extents);
         symMap.addCharSymbolWithBounds(sym, local, len, extents, lbounds);
       },
@@ -1516,8 +1508,7 @@ void Fortran::lower::mapSymbolAttributes(
           return;
         }
         // local CHARACTER array with computed bounds
-        assert(Fortran::lower::isExplicitShape(sym) ||
-               Fortran::semantics::IsAllocatableOrPointer(sym));
+        assert(Fortran::lower::isExplicitShape(sym));
         auto local =
             createNewLocal(converter, loc, var, preAlloc, extents, lengths);
         symMap.addCharSymbolWithBounds(sym, local, len, extents, lbounds);

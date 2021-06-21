@@ -9,10 +9,11 @@ subroutine scalar_cst_len()
 end subroutine
 
 ! CHECK-LABEL: func @_QPscalar_dyn_len
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i32>
 subroutine scalar_dyn_len(l)
   integer :: l
   character(l) :: c
-  ! CHECK: %[[l:.*]] = fir.load %arg0 : !fir.ref<i32>
+  ! CHECK: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i32>
   ! CHECK: fir.alloca !fir.char<1,?>(%[[l]] : i32) {{{.*}}uniq_name = "_QFscalar_dyn_lenEc"}
 end subroutine
 
@@ -23,28 +24,71 @@ subroutine cst_array_cst_len()
 end subroutine
 
 ! CHECK-LABEL: func @_QPcst_array_dyn_len
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i32>
 subroutine cst_array_dyn_len(l)
   integer :: l
-  character(l) :: c
-  ! CHECK: %[[l:.*]] = fir.load %arg0 : !fir.ref<i32>
-  ! CHECK: fir.alloca !fir.char<1,?>(%[[l]] : i32) {{{.*}}uniq_name = "_QFcst_array_dyn_lenEc"}
+  character(l) :: c(10)
+  ! CHECK: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i32>
+  ! CHECK: fir.alloca !fir.array<10x!fir.char<1,?>>(%[[l]] : i32) {{{.*}}uniq_name = "_QFcst_array_dyn_lenEc"}
 end subroutine
 
 ! CHECK-LABEL: func @_QPdyn_array_cst_len
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i32>
 subroutine dyn_array_cst_len(n)
   integer :: n
   character(10) :: c(n)
-  ! CHECK: %[[n:.*]] = fir.load %arg0 : !fir.ref<i32>
+  ! CHECK: %[[n:.*]] = fir.load %[[arg0]] : !fir.ref<i32>
   ! CHECK: %[[ni:.*]] = fir.convert %[[n]] : (i32) -> index
   ! CHECK: fir.alloca !fir.array<?x!fir.char<1,10>>, %[[ni]] {{{.*}}uniq_name = "_QFdyn_array_cst_lenEc"}
 end subroutine
 
 ! CHECK: func @_QPdyn_array_dyn_len
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i32>, %[[arg1:.*]]: !fir.ref<i32>
 subroutine dyn_array_dyn_len(l, n)
   integer :: l, n
   character(l) :: c(n)
-  ! CHECK-DAG: %[[l:.*]] = fir.load %arg0 : !fir.ref<i32>
-  ! CHECK-DAG: %[[n:.*]] = fir.load %arg1 : !fir.ref<i32>
+  ! CHECK-DAG: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i32>
+  ! CHECK-DAG: %[[n:.*]] = fir.load %[[arg1]] : !fir.ref<i32>
   ! CHECK: %[[ni:.*]] = fir.convert %[[n]] : (i32) -> index
   ! CHECK: fir.alloca !fir.array<?x!fir.char<1,?>>(%[[l]] : i32), %[[ni]] {{{.*}}uniq_name = "_QFdyn_array_dyn_lenEc"}
+end subroutine
+
+! CHECK-LABEL: func @_QPcst_array_cst_len_lb
+subroutine cst_array_cst_len_lb()
+  character(10) :: c(11:30)
+  ! CHECK: fir.alloca !fir.array<20x!fir.char<1,10>> {{{.*}}uniq_name = "_QFcst_array_cst_len_lbEc"}
+end subroutine
+
+! CHECK-LABEL: func @_QPcst_array_dyn_len_lb
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i64>
+subroutine cst_array_dyn_len_lb(l)
+  integer(8) :: l
+  character(l) :: c(11:20)
+  ! CHECK: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i64>
+  ! CHECK: fir.alloca !fir.array<10x!fir.char<1,?>>(%[[l]] : i64) {{{.*}}uniq_name = "_QFcst_array_dyn_len_lbEc"}
+end subroutine
+
+! CHECK-LABEL: func @_QPdyn_array_cst_len_lb
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i64>
+subroutine dyn_array_cst_len_lb(n)
+  integer(8) :: n
+  character(10) :: c(11:n)
+  ! CHECK-DAG: %[[cm10:.*]] = constant -10 : index
+  ! CHECK-DAG: %[[n:.*]] = fir.load %[[arg0]] : !fir.ref<i64>
+  ! CHECK-DAG: %[[ni:.*]] = fir.convert %[[n]] : (i64) -> index
+  ! CHECK: %[[extent:.*]] = addi %[[ni]], %[[cm10]] : index
+  ! CHECK: fir.alloca !fir.array<?x!fir.char<1,10>>, %[[extent]] {{{.*}}uniq_name = "_QFdyn_array_cst_len_lbEc"}
+end subroutine
+
+! CHECK: func @_QPdyn_array_dyn_len_lb
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i64>, %[[arg1:.*]]: !fir.ref<i64>
+subroutine dyn_array_dyn_len_lb(l, n)
+  integer(8) :: l, n
+  character(l) :: c(11:n)
+  ! CHECK-DAG: %[[cm10:.*]] = constant -10 : index
+  ! CHECK-DAG: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i64>
+  ! CHECK-DAG: %[[n:.*]] = fir.load %[[arg1]] : !fir.ref<i64>
+  ! CHECK-DAG: %[[ni:.*]] = fir.convert %[[n]] : (i64) -> index
+  ! CHECK: %[[extent:.*]] = addi %[[ni]], %[[cm10]] : index
+  ! CHECK: fir.alloca !fir.array<?x!fir.char<1,?>>(%[[l]] : i64), %[[extent]] {{{.*}}uniq_name = "_QFdyn_array_dyn_len_lbEc"}
 end subroutine
