@@ -94,13 +94,6 @@ struct SymbolBox : public fir::details::matcher<SymbolBox> {
         [](const Fortran::lower::SymbolBox::None &) -> fir::ExtendedValue {
           llvm::report_fatal_error("symbol not mapped");
         },
-        [](const Fortran::lower::SymbolBox::PointerOrAllocatable &)
-            -> fir::ExtendedValue {
-          // Until there is a use case, PointerOrAllocatable are not
-          // ExtendedValue.
-          llvm::report_fatal_error(
-              "Pointer and Allocatable to exv needs unboxing");
-        },
         [](const auto &box) -> fir::ExtendedValue { return box; });
   }
 

@@ -283,37 +283,59 @@ public:
     return genval(expr);
   }
 
+  /// Lower an expression that is a pointer or an allocatable to a
+  /// MutableBoxValue.
   fir::MutableBoxValue
   genMutableBoxValue(const Fortran::lower::SomeExpr &expr) {
     // Pointers and allocatables can only be:
     //    - a simple designator "x"
     //    - a component designator "a%b(i,j)%x"
     //    - a function reference "foo()"
-    auto dataRef = Fortran::evaluate::ExtractDataRef(expr);
-
-    // Function reference case
-    if (!dataRef)
-      TODO(getLoc(), "lower pointer from function reference");
-
-    // Simple designator case
-    if (const auto *sym =
-            std::get_if<Fortran::semantics::SymbolRef>(&dataRef->u)) {
-      return symMap.lookupSymbol(*sym).match(
-          [&](const Fortran::lower::SymbolBox::PointerOrAllocatable &boxAddr) {
-            return boxAddr;
-          },
-          [&](auto &) -> fir::MutableBoxValue {
-            fir::emitFatalError(getLoc(),
-                                "symbol was not lowered to MutableBoxValue");
-          });
-    }
-
-    // Component designator case
-    const auto &component = std::get<Fortran::evaluate::Component>(dataRef->u);
-    auto *mutableBox = genComponent(component).getBoxOf<fir::MutableBoxValue>();
+    //    - result of NULL() or NULL(MOLD) intrinsic.
+    //    NULL() requires some context to be lowered, so it is not handled
+    //    here and must be lowered according to the context where it appears.
+    auto exv = std::visit(
+        [&](const auto &x) { return genMutableBoxValueImpl(x); }, expr.u);
+    auto *mutableBox = exv.getBoxOf<fir::MutableBoxValue>();
     if (!mutableBox)
-      fir::emitFatalError(getLoc(), "component not lowered to MutableBoxValue");
+      fir::emitFatalError(getLoc(), "expr was not lowered to MutableBoxValue");
     return *mutableBox;
+  }
+
+  template <typename T>
+  ExtValue genMutableBoxValueImpl(const T &) {
+    // NULL() case should not be handled here.
+    fir::emitFatalError(getLoc(), "NULL() must be lowered in its context");
+  }
+
+  template <typename T>
+  ExtValue
+  genMutableBoxValueImpl(const Fortran::evaluate::FunctionRef<T> &funRef) {
+    return genRawProcedureRef(funRef, converter.genType(toEvExpr(funRef)));
+  }
+
+  template <typename T>
+  ExtValue
+  genMutableBoxValueImpl(const Fortran::evaluate::Designator<T> &designator) {
+    return std::visit(
+        Fortran::common::visitors{
+            [&](const Fortran::evaluate::SymbolRef &sym) -> ExtValue {
+              return symMap.lookupSymbol(*sym).toExtendedValue();
+            },
+            [&](const Fortran::evaluate::Component &comp) -> ExtValue {
+              return genComponent(comp);
+            },
+            [&](const auto &) -> ExtValue {
+              fir::emitFatalError(getLoc(),
+                                  "not an allocatable or pointer designator");
+            }},
+        designator.u);
+  }
+
+  template <typename T>
+  ExtValue genMutableBoxValueImpl(const Fortran::evaluate::Expr<T> &expr) {
+    return std::visit([&](const auto &x) { return genMutableBoxValueImpl(x); },
+                      expr.u);
   }
 
   mlir::Location getLoc() { return location; }
@@ -1755,8 +1777,24 @@ public:
     return createSomeArrayAssignment(converter, dest, source, symMap, stmtCtx);
   }
 
+  /// Lower a non-elemental procedure reference and read allocatable and pointer
+  /// results into normal values.
   ExtValue genProcedureRef(const Fortran::evaluate::ProcedureRef &procRef,
                            llvm::Optional<mlir::Type> resultType) {
+    auto res = genRawProcedureRef(procRef, resultType);
+    // In most contexts, pointers and allocatable do not appear as allocatable
+    // or pointer variable on the caller side (see 8.5.3 note 1 for
+    // allocatables). The few context where this can happen must call
+    // genRawProcedureRef directly.
+    if (const auto *box = res.getBoxOf<fir::MutableBoxValue>())
+      return Fortran::lower::genMutableBoxRead(builder, getLoc(), *box)
+          .toExtendedValue();
+    return res;
+  }
+
+  /// Lower a non-elemental procedure reference.
+  ExtValue genRawProcedureRef(const Fortran::evaluate::ProcedureRef &procRef,
+                              llvm::Optional<mlir::Type> resultType) {
     if (const auto *intrinsic = procRef.proc().GetSpecificIntrinsic())
       return genIntrinsicRef(procRef, *intrinsic, resultType);
 
@@ -1794,6 +1832,25 @@ public:
       }
 
       if (arg.passBy == PassBy::MutableBox) {
+        if (Fortran::evaluate::UnwrapExpr<Fortran::evaluate::NullPointer>(
+                *expr)) {
+          // If expr is NULL(), the mutableBox created must be a deallocated
+          // pointer with the dummy argument characteristics (see table 16.5
+          // in Fortran 2018 standard).
+          // No length parameters are set for the created box because any non
+          // deferred type parameters of the dummy will be evaluated on the
+          // callee side, and it is illegal to use NULL without a MOLD if any
+          // dummy length parameters are assumed.
+          auto boxTy = fir::dyn_cast_ptrEleTy(argTy);
+          assert(boxTy && boxTy.isa<fir::BoxType>() &&
+                 "must be a fir.box type");
+          auto boxStorage = builder.createTemporary(loc, boxTy);
+          auto nullBox = Fortran::lower::createUnallocatedBox(
+              builder, loc, boxTy, /*nonDeferredParams=*/{});
+          builder.create<fir::StoreOp>(loc, nullBox, boxStorage);
+          caller.placeInput(arg, boxStorage);
+          continue;
+        }
         auto mutableBox = genMutableBoxValue(*expr);
         auto irBox = Fortran::lower::getMutableIRBox(builder, loc, mutableBox);
         caller.placeInput(arg, irBox);
@@ -2047,20 +2104,15 @@ public:
       genArrayCopy(var, temp);
 
     if (allocatedResult) {
-      return allocatedResult->match(
-          [&](const fir::MutableBoxValue &box) {
-            if (box.isAllocatable()) {
-              // 9.7.3.2 point 4. Finalize allocatables.
-              auto *bldr = &converter.getFirOpBuilder();
-              stmtCtx.attachCleanup(
-                  [=]() { Fortran::lower::genFinalization(*bldr, loc, box); });
-            }
-            // Pointers and allocatable do not appear as allocatable/pointer
-            // variable on the caller side (see 8.5.3 note 1 for allocatables).
-            return Fortran::lower::genMutableBoxRead(builder, loc, box)
-                .toExtendedValue();
-          },
-          [&](const auto &) { return *allocatedResult; });
+      if (const auto *box = allocatedResult->getBoxOf<fir::MutableBoxValue>()) {
+        if (box->isAllocatable()) {
+          // 9.7.3.2 point 4. Finalize allocatables.
+          auto *bldr = &converter.getFirOpBuilder();
+          stmtCtx.attachCleanup(
+              [=]() { Fortran::lower::genFinalization(*bldr, loc, *box); });
+        }
+      }
+      return *allocatedResult;
     }
 
     if (!resultType.hasValue())

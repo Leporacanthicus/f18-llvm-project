@@ -448,6 +448,7 @@ struct IntrinsicLibrary {
   mlir::Value genModulo(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNint(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNot(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  fir::ExtendedValue genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genPresent(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genProduct(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genRandomInit(llvm::ArrayRef<fir::ExtendedValue>);
@@ -667,6 +668,7 @@ static constexpr IntrinsicHandler handlers[]{
     {"modulo", &I::genModulo},
     {"nint", &I::genNint},
     {"not", &I::genNot},
+    {"null", &I::genNull, {{{"mold", asInquired}}}, /*isElemental=*/false},
     {"present",
      &I::genPresent,
      {{{"a", asInquired}}},
@@ -2323,6 +2325,23 @@ mlir::Value IntrinsicLibrary::genNot(mlir::Type resultType,
   assert(args.size() == 1);
   auto allOnes = builder.createIntegerConstant(loc, resultType, -1);
   return builder.create<mlir::XOrOp>(loc, args[0], allOnes);
+}
+
+// NULL
+fir::ExtendedValue
+IntrinsicLibrary::genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue> args) {
+  // NULL() without MOLD must be handled in the contexts where it can appear
+  // (see table 16.5 of Fortran 2018 standard).
+  assert(args.size() == 1 && isPresent(args[0]) &&
+         "MOLD argument required to lower NULL outside of any context");
+  const auto *mold = args[0].getBoxOf<fir::MutableBoxValue>();
+  assert(mold && "MOLD must be a pointer or allocatable");
+  auto boxType = mold->getBoxTy();
+  auto boxStorage = builder.createTemporary(loc, boxType);
+  auto box = Fortran::lower::createUnallocatedBox(builder, loc, boxType,
+                                                  mold->nonDeferredLenParams());
+  builder.create<fir::StoreOp>(loc, box, boxStorage);
+  return fir::MutableBoxValue(boxStorage, mold->nonDeferredLenParams(), {});
 }
 
 // PRESENT
