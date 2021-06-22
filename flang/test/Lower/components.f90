@@ -97,3 +97,21 @@ subroutine sliced_base()
   ! CHECK:  fir.call @_QPtakes_int_array(%[[VAL_17]]) : (!fir.box<!fir.array<?xi32>>) -> ()
   call takes_int_array(a(1:50)%y)
 end subroutine
+
+! CHECK-LABEL: issue772
+subroutine issue772(a, x)
+  ! Verify that sub-expressions inside a component reference are
+  ! only evaluated once.
+  type t
+    real :: b(100)
+  end type
+  real :: x(100)
+  type(t) :: a(100)
+  ! CHECK: fir.call @_QPifoo()
+  ! CHECK-NOT: fir.call @_QPifoo()
+  x = a(ifoo())%b(1:100:1)
+  ! CHECK: fir.call @_QPibar()
+  ! CHECK-NOT: fir.call @_QPibar()
+  print *, a(20)%b(1:ibar():1)
+  ! CHECK return
+end subroutine
