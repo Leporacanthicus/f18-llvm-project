@@ -353,6 +353,14 @@ llvm::SmallVector<mlir::Value> getExtents(FirOpBuilder &builder,
                                           mlir::Location loc,
                                           const fir::ExtendedValue &box);
 
+/// Read a fir::BoxValue into an fir::UnboxValue, a fir::ArrayBoxValue or a
+/// fir::CharArrayBoxValue. This should only be called if the fir::BoxValue is
+/// known to be contiguous given the context (or if the resulting address will
+/// not be used). If the value is polymorphic, its dynamic type will be lost.
+/// This must not be used on unlimited polymorphic and assumed rank entities.
+fir::ExtendedValue readBoxValue(FirOpBuilder &builder, mlir::Location loc,
+                                const fir::BoxValue &box);
+
 //===--------------------------------------------------------------------===//
 // String literal helper helpers
 //===--------------------------------------------------------------------===//

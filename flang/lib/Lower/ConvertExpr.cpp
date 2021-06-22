@@ -1797,17 +1797,15 @@ public:
             return temp;
           }
           auto baseAddr = genExtAddr(*expr);
-          if (const auto *box = baseAddr.getBoxOf<fir::BoxValue>()) {
-            if (!box->isDerived())
-              fir::emitFatalError(
-                  loc, "contiguous argument was not lowered to an address");
-            // Scalar and contiguous derived type array may be lowered to
-            // fir.box<> to deal with potential polymorphism. Here, polymorphism
-            // does not matter (an entity of the declared type is passed, not
-            // one of the dynamic type), so it is safe to unbox it.
-            return builder.create<fir::BoxAddrOp>(loc, box->getMemTy(),
-                                                  fir::getBase(*box));
-          }
+          // Scalar and contiguous expressions may be lowered to a fir.box,
+          // either to account for potential polymorphism, or because lowering
+          // did not account for some contiguity hints.
+          // Here, polymorphism does not matter (an entity of the declared type
+          // is passed, not one of the dynamic type), and the expr is known to
+          // be simply contiguous, so it is safe to unbox it and pass the
+          // address without making a copy.
+          if (const auto *box = baseAddr.getBoxOf<fir::BoxValue>())
+            return Fortran::lower::readBoxValue(builder, loc, *box);
           return baseAddr;
         }();
         if (arg.passBy == PassBy::BaseAddress) {
@@ -2122,10 +2120,11 @@ public:
 
   template <typename A>
   ExtValue gen(const Fortran::evaluate::Expr<A> &x) {
-    // Whole array symbols and results of transformational functions already
-    // have a storage and the scalar expression lowering path is used to not
-    // create a new temporary storage.
-    if (isScalar(x) || Fortran::evaluate::UnwrapWholeSymbolDataRef(x) ||
+    // Whole array symbols or components, and results of transformational
+    // functions already have a storage and the scalar expression lowering path
+    // is used to not create a new temporary storage.
+    if (isScalar(x) ||
+        Fortran::evaluate::UnwrapWholeSymbolOrComponentDataRef(x) ||
         isTransformationalRef(x))
       return std::visit([&](const auto &e) { return genref(e); }, x.u);
     if (useBoxArg)

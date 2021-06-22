@@ -546,6 +546,29 @@ Fortran::lower::getExtents(Fortran::lower::FirOpBuilder &builder,
       [&](const auto &) -> llvm::SmallVector<mlir::Value> { return {}; });
 }
 
+fir::ExtendedValue
+Fortran::lower::readBoxValue(Fortran::lower::FirOpBuilder &builder,
+                             mlir::Location loc, const fir::BoxValue &box) {
+  assert(!box.isUnlimitedPolymorphic() && !box.hasAssumedRank() &&
+         "cannot read unlimited polymorphic or assumed rank fir.box");
+  auto addr =
+      builder.create<fir::BoxAddrOp>(loc, box.getMemTy(), box.getAddr());
+  if (box.isCharacter()) {
+    auto len = Fortran::lower::readCharLen(builder, loc, box);
+    if (box.rank() == 0)
+      return fir::CharBoxValue(addr, len);
+    return fir::CharArrayBoxValue(
+        addr, len, Fortran::lower::readExtents(builder, loc, box),
+        box.getLBounds());
+  }
+  if (box.isDerivedWithLengthParameters())
+    TODO(loc, "read fir.box with length parameters");
+  if (box.rank() == 0)
+    return addr;
+  return fir::ArrayBoxValue(
+      addr, Fortran::lower::readExtents(builder, loc, box), box.getLBounds());
+}
+
 std::string Fortran::lower::uniqueCGIdent(llvm::StringRef prefix,
                                           llvm::StringRef name) {
   // For "long" identifiers use a hash value

@@ -230,3 +230,53 @@ subroutine issue871_array(p)
   ! CHECK: fir.call @_QPbar_derived_array(%[[cast]])
   call bar_derived_array(p)
 end subroutine
+
+! CHECK-LABEL: func @_QPwhole_components()
+subroutine whole_components()
+  ! Test no copy is made for whole components.
+  type t
+    integer :: i(100)
+  end type
+  ! CHECK: %[[a:.*]] = fir.alloca !fir.type<_QFwhole_componentsTt{i:!fir.array<100xi32>}>
+  type(t) :: a
+  ! CHECK: %[[field:.*]] = fir.field_index i, !fir.type<_QFwhole_componentsTt{i:!fir.array<100xi32>}>
+  ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[a]], %[[field]] : (!fir.ref<!fir.type<_QFwhole_componentsTt{i:!fir.array<100xi32>}>>, !fir.field) -> !fir.ref<!fir.array<100xi32>>
+  ! CHECK: fir.call @_QPbar_integer(%[[addr]]) : (!fir.ref<!fir.array<100xi32>>) -> ()
+  call bar_integer(a%i)
+end subroutine
+
+! CHECK-LABEL: func @_QPwhole_component_contiguous_pointer()
+subroutine whole_component_contiguous_pointer()
+  ! Test no copy is made for whole contiguous pointer components.
+  type t
+    integer, pointer, contiguous :: i(:)
+  end type
+  ! CHECK: %[[a:.*]] = fir.alloca !fir.type<_QFwhole_component_contiguous_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?xi32>>>}>
+  type(t) :: a
+  ! CHECK: %[[field:.*]] = fir.field_index i, !fir.type<_QFwhole_component_contiguous_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?xi32>>>}>
+  ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[a]], %[[field]] : (!fir.ref<!fir.type<_QFwhole_component_contiguous_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?xi32>>>}>>, !fir.field) -> !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
+  ! CHECK: %[[box_load:.*]] = fir.load %[[coor]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xi32>>>>
+  ! CHECK: %[[addr:.*]] = fir.box_addr %[[box_load]] : (!fir.box<!fir.ptr<!fir.array<?xi32>>>) -> !fir.ptr<!fir.array<?xi32>>
+  ! CHECK: %[[cast:.*]] = fir.convert %[[addr]] : (!fir.ptr<!fir.array<?xi32>>) -> !fir.ref<!fir.array<100xi32>>
+  ! CHECK: fir.call @_QPbar_integer(%[[cast]]) : (!fir.ref<!fir.array<100xi32>>) -> ()
+  call bar_integer(a%i)
+end subroutine
+
+! CHECK-LABEL: func @_QPwhole_component_contiguous_char_pointer()
+subroutine whole_component_contiguous_char_pointer()
+  ! Test no copy is made for whole contiguous character pointer components.
+  type t
+    character(:), pointer, contiguous :: i(:)
+  end type
+  ! CHECK: %[[a:.*]] = fir.alloca !fir.type<_QFwhole_component_contiguous_char_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>}>
+  type(t) :: a
+  ! CHECK: %[[field:.*]] = fir.field_index i, !fir.type<_QFwhole_component_contiguous_char_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>}>
+  ! CHECK: %[[coor:.*]] = fir.coordinate_of %0, %1 : (!fir.ref<!fir.type<_QFwhole_component_contiguous_char_pointerTt{i:!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>}>>, !fir.field) -> !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>
+  ! CHECK: %[[box_load:.*]] = fir.load %[[coor]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>
+  ! CHECK: %[[addr:.*]] = fir.box_addr %[[box_load]] : (!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>) -> !fir.ptr<!fir.array<?x!fir.char<1,?>>>
+  ! CHECK: %[[len:.*]] = fir.box_elesize %[[box_load]] : (!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>) -> index
+  ! CHECK: %[[cast:.*]] = fir.convert %[[addr]] : (!fir.ptr<!fir.array<?x!fir.char<1,?>>>) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK: %[[embox:.*]] = fir.emboxchar %[[cast]], %[[len]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK: fir.call @_QPbar_char_3(%[[embox]]) : (!fir.boxchar<1>) -> ()
+  call bar_char_3(a%i)
+end subroutine
