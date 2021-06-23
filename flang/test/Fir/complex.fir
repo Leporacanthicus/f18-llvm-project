@@ -37,7 +37,7 @@ func @conj(%a : !fir.complex<4>) -> !fir.complex<4> {
   // LLVMIR: extractvalue
   %1 = fir.extract_value %a, [1 : i32] : (!fir.complex<4>) -> f32
   // LLVMIR: fneg float
-  %2 = fir.negf %1 : f32
+  %2 = negf %1 : f32
   // LLVMIR: insertvalue
   %3 = fir.insert_value %a, %2, [1 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   return %3 : !fir.complex<4>

@@ -224,7 +224,7 @@ end subroutine
 subroutine conjg_test(z1, z2)
   complex :: z1, z2
   ! CHECK: fir.extract_value
-  ! CHECK: fir.negf
+  ! CHECK: negf
   ! CHECK: fir.insert_value
   z2 = conjg(z1)
 end subroutine
@@ -926,7 +926,7 @@ end subroutine
 subroutine sign_testr(a, b, c)
   real a, b, c
   ! CHECK-DAG: fir.call {{.*}}fabs
-  ! CHECK-DAG: fir.negf
+  ! CHECK-DAG: negf
   ! CHECK-DAG: cmpf olt
   ! CHECK: select
   c = sign(a, b)

@@ -681,7 +681,7 @@ public:
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Negate<Fortran::evaluate::Type<
                       Fortran::common::TypeCategory::Real, KIND>> &op) {
-    return builder.create<fir::NegfOp>(getLoc(), genunbox(op.left()));
+    return builder.create<mlir::NegFOp>(getLoc(), genunbox(op.left()));
   }
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Negate<Fortran::evaluate::Type<
@@ -3082,7 +3082,7 @@ public:
     auto loc = getLoc();
     auto f = genarr(x.left());
     return [=](IterSpace iters) -> ExtValue {
-      return builder.create<fir::NegfOp>(loc, fir::getBase(f(iters)));
+      return builder.create<mlir::NegFOp>(loc, fir::getBase(f(iters)));
     };
   }
   template <int KIND>

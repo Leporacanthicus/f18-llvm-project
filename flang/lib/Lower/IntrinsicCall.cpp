@@ -2277,7 +2277,7 @@ mlir::Value IntrinsicLibrary::genSign(mlir::Type resultType,
   }
   // TODO: Requirements when second argument is +0./0.
   auto zero = builder.createRealZeroConstant(loc, resultType);
-  auto neg = builder.create<fir::NegfOp>(loc, abs);
+  auto neg = builder.create<mlir::NegFOp>(loc, abs);
   auto cmp = builder.create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OLT,
                                           args[1], zero);
   return builder.create<mlir::SelectOp>(loc, cmp, neg, abs);

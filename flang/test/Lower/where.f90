@@ -18,7 +18,7 @@
    ! CHECK: fir.coordinate_of %[[tvec]]
    ! CHECK: fir.if
    ! CHECK: fir.array_fetch
-   ! CHECK: fir.negf
+   ! CHECK: negf
    ! CHECK: fir.array_update
    ! CHECK: } else {
    ! CHECK: }
