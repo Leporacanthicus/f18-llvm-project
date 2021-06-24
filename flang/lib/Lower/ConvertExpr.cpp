@@ -3405,6 +3405,8 @@ public:
                   // Note: 9.5.3.3.3(3) specifies undefined behavior for
                   // multiple updates to any specific array element through a
                   // vector subscript with replicated values.
+                  assert(!isBoxValue() &&
+                         "fir.box cannot be created with vector subscripts");
                   auto base = x.base();
                   ScalarExprLowering sel{loc, converter, symMap, stmtCtx};
                   auto exv = base.IsSymbol() ? sel.gen(base.GetFirstSymbol())

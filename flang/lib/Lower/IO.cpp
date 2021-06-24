@@ -503,6 +503,8 @@ static void genInputItemList(Fortran::lower::AbstractConverter &converter,
 
     llvm::SmallVector<mlir::Value> inputFuncArgs = {cookie};
     if (argType.isa<fir::BoxType>()) {
+      if (Fortran::evaluate::HasVectorSubscript(*expr))
+        TODO(loc, "IO input item with vector subscripts");
       auto box = fir::getBase(converter.genExprBox(*expr, stmtCtx, loc));
       inputFuncArgs.push_back(builder.createConvert(loc, argType, box));
     } else {

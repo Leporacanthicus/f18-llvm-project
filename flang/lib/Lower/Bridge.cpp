@@ -304,7 +304,8 @@ public:
   fir::ExtendedValue genExprBox(const Fortran::lower::SomeExpr &expr,
                                 Fortran::lower::StatementContext &context,
                                 mlir::Location loc) override final {
-    if (expr.Rank() > 0 && Fortran::evaluate::IsVariable(expr))
+    if (expr.Rank() > 0 && Fortran::evaluate::IsVariable(expr) &&
+        !Fortran::evaluate::HasVectorSubscript(expr))
       return createSomeArrayBox(*this, expr, localSymbols, context);
     return fir::BoxValue(
         builder->createBox(loc, genExprAddr(expr, context, &loc)));
