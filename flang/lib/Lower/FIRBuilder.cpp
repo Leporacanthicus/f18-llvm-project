@@ -646,7 +646,9 @@ Fortran::lower::createStringLiteral(Fortran::lower::FirOpBuilder &builder,
 fir::ExtendedValue Fortran::lower::componentToExtendedValue(
     Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
     const fir::ExtendedValue &obj, mlir::Value component) {
-  auto fieldTy = fir::dyn_cast_ptrEleTy(component.getType());
+  auto fieldTy = component.getType();
+  if (auto ty = fir::dyn_cast_ptrEleTy(fieldTy))
+    fieldTy = ty;
   if (fieldTy.isa<fir::BoxType>()) {
     llvm::SmallVector<mlir::Value> nonDeferredTypeParams;
     auto eleTy = fir::unwrapSequenceType(fir::dyn_cast_ptrOrBoxEleTy(fieldTy));

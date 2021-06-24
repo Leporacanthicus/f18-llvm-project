@@ -204,6 +204,9 @@ static bool isAllocatableOrPointer(const Fortran::lower::SomeExpr &expr) {
 /// Given the address of an array element and the ExtendedValue describing the
 /// array, returns the ExtendedValue describing the array element. The purpose
 /// is to propagate the length parameters of the array to the element.
+/// This can be used for elements of `array` or `array(i:j:k)`. If \p element
+/// belongs to an array section `array%x` whose base is \p array,
+/// arraySectionElementToExtendedValue must be used instead.
 static fir::ExtendedValue
 arrayElementToExtendedValue(Fortran::lower::FirOpBuilder &builder,
                             mlir::Location loc, const fir::ExtendedValue &array,
@@ -225,6 +228,25 @@ arrayElementToExtendedValue(Fortran::lower::FirOpBuilder &builder,
         return element;
       },
       [&](const auto &) -> fir::ExtendedValue { return element; });
+}
+
+/// Build the ExtendedValue for \p element that is an element of an array or
+/// array section with \p array base (`array` or `array(i:j:k)%x%y`).
+/// If it is an array section, \p slice must be provided and be a fir::SliceOp
+/// that describes the section.
+static fir::ExtendedValue arraySectionElementToExtendedValue(
+    Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+    const fir::ExtendedValue &array, mlir::Value element, mlir::Value slice) {
+  if (!slice)
+    return arrayElementToExtendedValue(builder, loc, array, element);
+  auto sliceOp = mlir::dyn_cast_or_null<fir::SliceOp>(slice.getDefiningOp());
+  assert(sliceOp && "slice must be a sliceOp");
+  if (sliceOp.fields().empty())
+    return arrayElementToExtendedValue(builder, loc, array, element);
+  // For F95, using componentToExtendedValue will work, but when PDTs are
+  // lowered. It will be required to go down the slice to propagate the length
+  // parameters.
+  return Fortran::lower::componentToExtendedValue(builder, loc, array, element);
 }
 
 namespace {
@@ -2493,7 +2515,7 @@ public:
                                 iterSpace.iterVec(), destination.typeparams());
     builder.create<fir::ResultOp>(loc, upd);
     builder.restoreInsertionPoint(insPt);
-    return fir::substBase(exv, iterSpace.outerResult());
+    return abstractArrayExtValue(iterSpace.outerResult());
   }
   ExtValue lowerArrayExpression(
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &exp) {
@@ -3545,6 +3567,24 @@ public:
     return genarr(asScalarRef(sym));
   }
 
+  /// Build an ExtendedValue from a fir.array<?x...?xT> without
+  /// actually setting the actual extents and lengths. This is only
+  /// to allow their propagation as ExtendedValue without triggering
+  /// verifier failure when propagating character/arrays as unbox value.
+  /// Only the base of the resulting ExtendedValue should be used, it is
+  /// undefined to use its the length or extents,
+  ExtValue abstractArrayExtValue(mlir::Value val) {
+    auto type = val.getType();
+    if (auto ty = fir::dyn_cast_ptrEleTy(type))
+      type = ty;
+    auto undef = builder.create<fir::UndefOp>(getLoc(), builder.getIndexType());
+    auto seqTy = type.cast<fir::SequenceType>();
+    llvm::SmallVector<mlir::Value> extents(seqTy.getDimension(), undef);
+    if (fir::isa_char(seqTy.getEleTy()))
+      return fir::CharArrayBoxValue(val, undef, extents);
+    return fir::ArrayBoxValue(val, extents);
+  }
+
   CC genarr(const ExtValue &extMemref) {
     auto loc = getLoc();
     auto memref = fir::getBase(extMemref);
@@ -3592,7 +3632,8 @@ public:
         mlir::Value coor = builder.create<fir::ArrayCoorOp>(
             loc, refEleTy, memref, shape, slice, indices,
             fir::getTypeParams(extMemref));
-        return arrayElementToExtendedValue(builder, loc, extMemref, coor);
+        return arraySectionElementToExtendedValue(builder, loc, extMemref, coor,
+                                                  slice);
       };
     }
     auto arrLoad = builder.create<fir::ArrayLoadOp>(
@@ -3606,7 +3647,7 @@ public:
         auto arrUpdate = builder.create<fir::ArrayUpdateOp>(
             loc, resTy, innerArg, iters.getElement(), iters.iterVec(),
             destination.typeparams());
-        return arrayElementToExtendedValue(builder, loc, extMemref, arrUpdate);
+        return abstractArrayExtValue(arrUpdate);
       };
     }
     arrayOperandLoads.emplace_back(arrLoad);
@@ -3623,12 +3664,14 @@ public:
             loc, base.getType(),
             llvm::ArrayRef<mlir::NamedAttribute>{getAdaptToByRefAttr()});
         builder.create<fir::StoreOp>(loc, base, temp);
-        return arrayElementToExtendedValue(builder, loc, extMemref, temp);
+        return arraySectionElementToExtendedValue(builder, loc, extMemref, temp,
+                                                  slice);
       };
     return [=](IterSpace iters) -> ExtValue {
       auto arrFetch = builder.create<fir::ArrayFetchOp>(
           loc, resTy, arrLd, iters.iterVec(), arrLdTypeParams);
-      return arrayElementToExtendedValue(builder, loc, extMemref, arrFetch);
+      return arraySectionElementToExtendedValue(builder, loc, extMemref,
+                                                arrFetch, slice);
     };
   }
 
