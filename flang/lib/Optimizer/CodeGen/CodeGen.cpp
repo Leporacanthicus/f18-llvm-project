@@ -1935,7 +1935,7 @@ struct XArrayCoorOpConversion
       auto ptrTy = ty0.dyn_cast<mlir::LLVM::LLVMPointerType>();
       assert(ptrTy && "expected pointer type");
       auto eleTy = ptrTy.getElementType();
-      if (auto arrTy = eleTy.dyn_cast<mlir::LLVM::LLVMArrayType>())
+      while (auto arrTy = eleTy.dyn_cast<mlir::LLVM::LLVMArrayType>())
         eleTy = arrTy.getElementType();
       auto newTy = mlir::LLVM::LLVMPointerType::get(eleTy);
       base = rewriter.create<mlir::LLVM::BitcastOp>(loc, newTy, operands[0]);

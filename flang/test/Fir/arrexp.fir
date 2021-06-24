@@ -183,3 +183,21 @@ func @f7(%arg0: !fir.ref<f32>, %arg1: !fir.box<!fir.array<?xf32>>) {
   fir.store %2 to %arg0 : !fir.ref<f32>
   return
 } 
+
+// Test A(:, :)%x reference codegen with A constant shape.
+// CHECK-LABEL:  define void @f8(
+// CHECK-SAME: [2 x [2 x %t]]* %[[A:.*]], i32 %[[I:.*]])
+func @f8(%a : !fir.ref<!fir.array<2x2x!fir.type<t{i:i32}>>>, %i : i32) {
+  %c0 = constant 0 : index
+  %c1 = constant 1 : index
+  %c2 = constant 2 : index
+  %1 = fir.field_index i, !fir.type<t{i:i32}>
+  %2 = fir.shape %c2, %c2 : (index, index) -> !fir.shape<2>
+  %3 = fir.slice %c1, %c2, %c1, %c1, %c2, %c1 path %1 : (index, index, index, index, index, index, !fir.field) -> !fir.slice<2>
+  // CHECK: %[[CAST:.*]] = bitcast [2 x [2 x %t]]* %[[A]] to %t*
+  // CHECK: %[[GEP:.*]] = getelementptr %t, %t* %[[CAST]], i64 0, i32 0
+  %4 = fir.array_coor %a(%2) [%3] %c1, %c1 : (!fir.ref<!fir.array<2x2x!fir.type<t{i:i32}>>>, !fir.shape<2>, !fir.slice<2>, index, index) -> !fir.ref<i32>
+  // CHECK: store i32 %[[I]], i32* %[[GEP]], align 4
+  fir.store %i to %4 : !fir.ref<i32>
+  return
+}
