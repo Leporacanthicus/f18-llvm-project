@@ -2598,8 +2598,9 @@ public:
       for (const auto *e : masks->getExprs())
         if (e && !masks->vmap.count(e)) {
           ScalarExprLowering sel(getLoc(), converter, symMap, stmtCtx);
-          auto tmp = fir::getBase(sel.asArray(*e));
-          masks->vmap.try_emplace(e, tmp);
+          auto tmp = sel.asArray(*e);
+          auto shape = builder.createShape(loc, tmp);
+          masks->vmap.try_emplace(e, fir::getBase(tmp), shape);
         }
     }
 
@@ -2691,13 +2692,20 @@ public:
 
     // Generate the mask conditional structure, if there are masks.
     if (masks && !masks->empty()) {
-      auto genCond = [&](mlir::Value tmp, IterSpace iters) {
+      auto genCond = [&](Fortran::lower::MaskExpr::MaskAddrAndShape mask,
+                         IterSpace iters) {
+        auto tmp = mask.first;
+        auto shape = mask.second;
         auto arrTy = fir::dyn_cast_ptrOrBoxEleTy(tmp.getType());
         auto eleTy = arrTy.cast<fir::SequenceType>().getEleTy();
         auto eleRefTy = builder.getRefType(eleTy);
         auto i1Ty = builder.getI1Type();
-        auto addr = builder.create<fir::CoordinateOp>(loc, eleRefTy, tmp,
+        // ArrayCoorOp is not zero based.
+        auto indexes = fir::factory::originateIndices(loc, builder, shape,
                                                       iters.iterVec());
+        auto addr = builder.create<fir::ArrayCoorOp>(
+            loc, eleRefTy, tmp, shape, /*slice=*/mlir::Value{}, indexes,
+            /*typeParams=*/llvm::None);
         auto load = builder.create<fir::LoadOp>(loc, addr);
         return builder.createConvert(loc, i1Ty, load);
       };
