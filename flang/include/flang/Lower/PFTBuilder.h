@@ -585,13 +585,7 @@ struct FunctionLikeUnit : public ProgramUnit {
   }
 
   /// Get the starting source location for this function like unit
-  parser::CharBlock getStartingSourceLoc() {
-    if (beginStmt)
-      return stmtSourceLoc(*beginStmt);
-    if (!evaluationList.empty())
-      return evaluationList.front().position;
-    return stmtSourceLoc(endStmt);
-  }
+  parser::CharBlock getStartingSourceLoc() const;
 
   void setActiveEntry(int entryIndex) {
     assert(entryIndex >= 0 && entryIndex < (int)entryPointList.size() &&
@@ -614,11 +608,6 @@ struct FunctionLikeUnit : public ProgramUnit {
   /// This is null for a primary entry point.
   Evaluation *getEntryEval() const {
     return entryPointList[activeEntry].second;
-  }
-
-  /// Helper to get location from FunctionLikeUnit begin/end statements.
-  static parser::CharBlock stmtSourceLoc(const FunctionStatement &stmt) {
-    return stmt.visit(common::visitors{[](const auto &x) { return x.source; }});
   }
 
   //===--------------------------------------------------------------------===//
@@ -690,6 +679,9 @@ struct ModuleLikeUnit : public ProgramUnit {
 
   std::vector<Variable> getOrderedSymbolTable() { return varList[0]; }
 
+  /// Get the starting source location for this module like unit.
+  parser::CharBlock getStartingSourceLoc() const;
+
   ModuleStatement beginStmt;
   ModuleStatement endStmt;
   std::list<FunctionLikeUnit> nestedFunctions;
@@ -741,6 +733,13 @@ private:
 /// of a function result.
 std::vector<pft::Variable>
 buildFuncResultDependencyList(const Fortran::semantics::Symbol &);
+
+/// Helper to get location from FunctionLikeUnit/ModuleLikeUnit begin/end
+/// statements.
+template <typename T>
+static parser::CharBlock stmtSourceLoc(const T &stmt) {
+  return stmt.visit(common::visitors{[](const auto &x) { return x.source; }});
+}
 
 } // namespace Fortran::lower::pft
 

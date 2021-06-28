@@ -1131,6 +1131,7 @@ getFunctionStmt(const T &func) {
       std::get<parser::Statement<A>>(func.t)};
   return result;
 }
+
 template <typename A, typename T>
 static lower::pft::ModuleLikeUnit::ModuleStatement getModuleStmt(const T &mod) {
   lower::pft::ModuleLikeUnit::ModuleStatement result{
@@ -1474,6 +1475,10 @@ static void processSymbolTable(
   sdd.finalize();
 }
 
+//===----------------------------------------------------------------------===//
+// FunctionLikeUnit implementation
+//===----------------------------------------------------------------------===//
+
 Fortran::lower::pft::FunctionLikeUnit::FunctionLikeUnit(
     const parser::MainProgram &func, const lower::pft::PftNode &parent,
     const semantics::SemanticsContext &semanticsContext)
@@ -1541,6 +1546,19 @@ bool Fortran::lower::pft::FunctionLikeUnit::parentHasHostAssoc() {
   return false;
 }
 
+parser::CharBlock
+Fortran::lower::pft::FunctionLikeUnit::getStartingSourceLoc() const {
+  if (beginStmt)
+    return stmtSourceLoc(*beginStmt);
+  if (!evaluationList.empty())
+    return evaluationList.front().position;
+  return stmtSourceLoc(endStmt);
+}
+
+//===----------------------------------------------------------------------===//
+// ModuleLikeUnit implementation
+//===----------------------------------------------------------------------===//
+
 Fortran::lower::pft::ModuleLikeUnit::ModuleLikeUnit(
     const parser::Module &m, const lower::pft::PftNode &parent)
     : ProgramUnit{m, parent}, beginStmt{getModuleStmt<parser::ModuleStmt>(m)},
@@ -1557,6 +1575,15 @@ Fortran::lower::pft::ModuleLikeUnit::ModuleLikeUnit(
   auto symbol = getSymbol(beginStmt);
   processSymbolTable(*symbol->scope(), varList, /*reentrant=*/false);
 }
+
+parser::CharBlock
+Fortran::lower::pft::ModuleLikeUnit::getStartingSourceLoc() const {
+  return stmtSourceLoc(beginStmt);
+}
+
+//===----------------------------------------------------------------------===//
+// BlockDataUnit implementation
+//===----------------------------------------------------------------------===//
 
 Fortran::lower::pft::BlockDataUnit::BlockDataUnit(
     const parser::BlockData &bd, const lower::pft::PftNode &parent,

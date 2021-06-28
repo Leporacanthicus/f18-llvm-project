@@ -798,7 +798,8 @@ private:
   ///  - unstructured infinite and while loops
   ///  - structured and unstructured increment loops
   ///  - structured and unstructured concurrent loops
-  void genFIR(const Fortran::parser::DoConstruct &) {
+  void genFIR(const Fortran::parser::DoConstruct &doConstruct) {
+    setCurrentPosition(Fortran::parser::FindSourceLocation(doConstruct));
     // Collect loop nest information.
     // Generate begin loop code directly for infinite and while loops.
     auto &eval = getEval();
@@ -2290,8 +2291,7 @@ private:
 
   /// Emit return and cleanup after the function has been translated.
   void endNewFunction(Fortran::lower::pft::FunctionLikeUnit &funit) {
-    setCurrentPosition(
-        Fortran::lower::pft::FunctionLikeUnit::stmtSourceLoc(funit.endStmt));
+    setCurrentPosition(Fortran::lower::pft::stmtSourceLoc(funit.endStmt));
     if (funit.isMainProgram())
       genExitRoutine();
     else
@@ -2334,6 +2334,7 @@ private:
 
   /// Lower a procedure (nest).
   void lowerFunc(Fortran::lower::pft::FunctionLikeUnit &funit) {
+    setCurrentPosition(funit.getStartingSourceLoc());
     for (int entryIndex = 0, last = funit.entryPointList.size();
          entryIndex < last; ++entryIndex) {
       funit.setActiveEntry(entryIndex);
@@ -2352,6 +2353,7 @@ private:
     // FIXME: get rid of the bogus function context and instantiate the
     // globals directly into the module.
     auto *context = &getMLIRContext();
+    setCurrentPosition(mod.getStartingSourceLoc());
     auto func = Fortran::lower::FirOpBuilder::createFunction(
         mlir::UnknownLoc::get(context), getModuleOp(),
         fir::NameUniquer::doGenerated("ModuleSham"),
