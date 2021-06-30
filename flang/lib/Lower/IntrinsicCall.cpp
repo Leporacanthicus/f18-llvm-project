@@ -464,6 +464,8 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genSum(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genTransfer(mlir::Type,
                                  llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genTranspose(mlir::Type,
+                                  llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genTrim(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genVerify(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   /// Implement all conversion functions like DBLE, the first argument is
@@ -713,6 +715,10 @@ static constexpr IntrinsicHandler handlers[]{
     {"transfer",
      &I::genTransfer,
      {{{"source", asAddr}, {"mold", asAddr}, {"size", asValue}}},
+     /*isElemental=*/false},
+    {"transpose",
+     &I::genTranspose,
+     {{{"matrix", asAddr}}},
      /*isElemental=*/false},
     {"trim", &I::genTrim, {{{"string", asAddr}}}, /*isElemental=*/false},
     {"verify",
@@ -2644,6 +2650,30 @@ IntrinsicLibrary::genTransfer(mlir::Type resultType,
       [&](const auto &) -> fir::ExtendedValue {
         fir::emitFatalError(loc, "unexpected result for TRANSFER");
       });
+}
+
+// TRANSPOSE
+fir::ExtendedValue
+IntrinsicLibrary::genTranspose(mlir::Type resultType,
+                               llvm::ArrayRef<fir::ExtendedValue> args) {
+
+  assert(args.size() == 1);
+
+  // Handle source argument
+  auto source = builder.createBox(loc, args[0]);
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, 2);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+  // Call runtime. The runtime is allocating the result.
+  Fortran::lower::genTranspose(builder, loc, resultIrBox, source);
+  // Read result from mutable fir.box and add it to the list of temps to be
+  // finalized by the StatementContext.
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for TRANSPOSE");
 }
 
 // TRIM

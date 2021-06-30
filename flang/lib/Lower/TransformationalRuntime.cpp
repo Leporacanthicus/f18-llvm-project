@@ -33,3 +33,17 @@ void Fortran::lower::genReshape(Fortran::lower::FirOpBuilder &builder,
                                               orderBox, sourceFile, sourceLine);
   builder.create<fir::CallOp>(loc, func, args);
 }
+
+/// Generate call to Transpose intrinsic runtime routine.
+void Fortran::lower::genTranspose(Fortran::lower::FirOpBuilder &builder,
+                                  mlir::Location loc, mlir::Value resultBox,
+                                  mlir::Value sourceBox) {
+  auto func = Fortran::lower::getRuntimeFunc<mkRTKey(Transpose)>(loc, builder);
+  auto fTy = func.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(3));
+  auto args = Fortran::lower::createArguments(
+      builder, loc, fTy, resultBox, sourceBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, func, args);
+}

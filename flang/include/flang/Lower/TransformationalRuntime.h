@@ -23,6 +23,9 @@ void genReshape(FirOpBuilder &builder, mlir::Location loc,
                 mlir::Value resultBox, mlir::Value sourceBox,
                 mlir::Value shapeBox, mlir::Value padBox, mlir::Value orderBox);
 
+void genTranspose(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+                  mlir::Value resultBox, mlir::Value sourceBox);
+
 } // namespace Fortran::lower
 
 #endif // FORTRAN_LOWER_TRANSFORMATIONALRUNTIME_H
