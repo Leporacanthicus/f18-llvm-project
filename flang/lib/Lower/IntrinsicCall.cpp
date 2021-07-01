@@ -421,6 +421,7 @@ struct IntrinsicLibrary {
                                          llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genConjg(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genCount(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
+  void genCpuTime(llvm::ArrayRef<fir::ExtendedValue>);
   void genDateAndTime(llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDim(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -432,9 +433,9 @@ struct IntrinsicLibrary {
   mlir::Value genIbits(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genIbset(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genIchar(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
-  mlir::Value genIEOr(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genIeor(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genIndex(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
-  mlir::Value genIOr(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genIor(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genIshft(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genIshftc(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genLen(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
@@ -604,6 +605,10 @@ static constexpr IntrinsicHandler handlers[]{
      &I::genCount,
      {{{"mask", asAddr}, {"dim", asValue}, {"kind", asValue}}},
      /*isElemental=*/false},
+    {"cpu_time",
+     &I::genCpuTime,
+     {{{"time", asAddr}}},
+     /*isElemental=*/false},
     {"date_and_time",
      &I::genDateAndTime,
      {{{"date", asAddr},
@@ -621,14 +626,14 @@ static constexpr IntrinsicHandler handlers[]{
     {"ibits", &I::genIbits},
     {"ibset", &I::genIbset},
     {"ichar", &I::genIchar},
-    {"ieor", &I::genIEOr},
+    {"ieor", &I::genIeor},
     {"index",
      &I::genIndex,
      {{{"string", asAddr},
        {"substring", asAddr},
        {"back", asValue},
        {"kind", asValue}}}},
-    {"ior", &I::genIOr},
+    {"ior", &I::genIor},
     {"ishft", &I::genIshft},
     {"ishftc", &I::genIshftc},
     {"len", &I::genLen},
@@ -1886,6 +1891,17 @@ IntrinsicLibrary::genCount(mlir::Type resultType,
       });
 }
 
+// CPU_TIME
+void IntrinsicLibrary::genCpuTime(llvm::ArrayRef<fir::ExtendedValue> args) {
+  assert(args.size() == 1);
+  auto arg = args[0].getUnboxed();
+  assert(arg && "nonscalar cpu_time argument");
+  auto res1 = Fortran::lower::genCpuTime(builder, loc);
+  auto res2 =
+      builder.createConvert(loc, fir::dyn_cast_ptrEleTy(arg->getType()), res1);
+  builder.create<fir::StoreOp>(loc, res2, *arg);
+}
+
 // DATE_AND_TIME
 void IntrinsicLibrary::genDateAndTime(llvm::ArrayRef<fir::ExtendedValue> args) {
   assert(args.size() == 4 && "date_and_time has 4 args");
@@ -2044,7 +2060,7 @@ IntrinsicLibrary::genIchar(mlir::Type resultType,
 }
 
 // IEOR
-mlir::Value IntrinsicLibrary::genIEOr(mlir::Type resultType,
+mlir::Value IntrinsicLibrary::genIeor(mlir::Type resultType,
                                       llvm::ArrayRef<mlir::Value> args) {
   assert(args.size() == 2);
   return builder.create<mlir::XOrOp>(loc, args[0], args[1]);
@@ -2113,7 +2129,7 @@ IntrinsicLibrary::genIndex(mlir::Type resultType,
 }
 
 // IOR
-mlir::Value IntrinsicLibrary::genIOr(mlir::Type resultType,
+mlir::Value IntrinsicLibrary::genIor(mlir::Type resultType,
                                      llvm::ArrayRef<mlir::Value> args) {
   assert(args.size() == 2);
   return builder.create<mlir::OrOp>(loc, args[0], args[1]);
