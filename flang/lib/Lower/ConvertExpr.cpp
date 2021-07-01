@@ -1589,7 +1589,7 @@ public:
   /// Helper to lower intrinsic arguments for inquiry intrinsic.
   ExtValue
   lowerIntrinsicArgumentAsInquired(const Fortran::lower::SomeExpr &expr) {
-    if (IsAllocatableOrPointer(expr))
+    if (isAllocatableOrPointer(expr))
       return genMutableBoxValue(expr);
     return gen(expr);
   }
