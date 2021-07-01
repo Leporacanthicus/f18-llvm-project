@@ -2104,14 +2104,16 @@ public:
       genArrayCopy(var, temp);
 
     if (allocatedResult) {
-      if (const auto *box = allocatedResult->getBoxOf<fir::MutableBoxValue>()) {
-        if (box->isAllocatable()) {
-          // 9.7.3.2 point 4. Finalize allocatables.
-          auto *bldr = &converter.getFirOpBuilder();
-          stmtCtx.attachCleanup(
-              [=]() { Fortran::lower::genFinalization(*bldr, loc, *box); });
-        }
-      }
+      allocatedResult->match(
+          [&](const fir::MutableBoxValue &box) {
+            if (box.isAllocatable()) {
+              // 9.7.3.2 point 4. Finalize allocatables.
+              auto *bldr = &converter.getFirOpBuilder();
+              stmtCtx.attachCleanup(
+                  [=]() { Fortran::lower::genFinalization(*bldr, loc, box); });
+            }
+          },
+          [](const auto &) {});
       return *allocatedResult;
     }
 
