@@ -13,3 +13,6 @@ func private @foo4(%arg0: !fir.ref<!fir.array<?x?x?xi32>>)
 
 // CHECK-LABEL: declare void @byval5(i32*)
 func private @byval5(%arg0: !fir.array<?x?x?xi32>)
+
+// CHECK-LABEL: declare void @foo6(float**)
+func private @foo6(%arg0: !fir.llvm_ptr<!fir.ref<f32>>)

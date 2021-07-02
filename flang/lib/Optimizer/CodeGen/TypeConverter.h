@@ -58,6 +58,9 @@ public:
       return mlir::IntegerType::get(
           &getContext(), kindMapping.getLogicalBitsize(boolTy.getFKind()));
     });
+    addConversion([&](fir::LLVMPointerType pointer) {
+      return convertPointerLike(pointer);
+    });
     addConversion(
         [&](fir::PointerType pointer) { return convertPointerLike(pointer); });
     addConversion(

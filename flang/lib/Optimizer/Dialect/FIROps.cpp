@@ -1817,7 +1817,7 @@ static mlir::Type elementTypeOf(mlir::Type ref) {
 }
 
 mlir::ParseResult fir::LoadOp::getElementOf(mlir::Type &ele, mlir::Type ref) {
-  if ((ele = elementTypeOf(ref)))
+  if ((ele = fir::dyn_cast_ptrEleTy(ref)))
     return mlir::success();
   return mlir::failure();
 }
