@@ -12,6 +12,7 @@ add_flang_library(FortranLower
   ConvertExpr.cpp
   ConvertType.cpp
   ConvertVariable.cpp
+  DerivedRuntime.cpp
   DoLoopHelper.cpp
   FIRBuilder.cpp
   HostAssociations.cpp

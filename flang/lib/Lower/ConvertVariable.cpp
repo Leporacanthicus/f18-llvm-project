@@ -19,6 +19,7 @@
 #include "flang/Lower/CallInterface.h"
 #include "flang/Lower/CharacterExpr.h"
 #include "flang/Lower/ConvertExpr.h"
+#include "flang/Lower/DerivedRuntime.h"
 #include "flang/Lower/FIRBuilder.h"
 #include "flang/Lower/Mangler.h"
 #include "flang/Lower/PFTBuilder.h"
@@ -84,6 +85,16 @@ static mlir::Value genScalarValue(Fortran::lower::AbstractConverter &converter,
   // symbol mapping to be used expression lowering.
   return fir::getBase(Fortran::lower::createSomeExtendedExpression(
       loc, converter, expr, symMap, context));
+}
+
+/// Does this variable has a default initialization ?
+static bool hasDefaultInitialization(const Fortran::semantics::Symbol &sym) {
+  if (sym.has<Fortran::semantics::ObjectEntityDetails>())
+    if (!Fortran::semantics::IsAllocatableOrPointer(sym))
+      if (const auto *declTypeSpec = sym.GetType())
+        if (const auto *derivedTypeSpec = declTypeSpec->AsDerived())
+          return derivedTypeSpec->HasDefaultInitialization();
+  return false;
 }
 
 //===----------------------------------------------------------------===//
@@ -304,6 +315,8 @@ static fir::GlobalOp defineGlobal(Fortran::lower::AbstractConverter &converter,
             },
             linkage);
       }
+    } else if (hasDefaultInitialization(sym)) {
+      TODO(loc, "default initialization of global variables");
     }
   } else if (sym.has<Fortran::semantics::CommonBlockDetails>()) {
     mlir::emitError(loc, "COMMON symbol processed elsewhere");
@@ -393,6 +406,49 @@ static mlir::Value createNewLocal(Fortran::lower::AbstractConverter &converter,
   return builder.allocateLocal(loc, ty, nm, symNm, shape, lenParams, isTarg);
 }
 
+/// Must \p var be default initialized at runtime when entering its scope.
+static bool
+mustBeDefaultInitializedAtRuntime(const Fortran::lower::pft::Variable &var) {
+  if (!var.hasSymbol())
+    return false;
+  const auto &sym = var.getSymbol();
+  if (var.isGlobal())
+    // Global variables are statically initialized.
+    return false;
+  if (Fortran::semantics::IsDummy(sym) && !Fortran::semantics::IsIntentOut(sym))
+    return false;
+  // Local variables (including function results), and intent(out) dummies must
+  // be default initialized at runtime if their type has default initialization.
+  return hasDefaultInitialization(sym);
+}
+
+/// Call default initialization runtime routine to initialize \p var.
+static void
+defaultInitializeAtRuntime(Fortran::lower::AbstractConverter &converter,
+                           const Fortran::lower::pft::Variable &var,
+                           Fortran::lower::SymMap &symMap) {
+  auto &builder = converter.getFirOpBuilder();
+  auto loc = converter.getCurrentLocation();
+  const auto &sym = var.getSymbol();
+  auto exv = symMap.lookupSymbol(sym).toExtendedValue();
+  if (Fortran::semantics::IsOptional(sym)) {
+    // 15.5.2.12 point 3, absent optional dummies are not initialized.
+    // Creating descriptor/passing null descriptor to the runtime would
+    // create runtime crashes.
+    auto isPresent = builder.create<fir::IsPresentOp>(loc, builder.getI1Type(),
+                                                      fir::getBase(exv));
+    builder.genIfThen(loc, isPresent)
+        .genThen([&]() {
+          auto box = builder.createBox(loc, exv);
+          Fortran::lower::genDerivedTypeInitialize(builder, loc, box);
+        })
+        .end();
+  } else {
+    auto box = builder.createBox(loc, exv);
+    Fortran::lower::genDerivedTypeInitialize(builder, loc, box);
+  }
+}
+
 /// Instantiate a local variable. Precondition: Each variable will be visited
 /// such that if its properties depend on other variables, the variables upon
 /// which its properties depend will already have been visited.
@@ -402,6 +458,8 @@ static void instantiateLocal(Fortran::lower::AbstractConverter &converter,
   assert(!var.isAlias());
   Fortran::lower::StatementContext stmtCtx;
   mapSymbolAttributes(converter, var, symMap, stmtCtx);
+  if (mustBeDefaultInitializedAtRuntime(var))
+    defaultInitializeAtRuntime(converter, var, symMap);
 }
 
 //===----------------------------------------------------------------===//
@@ -484,7 +542,7 @@ static fir::GlobalOp defineGlobalAggregateStore(
     StringRef aggName, mlir::StringAttr linkage) {
   assert(aggregate.isGlobal() && "not a global interval");
   auto &builder = converter.getFirOpBuilder();
-  auto loc = converter.genLocation();
+  auto loc = converter.getCurrentLocation();
   auto idxTy = builder.getIndexType();
   mlir::TupleType aggTy = getAggregateType(converter, aggregate);
   auto initFunc = [&](Fortran::lower::FirOpBuilder &builder) {
@@ -512,6 +570,9 @@ static fir::GlobalOp defineGlobalAggregateStore(
                                                   offVal);
           ++tupIdx;
           offset = mem->offset() + mem->size();
+        } else if (hasDefaultInitialization(*mem)) {
+          // See Fortran 2018 standard 19.5.3.4 point 10
+          TODO(loc, "default initialization in global equivalence");
         }
       }
     }
@@ -548,7 +609,7 @@ instantiateAggregateStore(Fortran::lower::AbstractConverter &converter,
   assert(var.isAggregateStore() && "not an interval");
   auto &builder = converter.getFirOpBuilder();
   auto i8Ty = builder.getIntegerType(8);
-  auto loc = converter.genLocation();
+  auto loc = converter.getCurrentLocation();
   if (var.isGlobal()) {
     // The scope of this aggregate is this procedure.
     auto aggName = mangleGlobalAggregateStore(var.getAggregateStore());
@@ -612,6 +673,15 @@ static void instantiateAlias(Fortran::lower::AbstractConverter &converter,
       loc, builder.getRefType(converter.genType(sym)), ptr);
   Fortran::lower::StatementContext stmtCtx;
   mapSymbolAttributes(converter, var, symMap, stmtCtx, preAlloc);
+  // Default initialization is possible for equivalence members: see
+  // F2018 19.5.3.4. Note that if several equivalenced entities have
+  // default initialization, they must have the same type, and the standard
+  // allows the storage to be default initialized several times (this has
+  // no consequences other than wasting some execution time). For now,
+  // do not try optimizing this to single default initializations of
+  // the equivalenced storages. Keep lowering simple.
+  if (mustBeDefaultInitializedAtRuntime(var))
+    defaultInitializeAtRuntime(converter, var, symMap);
 }
 
 //===--------------------------------------------------------------===//
