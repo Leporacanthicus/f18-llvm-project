@@ -480,6 +480,7 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genTranspose(mlir::Type,
                                   llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genTrim(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genUnpack(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genVerify(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   /// Implement all conversion functions like DBLE, the first argument is
   /// the value to convert. There may be an additional KIND arguments that
@@ -749,6 +750,10 @@ static constexpr IntrinsicHandler handlers[]{
      {{{"matrix", asAddr}}},
      /*isElemental=*/false},
     {"trim", &I::genTrim, {{{"string", asAddr}}}, /*isElemental=*/false},
+    {"unpack",
+     &I::genUnpack,
+     {{{"vector", asAddr}, {"mask", asAddr}, {"field", asAddr}}},
+     /*isElemental=*/false},
     {"verify",
      &I::genVerify,
      {{{"string", asAddr},
@@ -2874,6 +2879,38 @@ static mlir::Value createExtremumCompare(mlir::Location loc,
   }
   assert(result && "result must be defined");
   return result;
+}
+
+// UNPACK
+fir::ExtendedValue
+IntrinsicLibrary::genUnpack(mlir::Type resultType,
+                            llvm::ArrayRef<fir::ExtendedValue> args) {
+  assert(args.size() == 3);
+
+  // Handle required vector argument
+  auto vector = builder.createBox(loc, args[0]);
+  fir::BoxValue vectorTmp = builder.createBox(loc, args[0]);
+  auto vectorRank = vectorTmp.rank();
+
+  // Handle required mask argument
+  auto mask = builder.createBox(loc, args[1]);
+  fir::BoxValue maskTmp = builder.createBox(loc, args[1]);
+  auto maskRank = maskTmp.rank();
+
+  // Handle required field argument
+  auto field = builder.createBox(loc, args[2]);
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, maskRank);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+
+  Fortran::lower::genUnpack(builder, loc, resultIrBox, vector, mask, field);
+
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for UNPACK");
 }
 
 // VERIFY

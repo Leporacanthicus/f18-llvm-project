@@ -30,6 +30,10 @@ void genSpread(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
 void genTranspose(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
                   mlir::Value resultBox, mlir::Value sourceBox);
 
+void genUnpack(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+               mlir::Value resultBox, mlir::Value vectorBox,
+               mlir::Value maskBox, mlir::Value fieldBox);
+
 } // namespace Fortran::lower
 
 #endif // FORTRAN_LOWER_TRANSFORMATIONALRUNTIME_H

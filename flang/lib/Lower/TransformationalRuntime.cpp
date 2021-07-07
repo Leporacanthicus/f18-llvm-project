@@ -63,3 +63,20 @@ void Fortran::lower::genTranspose(Fortran::lower::FirOpBuilder &builder,
       builder, loc, fTy, resultBox, sourceBox, sourceFile, sourceLine);
   builder.create<fir::CallOp>(loc, func, args);
 }
+
+/// Generate call to Unpack intrinsic runtime routine.
+void Fortran::lower::genUnpack(Fortran::lower::FirOpBuilder &builder,
+                               mlir::Location loc, mlir::Value resultBox,
+                               mlir::Value vectorBox, mlir::Value maskBox,
+                               mlir::Value fieldBox) {
+  auto unpackFunc =
+      Fortran::lower::getRuntimeFunc<mkRTKey(Unpack)>(loc, builder);
+  auto fTy = unpackFunc.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(5));
+  auto args = Fortran::lower::createArguments(builder, loc, fTy, resultBox,
+                                              vectorBox, maskBox, fieldBox,
+                                              sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, unpackFunc, args);
+}
