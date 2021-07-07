@@ -90,23 +90,29 @@ static void genObjectList(const Fortran::parser::OmpObjectList &objectList,
 }
 
 template <typename Op>
-static void
-createBodyOfOp(Op &op, Fortran::lower::AbstractConverter &converter,
-               mlir::Location &loc,
-               const Fortran::parser::OmpClauseList *clauses = nullptr,
-               const Fortran::semantics::Symbol *arg = nullptr) {
+static void createBodyOfOp(
+    Op &op, Fortran::lower::AbstractConverter &converter, mlir::Location &loc,
+    const Fortran::parser::OmpClauseList *clauses = nullptr,
+    const SmallVector<const Fortran::semantics::Symbol *> &args = {}) {
   auto &firOpBuilder = converter.getFirOpBuilder();
   // If an argument for the region is provided then create the block with that
   // argument. Also update the symbol's address with the mlir argument value.
   // e.g. For loops the argument is the induction variable. And all further
   // uses of the induction variable should use this mlir value.
-  if (arg) {
-    firOpBuilder.createBlock(&op.getRegion(), {}, {converter.genType(*arg)});
-    fir::ExtendedValue exval = op.getRegion().front().getArgument(0);
-    [[maybe_unused]] bool success = converter.bindSymbol(*arg, exval);
-    assert(
-        success &&
-        "Existing binding prevents setting MLIR value for the index variable");
+  if (args.size()) {
+    SmallVector<Type> tiv;
+    int argIndex = 0;
+    for (auto &arg : args) {
+      tiv.push_back(converter.genType(*arg));
+    }
+    firOpBuilder.createBlock(&op.getRegion(), {}, tiv);
+    for (auto &arg : args) {
+      fir::ExtendedValue exval = op.getRegion().front().getArgument(argIndex);
+      [[maybe_unused]] bool success = converter.bindSymbol(*arg, exval);
+      assert(success && "Existing binding prevents setting MLIR value for the "
+                        "index variable");
+      argIndex++;
+    }
   } else {
     firOpBuilder.createBlock(&op.getRegion());
   }
@@ -397,6 +403,18 @@ getSIMDModifier(const Fortran::parser::OmpScheduleClause &x) {
   return mlir::omp::ScheduleModifier::none;
 }
 
+int64_t Fortran::lower::getCollapseValue(
+    const Fortran::parser::OmpClauseList &clauseList) {
+  for (const auto &clause : clauseList.v) {
+    if (const auto &collapseClause =
+            std::get_if<Fortran::parser::OmpClause::Collapse>(&clause.u)) {
+      const auto *expr = Fortran::semantics::GetExpr(collapseClause->v);
+      return Fortran::evaluate::ToInt64(*expr).value();
+    }
+  }
+  return 1;
+}
+
 static void genOMP(Fortran::lower::AbstractConverter &converter,
                    Fortran::lower::pft::Evaluation &eval,
                    const Fortran::parser::OpenMPLoopConstruct &loopConstruct) {
@@ -437,34 +455,8 @@ static void genOMP(Fortran::lower::AbstractConverter &converter,
       genObjectList(ompObjectList, converter, lastPrivateClauseOperands);
     }
   }
-  // FIXME: Can be done in a better way ?
-  auto &doConstructEval =
-      eval.getFirstNestedEvaluation().getFirstNestedEvaluation();
-  auto *doStmt = doConstructEval.getIf<Fortran::parser::NonLabelDoStmt>();
 
-  const auto &loopControl =
-      std::get<std::optional<Fortran::parser::LoopControl>>(doStmt->t);
-  const Fortran::parser::LoopControl::Bounds *bounds =
-      std::get_if<Fortran::parser::LoopControl::Bounds>(&loopControl->u);
-  Fortran::semantics::Symbol *iv = nullptr;
-  if (bounds) {
-    Fortran::lower::StatementContext stmtCtx;
-    lowerBound.push_back(fir::getBase(converter.genExprValue(
-        *Fortran::semantics::GetExpr(bounds->lower), stmtCtx)));
-    upperBound.push_back(fir::getBase(converter.genExprValue(
-        *Fortran::semantics::GetExpr(bounds->upper), stmtCtx)));
-    if (bounds->step) {
-      step.push_back(fir::getBase(converter.genExprValue(
-          *Fortran::semantics::GetExpr(bounds->step), stmtCtx)));
-    }
-    // If `step` is not present, assume it as `1`.
-    else {
-      step.push_back(firOpBuilder.createIntegerConstant(
-          currentLocation, firOpBuilder.getIntegerType(32), 1));
-    }
-    iv = bounds->name.thing.symbol;
-  }
-
+  int64_t collapseValue = Fortran::lower::getCollapseValue(wsLoopOpClauseList);
   for (const auto &clause : wsLoopOpClauseList.v) {
     if (const auto &scheduleClause =
             std::get_if<Fortran::parser::OmpClause::Schedule>(&clause.u)) {
@@ -479,6 +471,41 @@ static void genOMP(Fortran::lower::AbstractConverter &converter,
       }
     }
   }
+
+  // Collect the loops to collapse.
+  auto *doConstructEval = &eval.getFirstNestedEvaluation();
+
+  SmallVector<const Fortran::semantics::Symbol *> iv;
+  do {
+    auto *doLoop = &doConstructEval->getFirstNestedEvaluation();
+    auto *doStmt = doLoop->getIf<Fortran::parser::NonLabelDoStmt>();
+    assert(doStmt && "Expected do loop to be in the nested evaluation");
+    const auto &loopControl =
+        std::get<std::optional<Fortran::parser::LoopControl>>(doStmt->t);
+    const Fortran::parser::LoopControl::Bounds *bounds =
+        std::get_if<Fortran::parser::LoopControl::Bounds>(&loopControl->u);
+    if (bounds) {
+      Fortran::lower::StatementContext stmtCtx;
+      lowerBound.push_back(fir::getBase(converter.genExprValue(
+          *Fortran::semantics::GetExpr(bounds->lower), stmtCtx)));
+      upperBound.push_back(fir::getBase(converter.genExprValue(
+          *Fortran::semantics::GetExpr(bounds->upper), stmtCtx)));
+      if (bounds->step) {
+        step.push_back(fir::getBase(converter.genExprValue(
+            *Fortran::semantics::GetExpr(bounds->step), stmtCtx)));
+      }
+      // If `step` is not present, assume it as `1`.
+      else {
+        step.push_back(firOpBuilder.createIntegerConstant(
+            currentLocation, firOpBuilder.getIntegerType(32), 1));
+      }
+      iv.push_back(bounds->name.thing.symbol);
+    }
+
+    collapseValue--;
+    doConstructEval =
+        &*std::next(doConstructEval->getNestedEvaluations().begin());
+  } while (collapseValue > 0);
 
   // FIXME: Add support for following clauses:
   // 1. linear

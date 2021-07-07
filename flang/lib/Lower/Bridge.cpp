@@ -1283,13 +1283,28 @@ private:
     auto insertPt = builder->saveInsertionPoint();
     localSymbols.pushScope();
     genOpenMPConstruct(*this, getEval(), omp);
+
+    auto ompLoop = std::get_if<Fortran::parser::OpenMPLoopConstruct>(&omp.u);
+
     // If loop is part of an OpenMP Construct then the OpenMP dialect
     // workshare loop operation has already been created. Only the
     // body needs to be created here and the do_loop can be skipped.
-    Fortran::lower::pft::Evaluation *curEval =
-        std::get_if<Fortran::parser::OpenMPLoopConstruct>(&omp.u)
-            ? &getEval().getFirstNestedEvaluation()
-            : &getEval();
+    // Skip the number of collapsed loops, which is 1 when there is a
+    // no collapse requested.
+
+    Fortran::lower::pft::Evaluation *curEval = &getEval();
+    if (ompLoop) {
+      const auto &wsLoopOpClauseList = std::get<Fortran::parser::OmpClauseList>(
+          std::get<Fortran::parser::OmpBeginLoopDirective>(ompLoop->t).t);
+      int64_t collapseValue =
+          Fortran::lower::getCollapseValue(wsLoopOpClauseList);
+
+      curEval = &curEval->getFirstNestedEvaluation();
+      for (auto i = 1; i < collapseValue; i++) {
+        curEval = &*std::next(curEval->getNestedEvaluations().begin());
+      }
+    }
+
     for (auto &e : curEval->getNestedEvaluations())
       genFIR(e);
     localSymbols.popScope();
