@@ -1375,21 +1375,6 @@ public:
     TODO(getLoc(), "non explicit semantics::Bound lowering");
   }
 
-  ExtValue genArrayRefComponent(const Fortran::evaluate::ArrayRef &aref) {
-    auto component = gen(aref.base().GetComponent());
-    auto base = fir::getBase(component);
-    llvm::SmallVector<mlir::Value> args;
-    // FIXME: the lower bounds should be apply, and in general,
-    // this coordinate op will only work if the extents are compile
-    // time constants. Otherwise, the coordinateOp need to be collapsed.
-    for (auto &subsc : aref.subscript())
-      args.push_back(genunbox(subsc));
-    auto ty = genSubType(base.getType(), args.size());
-    ty = builder.getRefType(ty);
-    auto addr = builder.create<fir::CoordinateOp>(getLoc(), ty, base, args);
-    return arrayElementToExtendedValue(builder, getLoc(), component, addr);
-  }
-
   static bool isSlice(const Fortran::evaluate::ArrayRef &aref) {
     for (auto &sub : aref.subscript())
       if (std::holds_alternative<Fortran::evaluate::Triplet>(sub.u))
@@ -1397,10 +1382,49 @@ public:
     return false;
   }
 
-  ExtValue gen(const Fortran::lower::SymbolBox &si,
-               const Fortran::evaluate::ArrayRef &aref) {
+  /// Lower an ArrayRef to a fir.coordinate_of given its lowered base.
+  ExtValue genCoordinateOp(const ExtValue &array,
+                           const Fortran::evaluate::ArrayRef &aref) {
     auto loc = getLoc();
-    auto addr = si.getAddr();
+    // References to array of rank > 1 with non constant shape that are not
+    // fir.box must be collapsed into an offset computation in lowering already.
+    // The same is needed with dynamic length character arrays of all ranks.
+    auto baseType = fir::dyn_cast_ptrOrBoxEleTy(fir::getBase(array).getType());
+    if ((array.rank() > 1 && fir::hasDynamicSize(baseType)) ||
+        fir::characterWithDynamicLen(fir::unwrapSequenceType(baseType)))
+      if (!array.getBoxOf<fir::BoxValue>())
+        return genOffsetAndCoordinateOp(array, aref);
+    // Generate a fir.coordinate_of with zero based array indexes.
+    llvm::SmallVector<mlir::Value> args;
+    for (auto &subsc : llvm::enumerate(aref.subscript())) {
+      auto subVal = genSubscript(subsc.value());
+      assert(fir::isUnboxedValue(subVal) && "subscript must be simple scalar");
+      auto val = fir::getBase(subVal);
+      auto ty = val.getType();
+      auto lb = getLBound(array, subsc.index(), ty);
+      args.push_back(builder.create<mlir::SubIOp>(loc, ty, val, lb));
+    }
+
+    auto base = fir::getBase(array);
+    auto seqTy =
+        fir::dyn_cast_ptrOrBoxEleTy(base.getType()).cast<fir::SequenceType>();
+    assert(args.size() == seqTy.getDimension());
+    auto ty = builder.getRefType(seqTy.getEleTy());
+    auto addr = builder.create<fir::CoordinateOp>(loc, ty, base, args);
+    return arrayElementToExtendedValue(builder, loc, array, addr);
+  }
+
+  /// Lower an ArrayRef to a fir.coordinate_of using an element offset instead
+  /// of array indexes.
+  /// This generates offset computation from the indexes and length parameters,
+  /// and use the offset to access the element with a fir.coordinate_of. This
+  /// must only be used if it is not possible to generate a normal
+  /// fir.coordinate_of using array indexes (i.e. when the shape information is
+  /// unavailable in the IR).
+  ExtValue genOffsetAndCoordinateOp(const ExtValue &array,
+                                    const Fortran::evaluate::ArrayRef &aref) {
+    auto loc = getLoc();
+    auto addr = fir::getBase(array);
     auto arrTy = fir::dyn_cast_ptrEleTy(addr.getType());
     auto eleTy = arrTy.cast<fir::SequenceType>().getEleTy();
     auto seqTy = builder.getRefType(builder.getVarLenSeqTy(eleTy));
@@ -1432,8 +1456,8 @@ public:
       return builder.create<fir::CoordinateOp>(
           loc, refTy, base, llvm::ArrayRef<mlir::Value>{total});
     };
-    return si.match(
-        [&](const Fortran::lower::SymbolBox::FullDim &arr) -> ExtValue {
+    return array.match(
+        [&](const fir::ArrayBoxValue &arr) -> ExtValue {
           // FIXME: this check can be removed when slicing is implemented
           if (isSlice(aref))
             fir::emitFatalError(
@@ -1441,7 +1465,7 @@ public:
                 "slice should be handled in array expression context");
           return genFullDim(arr, one);
         },
-        [&](const Fortran::lower::SymbolBox::CharFullDim &arr) -> ExtValue {
+        [&](const fir::CharArrayBoxValue &arr) -> ExtValue {
           auto delta = arr.getLen();
           // If the length is known in the type, fir.coordinate_of will
           // already take the length into account.
@@ -1449,7 +1473,7 @@ public:
             delta = one;
           return fir::CharBoxValue(genFullDim(arr, delta), arr.getLen());
         },
-        [&](const Fortran::lower::SymbolBox::Box &arr) -> ExtValue {
+        [&](const fir::BoxValue &arr) -> ExtValue {
           // CoordinateOp for BoxValue is not generated here. The dimensions
           // must be kept in the fir.coordinate_op so that potential fir.box
           // strides can be applied by codegen.
@@ -1461,6 +1485,7 @@ public:
         });
   }
 
+  /// Lower an ArrayRef to a fir.array_coor.
   ExtValue genArrayCoorOp(const ExtValue &exv,
                           const Fortran::evaluate::ArrayRef &aref) {
     auto loc = getLoc();
@@ -1485,60 +1510,25 @@ public:
     return arrayElementToExtendedValue(builder, loc, exv, elementAddr);
   }
 
-  // Return the coordinate of the array reference
+  /// Return the coordinate of the array reference.
   ExtValue gen(const Fortran::evaluate::ArrayRef &aref) {
-    if (aref.base().IsSymbol()) {
-      auto loc = getLoc();
-      auto &symbol = aref.base().GetFirstSymbol();
-      // Check for command-line override to use array_coor op.
-      if (generateArrayCoordinate)
-        return genArrayCoorOp(gen(symbol), aref);
-      // Otherwise, use coordinate_of op.
-      auto si = symMap.lookupSymbol(symbol);
-      si = si.match(
-          [&](const Fortran::lower::SymbolBox::PointerOrAllocatable &x)
-              -> Fortran::lower::SymbolBox {
-            return genAllocatableOrPointerUnbox(x);
-          },
-          [](const auto &x) -> Fortran::lower::SymbolBox { return x; },
-          [&](const Fortran::lower::SymbolBox::None &)
-              -> Fortran::lower::SymbolBox {
-            fir::emitFatalError(loc, "the symbol referenced in the array "
-                                     "expression is not in the symbol map");
-          });
-      auto isIrBox = si.getAddr().getType().isa<fir::BoxType>();
-      if (!si.hasConstantShape() && !isIrBox)
-        return gen(si, aref);
-      auto box = gen(symbol);
-      auto base = fir::getBase(box);
-      unsigned i = 0;
-      llvm::SmallVector<mlir::Value> args;
-      for (auto &subsc : aref.subscript()) {
-        auto subVal = genSubscript(subsc);
-        assert(fir::isUnboxedValue(subVal));
-        auto val = fir::getBase(subVal);
-        auto ty = val.getType();
-        auto adj = getLBound(si, i++, ty);
-        assert(adj && "boxed value not handled");
-        args.push_back(builder.create<mlir::SubIOp>(loc, ty, val, adj));
-      }
-
-      auto seqTy =
-          fir::dyn_cast_ptrOrBoxEleTy(base.getType()).cast<fir::SequenceType>();
-      assert(args.size() == seqTy.getDimension());
-      auto ty = builder.getRefType(seqTy.getEleTy());
-      auto addr = builder.create<fir::CoordinateOp>(loc, ty, base, args);
-      return arrayElementToExtendedValue(builder, loc, box, addr);
-    }
-    return genArrayRefComponent(aref);
+    auto base = aref.base().IsSymbol() ? gen(aref.base().GetFirstSymbol())
+                                       : gen(aref.base().GetComponent());
+    // Check for command-line override to use array_coor op.
+    if (generateArrayCoordinate)
+      return genArrayCoorOp(base, aref);
+    // Otherwise, use coordinate_of op.
+    return genCoordinateOp(base, aref);
   }
 
-  mlir::Value getLBound(const Fortran::lower::SymbolBox &box, unsigned dim,
-                        mlir::Type ty) {
-    assert(box.hasRank());
-    if (box.hasSimpleLBounds())
-      return builder.createIntegerConstant(getLoc(), ty, 1);
-    return builder.createConvert(getLoc(), ty, box.getLBound(dim));
+  /// Return lower bounds of \p box in dimension \p dim. The returned value
+  /// has type \ty.
+  mlir::Value getLBound(const ExtValue &box, unsigned dim, mlir::Type ty) {
+    assert(box.rank() > 0 && "must be an array");
+    auto loc = getLoc();
+    auto one = builder.createIntegerConstant(loc, ty, 1);
+    auto lb = Fortran::lower::readLowerBound(builder, loc, box, dim, one);
+    return builder.createConvert(loc, ty, lb);
   }
 
   ExtValue genval(const Fortran::evaluate::ArrayRef &aref) {

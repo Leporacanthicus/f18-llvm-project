@@ -24,9 +24,9 @@ contains
   subroutine s1(i,j)
     ! CHECK-DAG: %[[VAL_0:.*]] = constant 1 : i32
     ! CHECK-DAG: %[[VAL_1:.*]] = constant 6 : i32
-    ! CHECK-DAG: %[[VAL_2:.*]] = constant 1 : i64
-    ! CHECK-DAG: %[[VAL_3:.*]] = constant 2 : i64
-    ! CHECK-DAG: %[[VAL_4:.*]] = constant 3 : i64
+    ! CHECK-DAG: %[[VAL_2:.*]] = constant 0 : i64
+    ! CHECK-DAG: %[[VAL_3:.*]] = constant 1 : i64
+    ! CHECK-DAG: %[[VAL_4:.*]] = constant 2 : i64
     ! CHECK: %[[VAL_5:.*]] = fir.address_of(@_QMcomponents_testEinstance) : !fir.ref<!fir.type<_QMcomponents_testTt3{h1:!fir.array<3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,h2:!fir.array<4x!fir.type<_QMcomponents_testTt2{g1:!fir.array<3x3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g2:!fir.array<4x4x4x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g3:!fir.array<5xi32>}>>}>>
     ! CHECK: %[[VAL_6:.*]] = fir.load %[[VAL_7:.*]] : !fir.ref<i32>
     ! CHECK: %[[VAL_8:.*]] = cmpi sge, %[[VAL_6]], %[[VAL_0]] : i32
@@ -44,7 +44,8 @@ contains
     ! CHECK: %[[VAL_18:.*]] = fir.coordinate_of %[[VAL_16]], %[[VAL_17]] : (!fir.ref<!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>, !fir.field) -> !fir.ref<!fir.array<6xi32>>
     ! CHECK: %[[VAL_19:.*]] = fir.load %[[VAL_7]] : !fir.ref<i32>
     ! CHECK: %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i32) -> i64
-    ! CHECK: %[[VAL_21:.*]] = fir.coordinate_of %[[VAL_18]], %[[VAL_20]] : (!fir.ref<!fir.array<6xi32>>, i64) -> !fir.ref<i32>
+    ! CHECK: %[[VAL_20_ADJ:.*]] = subi %[[VAL_20]], %[[VAL_3]] : i64
+    ! CHECK: %[[VAL_21:.*]] = fir.coordinate_of %[[VAL_18]], %[[VAL_20_ADJ]] : (!fir.ref<!fir.array<6xi32>>, i64) -> !fir.ref<i32>
     ! CHECK: %[[VAL_22:.*]] = fir.load %[[VAL_21]] : !fir.ref<i32>
     ! CHECK: fir.store %[[VAL_22]] to %[[VAL_23:.*]] : !fir.ref<i32>
     ! CHECK: br ^bb2

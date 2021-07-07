@@ -17,7 +17,7 @@ subroutine test_element_ref(x, y)
   ! CHECK-DAG: %[[c4:.*]] = fir.convert %c4{{.*}} : (i64) -> index
 
   call bar(x(100))
-  ! CHECK: fir.coordinate_of %[[xaddr]], %{{.*}} : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
+  ! CHECK: fir.coordinate_of %[[xaddr]], %{{.*}} : (!fir.ref<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
   call bar(y(100))
   ! Test that for an entity that is not know to be contiguous, the fir.box is passed
   ! to coordinate of and that the lower bounds is already applied by lowering.
@@ -45,7 +45,7 @@ subroutine test_element_assign(x, y)
   real :: y(4:)
   ! CHECK-DAG: %[[c4:.*]] = fir.convert %c4{{.*}} : (i64) -> index
   x(100) = 42.
-  ! CHECK: fir.coordinate_of %[[xaddr]], %{{.*}} : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
+  ! CHECK: fir.coordinate_of %[[xaddr]], %{{.*}} : (!fir.ref<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
   y(100) = 42.
   ! CHECK: %[[c4_2:.*]] = fir.convert %[[c4]] : (index) -> i64
   ! CHECK: %[[index:.*]] = subi %c100{{.*}}, %[[c4_2]] : i64
@@ -122,7 +122,7 @@ end subroutine
 subroutine foo(x)
   real, allocatable :: x(:)
   call bar(x(100))
-  ! CHECK: fir.coordinate_of {{.*}} (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
+  ! CHECK: fir.coordinate_of %{{.*}}, %{{.*}} (!fir.heap<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 end subroutine
 
 ! Test that non-contiguous dummy are propagated with their memory layout (we
