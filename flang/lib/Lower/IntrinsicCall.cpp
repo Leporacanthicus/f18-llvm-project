@@ -205,6 +205,36 @@ genProdOrSum(FN func, FD funcDim, mlir::Type resultType,
                     args[1], mask, rank);
 }
 
+/// Process calls to DotProduct
+template <typename FN>
+static fir::ExtendedValue genDotProd(FN func, mlir::Type resultType,
+                                     Fortran::lower::FirOpBuilder &builder,
+                                     mlir::Location loc,
+                                     Fortran::lower::StatementContext *stmtCtx,
+                                     llvm::ArrayRef<fir::ExtendedValue> args) {
+
+  assert(args.size() == 2);
+
+  // Handle required vector arguments
+  fir::BoxValue vecTmpA = builder.createBox(loc, args[0]);
+  mlir::Value vectorA = fir::getBase(vecTmpA);
+  fir::BoxValue vecTmpB = builder.createBox(loc, args[1]);
+  mlir::Value vectorB = fir::getBase(vecTmpB);
+
+  auto eleTy = fir::dyn_cast_ptrOrBoxEleTy(vectorA.getType())
+                   .cast<fir::SequenceType>()
+                   .getEleTy();
+  if (fir::isa_complex(eleTy)) {
+    auto result = builder.createTemporary(loc, eleTy);
+    func(builder, loc, vectorA, vectorB, result);
+    return builder.create<fir::LoadOp>(loc, result);
+  }
+
+  auto resultBox = builder.create<fir::AbsentOp>(
+      loc, fir::BoxType::get(builder.getI1Type()));
+  return func(builder, loc, vectorA, vectorB, resultBox);
+}
+
 /// Process calls to Maxval, Minval, Product, Sum intrinsic functions
 template <typename FN, typename FD, typename FC>
 static fir::ExtendedValue
@@ -434,6 +464,8 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genCshift(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genDateAndTime(llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDim(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  fir::ExtendedValue genDotProduct(mlir::Type,
+                                   llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
   template <Extremum, ExtremumBehavior>
   mlir::Value genExtremum(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -643,6 +675,10 @@ static constexpr IntrinsicHandler handlers[]{
      /*isElemental=*/false},
     {"dble", &I::genConversion},
     {"dim", &I::genDim},
+    {"dot_product",
+     &I::genDotProduct,
+     {{{"vector_a", asAddr}, {"vector_b", asAddr}}},
+     /*isElemental=*/false},
     {"dprod", &I::genDprod},
     {"floor", &I::genFloor},
     {"iachar", &I::genIchar},
@@ -2049,6 +2085,14 @@ mlir::Value IntrinsicLibrary::genDim(mlir::Type resultType,
   return builder.create<mlir::SelectOp>(loc, cmp, diff, zero);
 }
 
+// DOT_PRODUCT
+fir::ExtendedValue
+IntrinsicLibrary::genDotProduct(mlir::Type resultType,
+                                llvm::ArrayRef<fir::ExtendedValue> args) {
+  return genDotProd(Fortran::lower::genDotProduct, resultType, builder, loc,
+                    stmtCtx, args);
+}
+
 // DPROD
 mlir::Value IntrinsicLibrary::genDprod(mlir::Type resultType,
                                        llvm::ArrayRef<mlir::Value> args) {
@@ -2070,7 +2114,6 @@ mlir::Value IntrinsicLibrary::genFloor(mlir::Type resultType,
   auto floor = genRuntimeCall("floor", arg.getType(), {arg});
   return builder.createConvert(loc, resultType, floor);
 }
-
 // IAND
 mlir::Value IntrinsicLibrary::genIand(mlir::Type resultType,
                                       llvm::ArrayRef<mlir::Value> args) {

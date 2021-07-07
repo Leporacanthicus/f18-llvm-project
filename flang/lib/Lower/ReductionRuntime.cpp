@@ -201,6 +201,90 @@ struct ForcedProductComplex16 {
   }
 };
 
+/// Placeholder for real*10 version of DotProduct Intrinsic
+struct ForcedDotProductReal10 {
+  static constexpr const char *name =
+      ExpandAndQuoteKey(RTNAME(DotProductReal10));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto ty = mlir::FloatType::getF80(ctx);
+      auto boxTy =
+          Fortran::lower::getModel<const Fortran::runtime::Descriptor &>()(ctx);
+      auto strTy = fir::ReferenceType::get(mlir::IntegerType::get(ctx, 8));
+      auto intTy = mlir::IntegerType::get(ctx, 8 * sizeof(int));
+      return mlir::FunctionType::get(ctx, {boxTy, boxTy, strTy, intTy}, {ty});
+    };
+  }
+};
+
+/// Placeholder for real*16 version of DotProduct Intrinsic
+struct ForcedDotProductReal16 {
+  static constexpr const char *name =
+      ExpandAndQuoteKey(RTNAME(DotProductReal16));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto ty = mlir::FloatType::getF128(ctx);
+      auto boxTy =
+          Fortran::lower::getModel<const Fortran::runtime::Descriptor &>()(ctx);
+      auto strTy = fir::ReferenceType::get(mlir::IntegerType::get(ctx, 8));
+      auto intTy = mlir::IntegerType::get(ctx, 8 * sizeof(int));
+      return mlir::FunctionType::get(ctx, {boxTy, boxTy, strTy, intTy}, {ty});
+    };
+  }
+};
+
+/// Placeholder for complex(10) version of DotProduct Intrinsic
+struct ForcedDotProductComplex10 {
+  static constexpr const char *name =
+      ExpandAndQuoteKey(RTNAME(CppDotProductComplex10));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto ty = mlir::ComplexType::get(mlir::FloatType::getF80(ctx));
+      auto boxTy =
+          Fortran::lower::getModel<const Fortran::runtime::Descriptor &>()(ctx);
+      auto strTy = fir::ReferenceType::get(mlir::IntegerType::get(ctx, 8));
+      auto intTy = mlir::IntegerType::get(ctx, 8 * sizeof(int));
+      auto resTy = fir::ReferenceType::get(ty);
+      return mlir::FunctionType::get(
+          ctx, {resTy, boxTy, boxTy, strTy, intTy}, {});
+    };
+  }
+};
+
+/// Placeholder for complex(16) version of DotProduct Intrinsic
+struct ForcedDotProductComplex16 {
+  static constexpr const char *name =
+      ExpandAndQuoteKey(RTNAME(CppDotProductComplex16));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto ty = mlir::ComplexType::get(mlir::FloatType::getF128(ctx));
+      auto boxTy =
+          Fortran::lower::getModel<const Fortran::runtime::Descriptor &>()(ctx);
+      auto strTy = fir::ReferenceType::get(mlir::IntegerType::get(ctx, 8));
+      auto intTy = mlir::IntegerType::get(ctx, 8 * sizeof(int));
+      auto resTy = fir::ReferenceType::get(ty);
+      return mlir::FunctionType::get(
+          ctx, {resTy, boxTy, boxTy, strTy, intTy}, {});
+    };
+  }
+};
+
+/// Placeholder for integer*16 version of DotProduct Intrinsic
+struct ForcedDotProductInteger16 {
+  static constexpr const char *name =
+      ExpandAndQuoteKey(RTNAME(DotProductInteger16));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto ty = mlir::IntegerType::get(ctx, 128);
+      auto boxTy =
+          Fortran::lower::getModel<const Fortran::runtime::Descriptor &>()(ctx);
+      auto strTy = fir::ReferenceType::get(mlir::IntegerType::get(ctx, 8));
+      auto intTy = mlir::IntegerType::get(ctx, 8 * sizeof(int));
+      return mlir::FunctionType::get(ctx, {boxTy, boxTy, strTy, intTy}, {ty});
+    };
+  }
+};
+
 /// Placeholder for real*10 version of Sum Intrinsic
 struct ForcedSumReal10 {
   static constexpr const char *name = ExpandAndQuoteKey(RTNAME(SumReal10));
@@ -712,6 +796,84 @@ mlir::Value Fortran::lower::genProduct(Fortran::lower::FirOpBuilder &builder,
   auto args = Fortran::lower::createArguments(
       builder, loc, fTy, arrayBox, sourceFile, sourceLine, dim, maskBox);
 
+  return builder.create<fir::CallOp>(loc, func, args).getResult(0);
+}
+
+mlir::Value Fortran::lower::genDotProduct(Fortran::lower::FirOpBuilder &builder,
+                                          mlir::Location loc,
+                                          mlir::Value vectorABox,
+                                          mlir::Value vectorBBox,
+                                          mlir::Value resultBox) {
+  mlir::FuncOp func;
+  auto ty = vectorABox.getType();
+  auto arrTy = fir::dyn_cast_ptrOrBoxEleTy(ty);
+  auto eleTy = arrTy.cast<fir::SequenceType>().getEleTy();
+
+  if (eleTy.isF32())
+    func =
+        Fortran::lower::getRuntimeFunc<mkRTKey(DotProductReal4)>(loc, builder);
+  else if (eleTy.isF64())
+    func =
+        Fortran::lower::getRuntimeFunc<mkRTKey(DotProductReal8)>(loc, builder);
+  else if (eleTy.isF80())
+    func = Fortran::lower::getRuntimeFunc<ForcedDotProductReal10>(loc, builder);
+  else if (eleTy.isF128())
+    func = Fortran::lower::getRuntimeFunc<ForcedDotProductReal16>(loc, builder);
+  else if (eleTy == fir::ComplexType::get(builder.getContext(), 4))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(CppDotProductComplex4)>(
+        loc, builder);
+  else if (eleTy == fir::ComplexType::get(builder.getContext(), 8))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(CppDotProductComplex8)>(
+        loc, builder);
+  else if (eleTy == fir::ComplexType::get(builder.getContext(), 10))
+    func =
+        Fortran::lower::getRuntimeFunc<ForcedDotProductComplex10>(loc, builder);
+  else if (eleTy == fir::ComplexType::get(builder.getContext(), 16))
+    func =
+        Fortran::lower::getRuntimeFunc<ForcedDotProductComplex16>(loc, builder);
+  else if (eleTy ==
+           builder.getIntegerType(builder.getKindMap().getIntegerBitsize(1)))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(DotProductInteger1)>(loc,
+                                                                       builder);
+  else if (eleTy ==
+           builder.getIntegerType(builder.getKindMap().getIntegerBitsize(2)))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(DotProductInteger2)>(loc,
+                                                                       builder);
+  else if (eleTy ==
+           builder.getIntegerType(builder.getKindMap().getIntegerBitsize(4)))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(DotProductInteger4)>(loc,
+                                                                       builder);
+  else if (eleTy ==
+           builder.getIntegerType(builder.getKindMap().getIntegerBitsize(8)))
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(DotProductInteger8)>(loc,
+                                                                       builder);
+  else if (eleTy ==
+           builder.getIntegerType(builder.getKindMap().getIntegerBitsize(16)))
+    func =
+        Fortran::lower::getRuntimeFunc<ForcedDotProductInteger16>(loc, builder);
+  else if (eleTy.isa<fir::LogicalType>())
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(DotProductLogical)>(loc,
+                                                                      builder);
+  else
+    fir::emitFatalError(loc, "invalid type in DotProduct lowering");
+
+  auto fTy = func.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+
+  if (fir::isa_complex(eleTy)) {
+    auto sourceLine =
+        Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(4));
+    auto args = Fortran::lower::createArguments(builder, loc, fTy, resultBox,
+                                                vectorABox, vectorBBox,
+                                                sourceFile, sourceLine);
+    builder.create<fir::CallOp>(loc, func, args);
+    return resultBox;
+  }
+
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(3));
+  auto args = Fortran::lower::createArguments(
+      builder, loc, fTy, vectorABox, vectorBBox, sourceFile, sourceLine);
   return builder.create<fir::CallOp>(loc, func, args).getResult(0);
 }
 /// Generate call to Sum intrinsic runtime routine. This is the version

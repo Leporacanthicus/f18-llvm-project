@@ -56,6 +56,11 @@ void genCountDim(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
                  mlir::Value resultBox, mlir::Value maskBox, mlir::Value dim,
                  mlir::Value kind);
 
+/// Generate call to DotProduct intrinsic runtime routine.
+mlir::Value genDotProduct(Fortran::lower::FirOpBuilder &builder,
+                          mlir::Location loc, mlir::Value vectorABox,
+                          mlir::Value vectorBBox, mlir::Value resultBox);
+
 /// Generate call to Maxloc intrinsic runtime routine. This is the version
 /// that does not take a dim argument.
 void genMaxloc(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
