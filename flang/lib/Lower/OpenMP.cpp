@@ -423,7 +423,7 @@ static void genOMP(Fortran::lower::AbstractConverter &converter,
   auto currentLocation = converter.getCurrentLocation();
   SmallVector<Value, 4> lowerBound, upperBound, step, privateClauseOperands,
       firstPrivateClauseOperands, lastPrivateClauseOperands, linearVars,
-      linearStepVars;
+      linearStepVars, reductionVars;
   mlir::Value scheduleChunkClauseOperand;
   mlir::Attribute scheduleClauseOperand, collapseClauseOperand,
       noWaitClauseOperand, orderedClauseOperand, orderClauseOperand;
@@ -514,7 +514,7 @@ static void genOMP(Fortran::lower::AbstractConverter &converter,
   auto wsLoopOp = firOpBuilder.create<mlir::omp::WsLoopOp>(
       currentLocation, resultType, lowerBound, upperBound, step,
       privateClauseOperands, firstPrivateClauseOperands,
-      lastPrivateClauseOperands, linearVars, linearStepVars,
+      lastPrivateClauseOperands, linearVars, linearStepVars, reductionVars,
       scheduleClauseOperand.dyn_cast_or_null<StringAttr>(),
       scheduleChunkClauseOperand,
       collapseClauseOperand.dyn_cast_or_null<IntegerAttr>(),
