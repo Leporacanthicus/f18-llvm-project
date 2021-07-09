@@ -23,6 +23,10 @@ void genReshape(FirOpBuilder &builder, mlir::Location loc,
                 mlir::Value resultBox, mlir::Value sourceBox,
                 mlir::Value shapeBox, mlir::Value padBox, mlir::Value orderBox);
 
+void genSpread(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+               mlir::Value resultBox, mlir::Value sourceBox, mlir::Value dim,
+               mlir::Value ncopies);
+
 void genTranspose(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
                   mlir::Value resultBox, mlir::Value sourceBox);
 

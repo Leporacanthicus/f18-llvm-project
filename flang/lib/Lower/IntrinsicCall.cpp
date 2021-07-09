@@ -473,6 +473,7 @@ struct IntrinsicLibrary {
   mlir::Value genSign(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genSpacing(mlir::Type resultType,
                          llvm::ArrayRef<mlir::Value> args);
+  fir::ExtendedValue genSpread(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genSum(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genTransfer(mlir::Type,
                                  llvm::ArrayRef<fir::ExtendedValue>);
@@ -731,6 +732,10 @@ static constexpr IntrinsicHandler handlers[]{
      /*isElemental=*/true},
     {"sign", &I::genSign},
     {"spacing", &I::genSpacing},
+    {"spread",
+     &I::genSpread,
+     {{{"source", asAddr}, {"dim", asValue}, {"ncopies", asValue}}},
+     /*isElemental=*/false},
     {"sum",
      &I::genSum,
      {{{"array", asAddr}, {"dim", asValue}, {"mask", asAddr}}},
@@ -2648,6 +2653,37 @@ mlir::Value IntrinsicLibrary::genSpacing(mlir::Type resultType,
   return builder.createConvert(
       loc, resultType,
       Fortran::lower::genSpacing(builder, loc, fir::getBase(args[0])));
+}
+
+// SPREAD
+fir::ExtendedValue
+IntrinsicLibrary::genSpread(mlir::Type resultType,
+                            llvm::ArrayRef<fir::ExtendedValue> args) {
+
+  assert(args.size() == 3);
+
+  // Handle source argument
+  auto source = builder.createBox(loc, args[0]);
+  fir::BoxValue sourceTmp = source;
+  auto sourceRank = sourceTmp.rank();
+
+  // Handle Dim argument
+  auto dim = fir::getBase(args[1]);
+
+  // Handle ncopies argument
+  auto ncopies = fir::getBase(args[2]);
+
+  // Generate result descriptor
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, sourceRank + 1);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+
+  Fortran::lower::genSpread(builder, loc, resultIrBox, source, dim, ncopies);
+
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for SPREAD");
 }
 
 // SUM
