@@ -2890,7 +2890,6 @@ IntrinsicLibrary::genUnpack(mlir::Type resultType,
   // Handle required vector argument
   auto vector = builder.createBox(loc, args[0]);
   fir::BoxValue vectorTmp = builder.createBox(loc, args[0]);
-  auto vectorRank = vectorTmp.rank();
 
   // Handle required mask argument
   auto mask = builder.createBox(loc, args[1]);
