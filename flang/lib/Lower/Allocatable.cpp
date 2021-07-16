@@ -12,6 +12,7 @@
 
 #include "flang/Lower/Allocatable.h"
 #include "../runtime/allocatable.h"
+#include "../runtime/pointer.h"
 #include "RTBuilder.h"
 #include "StatementContext.h"
 #include "flang/Evaluate/tools.h"
@@ -111,15 +112,20 @@ private:
 //===----------------------------------------------------------------------===//
 
 using namespace Fortran::runtime;
-/// Generate a runtime call to set the bounds of an allocatable descriptor.
-static void genAllocatableSetBounds(Fortran::lower::FirOpBuilder &builder,
-                                    mlir::Location loc, mlir::Value boxAddress,
-                                    mlir::Value dimIndex,
-                                    mlir::Value lowerBound,
-                                    mlir::Value upperBound) {
-  auto callee = Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableSetBounds)>(
-      loc, builder);
-  llvm::SmallVector<mlir::Value> args{boxAddress, dimIndex, lowerBound,
+/// Generate a runtime call to set the bounds of an allocatable or pointer
+/// descriptor.
+static void genRuntimeSetBounds(Fortran::lower::FirOpBuilder &builder,
+                                mlir::Location loc,
+                                const fir::MutableBoxValue &box,
+                                mlir::Value dimIndex, mlir::Value lowerBound,
+                                mlir::Value upperBound) {
+  auto callee =
+      box.isPointer()
+          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerSetBounds)>(loc,
+                                                                      builder)
+          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableSetBounds)>(
+                loc, builder);
+  llvm::SmallVector<mlir::Value> args{box.getAddr(), dimIndex, lowerBound,
                                       upperBound};
   llvm::SmallVector<mlir::Value> operands;
   for (auto [fst, snd] : llvm::zip(args, callee.getType().getInputs()))
@@ -127,15 +133,18 @@ static void genAllocatableSetBounds(Fortran::lower::FirOpBuilder &builder,
   builder.create<fir::CallOp>(loc, callee, operands);
 }
 
-/// Generate runtime call to set the lengths of a character allocatable
-/// descriptor.
-static void genAllocatableInitCharacter(Fortran::lower::FirOpBuilder &builder,
-                                        mlir::Location loc,
-                                        const fir::MutableBoxValue &box,
-                                        mlir::Value len) {
+/// Generate runtime call to set the lengths of a character allocatable or
+/// pointer descriptor.
+static void genRuntimeInitCharacter(Fortran::lower::FirOpBuilder &builder,
+                                    mlir::Location loc,
+                                    const fir::MutableBoxValue &box,
+                                    mlir::Value len) {
   auto callee =
-      Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableInitCharacter)>(
-          loc, builder);
+      box.isPointer()
+          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerNullifyCharacter)>(
+                loc, builder)
+          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableInitCharacter)>(
+                loc, builder);
   auto inputTypes = callee.getType().getInputs();
   if (inputTypes.size() != 5)
     fir::emitFatalError(
@@ -154,14 +163,18 @@ static void genAllocatableInitCharacter(Fortran::lower::FirOpBuilder &builder,
 }
 
 /// Generate a sequence of runtime calls to allocate memory.
-static mlir::Value genAllocatableAllocate(Fortran::lower::FirOpBuilder &builder,
-                                          mlir::Location loc,
-                                          mlir::Value boxAddress,
-                                          ErrorManager &errorManager) {
-  auto callee = Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableAllocate)>(
-      loc, builder);
+static mlir::Value genRuntimeAllocate(Fortran::lower::FirOpBuilder &builder,
+                                      mlir::Location loc,
+                                      const fir::MutableBoxValue &box,
+                                      ErrorManager &errorManager) {
+  auto callee =
+      box.isPointer()
+          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerAllocate)>(loc,
+                                                                     builder)
+          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableAllocate)>(
+                loc, builder);
   llvm::SmallVector<mlir::Value> args{
-      boxAddress, errorManager.hasStat, errorManager.errMsgAddr,
+      box.getAddr(), errorManager.hasStat, errorManager.errMsgAddr,
       errorManager.sourceFile, errorManager.sourceLine};
   llvm::SmallVector<mlir::Value> operands;
   for (auto [fst, snd] : llvm::zip(args, callee.getType().getInputs()))
@@ -170,12 +183,18 @@ static mlir::Value genAllocatableAllocate(Fortran::lower::FirOpBuilder &builder,
 }
 
 /// Generate a runtime call to deallocate memory.
-static mlir::Value
-genAllocatableDeallocate(Fortran::lower::FirOpBuilder &builder,
-                         mlir::Location loc, mlir::Value boxAddress,
-                         ErrorManager &errorManager) {
-  auto callee = Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableDeallocate)>(
-      loc, builder);
+static mlir::Value genRuntimeDeallocate(Fortran::lower::FirOpBuilder &builder,
+                                        mlir::Location loc,
+                                        const fir::MutableBoxValue &box,
+                                        ErrorManager &errorManager) {
+  // Ensure fir.box is up-to-date before passing it to deallocate runtime.
+  auto boxAddress = Fortran::lower::getMutableIRBox(builder, loc, box);
+  auto callee =
+      box.isPointer()
+          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerDeallocate)>(loc,
+                                                                       builder)
+          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableDeallocate)>(
+                loc, builder);
   llvm::SmallVector<mlir::Value> args{
       boxAddress, errorManager.hasStat, errorManager.errMsgAddr,
       errorManager.sourceFile, errorManager.sourceLine};
@@ -656,9 +675,21 @@ private:
       return;
     }
     // Generate a sequence of runtime calls.
-    // Sync MutableBoxValue and descriptor before and after calls.
     errorManager.genStatCheck(builder, loc);
-    Fortran::lower::getMutableIRBox(builder, loc, box);
+    if (box.isPointer()) {
+      // For pointers, the descriptor may still be uninitialized (see Fortran
+      // 2018 19.5.2.2). The allocation runtime needs to be given a descriptor
+      // with initialized rank, types and attributes. Initialize the descriptor
+      // here to ensure these constraints are fulfilled.
+      auto nullPointer = Fortran::lower::createUnallocatedBox(
+          builder, loc, box.getBoxTy(), box.nonDeferredLenParams());
+      builder.create<fir::StoreOp>(loc, nullPointer, box.getAddr());
+    } else {
+      assert(box.isAllocatable() && "must be an allocatable");
+      // For allocatables, sync the MutableBoxValue and descriptor before the
+      // calls in case it is tracked locally by a set of variables.
+      Fortran::lower::getMutableIRBox(builder, loc, box);
+    }
     if (alloc.hasCoarraySpec())
       TODO(loc, "coarray allocation");
     if (alloc.type.IsPolymorphic())
@@ -668,7 +699,6 @@ private:
     auto idxTy = builder.getIndexType();
     auto i32Ty = builder.getIntegerType(32);
     Fortran::lower::StatementContext stmtCtx;
-    auto addr = box.getAddr();
     for (const auto &iter : llvm::enumerate(alloc.getShapeSpecs())) {
       mlir::Value lb;
       const auto &bounds = iter.value().t;
@@ -681,9 +711,9 @@ private:
           Fortran::semantics::GetExpr(std::get<1>(bounds)), stmtCtx, loc));
       auto dimIndex = builder.createIntegerConstant(loc, i32Ty, iter.index());
       // Runtime call
-      genAllocatableSetBounds(builder, loc, addr, dimIndex, lb, ub);
+      genRuntimeSetBounds(builder, loc, box, dimIndex, lb, ub);
     }
-    auto stat = genAllocatableAllocate(builder, loc, addr, errorManager);
+    auto stat = genRuntimeAllocate(builder, loc, box, errorManager);
     Fortran::lower::syncMutableBoxFromIRBox(builder, loc, box);
     errorManager.assignStat(builder, loc, stat);
   }
@@ -720,7 +750,7 @@ private:
     // that the length is the same (AllocatableCheckLengthParameter runtime
     // call).
     if (box.isCharacter())
-      genAllocatableInitCharacter(builder, loc, box, lenParams[0]);
+      genRuntimeInitCharacter(builder, loc, box, lenParams[0]);
 
     if (box.isDerived())
       TODO(loc, "derived type length parameters in allocate");
@@ -799,8 +829,7 @@ static void genDeallocate(Fortran::lower::FirOpBuilder &builder,
   // Use runtime calls to deallocate descriptor cases. Sync MutableBoxValue
   // with its descriptor before and after calls if needed.
   errorManager.genStatCheck(builder, loc);
-  auto irBox = Fortran::lower::getMutableIRBox(builder, loc, box);
-  auto stat = genAllocatableDeallocate(builder, loc, irBox, errorManager);
+  auto stat = genRuntimeDeallocate(builder, loc, box, errorManager);
   Fortran::lower::syncMutableBoxFromIRBox(builder, loc, box);
   errorManager.assignStat(builder, loc, stat);
 }
