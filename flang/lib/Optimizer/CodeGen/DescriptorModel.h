@@ -131,11 +131,9 @@ static constexpr TypeBuilderFunc getExtendedDescFieldTypeModel() {
   if constexpr (Field == 8) {
     return getModel<void *>();
   } else if constexpr (Field == 9) {
-    return getModel<std::uint64_t>();
-  } else if constexpr (Field == 10) {
     return getModel<Fortran::runtime::typeInfo::TypeParameterValue>();
   } else {
-    llvm_unreachable("extended ISO descriptor only has 11 fields");
+    llvm_unreachable("extended ISO descriptor only has 10 fields");
   }
 }
 

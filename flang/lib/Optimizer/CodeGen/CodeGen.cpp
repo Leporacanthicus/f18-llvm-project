@@ -1189,15 +1189,9 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
                        this->genConstantOffset(loc, rewriter, hasAddendum));
 
     if (hasAddendum) {
-      // TODO: For now, set addendum flags to zero. The runtime expects some
-      // information such as TARGET here.
       auto isArray =
           fir::dyn_cast_ptrOrBoxEleTy(boxTy).template isa<fir::SequenceType>();
       unsigned typeDescFieldId = isArray ? 8 : 7;
-      unsigned flagsFieldId = typeDescFieldId + 1;
-      auto i64Ty = mlir::IntegerType::get(box.getContext(), 64);
-      dest = insertField(rewriter, loc, dest, flagsFieldId,
-                         genConstantIndex(loc, i64Ty, rewriter, 0));
       auto typeDesc =
           getTypeDescriptor(box, rewriter, loc, unwrapIfDerived(boxTy));
       dest = insertField(rewriter, loc, dest, {typeDescFieldId}, typeDesc,

@@ -8,6 +8,6 @@ fir.global internal @_QFfooEx : !fir.box<!fir.heap<!sometype>> {
   fir.has_value %1 : !fir.box<!fir.heap<!sometype>>
 }
 
-// CHECK: @_QFfooEx = internal global { %_QFfooTsometype*, i64, i32, i8, i8, i8, i8, i8*, i64, [1 x i64] }
+// CHECK: @_QFfooEx = internal global { %_QFfooTsometype*, i64, i32, i8, i8, i8, i8, i8*, [1 x i64] }
 // CHECK-SAME: { %_QFfooTsometype* null, i64 ptrtoint (%_QFfooTsometype* getelementptr (%_QFfooTsometype, %_QFfooTsometype* null, i32 1) to i64),
-// CHECK-SAME: i32 20180515, i8 0, i8 34, i8 2, i8 1, i8* @_QFfooE.dt.sometype, i64 0, [1 x i64] undef }
+// CHECK-SAME: i32 20180515, i8 0, i8 34, i8 2, i8 1, i8* @_QFfooE.dt.sometype, [1 x i64] undef }
