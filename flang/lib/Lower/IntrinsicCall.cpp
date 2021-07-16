@@ -107,8 +107,7 @@ fir::ExtendedValue Fortran::lower::getAbsentIntrinsicArgument() {
 static bool isAbsent(const fir::ExtendedValue &exv) {
   return !fir::getBase(exv);
 }
-static bool isAbsent(llvm::ArrayRef<fir::ExtendedValue> args,
-                     unsigned argIndex) {
+static bool isAbsent(llvm::ArrayRef<fir::ExtendedValue> args, size_t argIndex) {
   return args.size() <= argIndex || isAbsent(args[argIndex]);
 }
 
@@ -411,8 +410,8 @@ struct IntrinsicLibrary {
 
   template <void (*CallRuntime)(Fortran::lower::FirOpBuilder &,
                                 mlir::Location loc, mlir::Value, mlir::Value)>
-     fir::ExtendedValue genAdjustRtCall(mlir::Type,
-                                 llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genAdjustRtCall(mlir::Type,
+                                     llvm::ArrayRef<fir::ExtendedValue>);
 
   mlir::Value genAimag(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genAint(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -457,6 +456,7 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genMinval(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genMod(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genModulo(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  void genMvbits(llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genNint(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNot(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
@@ -590,12 +590,14 @@ using I = IntrinsicLibrary;
 static constexpr IntrinsicHandler handlers[]{
     {"abs", &I::genAbs},
     {"achar", &I::genChar},
-    {"adjustl", &I::genAdjustRtCall<Fortran::lower::genAdjustL>,
-      {{{"string", asAddr}}},   
-      /*isElemental=*/true},
-    {"adjustr", &I::genAdjustRtCall<Fortran::lower::genAdjustR>,
-      {{{"string", asAddr}}},   
-      /*isElemental=*/true},
+    {"adjustl",
+     &I::genAdjustRtCall<Fortran::lower::genAdjustL>,
+     {{{"string", asAddr}}},
+     /*isElemental=*/true},
+    {"adjustr",
+     &I::genAdjustRtCall<Fortran::lower::genAdjustR>,
+     {{{"string", asAddr}}},
+     /*isElemental=*/true},
     {"aimag", &I::genAimag},
     {"aint", &I::genAint},
     {"all",
@@ -689,6 +691,13 @@ static constexpr IntrinsicHandler handlers[]{
      /*isElemental=*/false},
     {"mod", &I::genMod},
     {"modulo", &I::genModulo},
+    {"mvbits",
+     &I::genMvbits,
+     {{{"from", asValue},
+       {"frompos", asValue},
+       {"len", asValue},
+       {"to", asAddr},
+       {"topos", asValue}}}},
     {"nint", &I::genNint},
     {"not", &I::genNot},
     {"null", &I::genNull, {{{"mold", asInquired}}}, /*isElemental=*/false},
@@ -1209,43 +1218,54 @@ mlir::Value toValue(const fir::ExtendedValue &val,
 // IntrinsicLibrary
 //===----------------------------------------------------------------------===//
 
+/// Emit a TODO error message for as yet unimplemented intrinsics.
+static void crashOnMissingIntrinsic(mlir::Location loc, llvm::StringRef name) {
+  mlir::emitError(loc,
+                  "TODO: missing intrinsic lowering: " + llvm::Twine(name));
+  exit(1);
+}
+
 template <typename GeneratorType>
 fir::ExtendedValue IntrinsicLibrary::genElementalCall(
     GeneratorType generator, llvm::StringRef name, mlir::Type resultType,
     llvm::ArrayRef<fir::ExtendedValue> args, bool outline) {
   llvm::SmallVector<mlir::Value> scalarArgs;
-  for (const auto &arg : args) {
-    if (arg.getUnboxed() || arg.getCharBox()) {
+  for (const auto &arg : args)
+    if (arg.getUnboxed() || arg.getCharBox())
       scalarArgs.emplace_back(fir::getBase(arg));
-    } else {
-      // TODO: get the result shape and create the loop...
-      mlir::emitError(loc, "array or descriptor not yet handled in elemental "
-                           "intrinsic lowering");
-      exit(1);
-    }
-  }
+    else
+      fir::emitFatalError(loc, "nonscalar intrinsic argument");
   if (outline)
     return outlineInWrapper(generator, name, resultType, scalarArgs);
   return invokeGenerator(generator, resultType, scalarArgs);
 }
 
-/// Some ExtendedGenerator operating on characters are also elemental
-/// (e.g LEN_TRIM).
 template <>
 fir::ExtendedValue
 IntrinsicLibrary::genElementalCall<IntrinsicLibrary::ExtendedGenerator>(
     ExtendedGenerator generator, llvm::StringRef name, mlir::Type resultType,
     llvm::ArrayRef<fir::ExtendedValue> args, bool outline) {
   for (const auto &arg : args)
-    if (!arg.getUnboxed() && !arg.getCharBox()) {
-      // TODO: get the result shape and create the loop...
-      mlir::emitError(loc, "array or descriptor not yet handled in elemental "
-                           "intrinsic lowering");
-      exit(1);
-    }
+    if (!arg.getUnboxed() && !arg.getCharBox())
+      fir::emitFatalError(loc, "nonscalar intrinsic argument");
   if (outline)
     return outlineInExtendedWrapper(generator, name, resultType, args);
   return std::invoke(generator, *this, resultType, args);
+}
+
+template <>
+fir::ExtendedValue
+IntrinsicLibrary::genElementalCall<IntrinsicLibrary::SubroutineGenerator>(
+    SubroutineGenerator generator, llvm::StringRef name, mlir::Type resultType,
+    llvm::ArrayRef<fir::ExtendedValue> args, bool outline) {
+  for (const auto &arg : args)
+    if (!arg.getUnboxed() && !arg.getCharBox())
+      // fir::emitFatalError(loc, "nonscalar intrinsic argument");
+      crashOnMissingIntrinsic(loc, name);
+  if (outline)
+    return outlineInExtendedWrapper(generator, name, resultType, args);
+  std::invoke(generator, *this, args);
+  return mlir::Value();
 }
 
 static fir::ExtendedValue
@@ -1280,19 +1300,14 @@ invokeHandler(IntrinsicLibrary::SubroutineGenerator generator,
               llvm::Optional<mlir::Type> resultType,
               llvm::ArrayRef<fir::ExtendedValue> args, bool outline,
               IntrinsicLibrary &lib) {
+  if (handler.isElemental)
+    return lib.genElementalCall(generator, handler.name, mlir::Type{}, args,
+                                outline);
   if (outline)
     return lib.outlineInExtendedWrapper(generator, handler.name, resultType,
                                         args);
   std::invoke(generator, lib, args);
   return mlir::Value{};
-}
-
-/// Many intrinsics are not yet lowered, provide a clear error message to user
-/// instead of hitting harder to understand asserts.
-static void crashOnMissingIntrinsic(mlir::Location loc, llvm::StringRef name) {
-  mlir::emitError(loc,
-                  "TODO: missing intrinsic lowering: " + llvm::Twine(name));
-  exit(1);
 }
 
 fir::ExtendedValue
@@ -1634,11 +1649,11 @@ mlir::Value IntrinsicLibrary::genAbs(mlir::Type resultType,
 }
 
 // ADJUSTL & ADJUSTR
-template<void (*CallRuntime)(Fortran::lower::FirOpBuilder &, 
-                             mlir::Location loc, 
-                             mlir::Value, mlir::Value)>
-fir::ExtendedValue IntrinsicLibrary::genAdjustRtCall(mlir::Type resultType,
-                          llvm::ArrayRef<fir::ExtendedValue> args) {
+template <void (*CallRuntime)(Fortran::lower::FirOpBuilder &,
+                              mlir::Location loc, mlir::Value, mlir::Value)>
+fir::ExtendedValue
+IntrinsicLibrary::genAdjustRtCall(mlir::Type resultType,
+                                  llvm::ArrayRef<fir::ExtendedValue> args) {
   assert(args.size() == 1);
   auto string = builder.createBox(loc, args[0]);
   // Create a mutable fir.box to be passed to the runtime for the result.
@@ -1650,18 +1665,17 @@ fir::ExtendedValue IntrinsicLibrary::genAdjustRtCall(mlir::Type resultType,
   // Call the runtime -- the runtime will allocate the result.
   CallRuntime(builder, loc, resultIrBox, string);
 
- // Read result from mutable fir.box and add it to the list of temps to be
+  // Read result from mutable fir.box and add it to the list of temps to be
   // finalized by the StatementContext.
   auto res = Fortran::lower::genMutableBoxRead(builder, loc, resultMutableBox);
   return res.match(
-    [&](const fir::CharBoxValue &box) -> fir::ExtendedValue {
-      addCleanUpForTemp(loc, fir::getBase(box));
-      return box;
-    },
-    [&](const auto &) -> fir::ExtendedValue {
-      fir::emitFatalError(loc, "result of ADJUSTL is not a scalar character");
-    });
-
+      [&](const fir::CharBoxValue &box) -> fir::ExtendedValue {
+        addCleanUpForTemp(loc, fir::getBase(box));
+        return box;
+      },
+      [&](const auto &) -> fir::ExtendedValue {
+        fir::emitFatalError(loc, "result of ADJUSTL is not a scalar character");
+      });
 }
 
 // AIMAG
@@ -2380,6 +2394,52 @@ mlir::Value IntrinsicLibrary::genModulo(mlir::Type resultType,
       builder.create<mlir::AndOp>(loc, remainderIsNotZero, argSignDifferent);
   auto remPlusP = builder.create<mlir::AddFOp>(loc, remainder, args[1]);
   return builder.create<mlir::SelectOp>(loc, mustAddP, remPlusP, remainder);
+}
+
+// MVBITS
+void IntrinsicLibrary::genMvbits(llvm::ArrayRef<fir::ExtendedValue> args) {
+  // A conformant MVBITS(FROM,FROMPOS,LEN,TO,TOPOS) call satisfies:
+  //     FROMPOS >= 0
+  //     LEN >= 0
+  //     TOPOS >= 0
+  //     FROMPOS + LEN <= BIT_SIZE(FROM)
+  //     TOPOS + LEN <= BIT_SIZE(TO)
+  // MASK = -1 >> (BIT_SIZE(FROM) - LEN)
+  // TO = LEN == 0 ? TO : ((!(MASK << TOPOS)) & TO) |
+  //                      (((FROM >> FROMPOS) & MASK) << TOPOS)
+  assert(args.size() == 5);
+  auto unbox = [&](fir::ExtendedValue exv) {
+    auto arg = exv.getUnboxed();
+    assert(arg && "nonscalar mvbits argument");
+    return *arg;
+  };
+  auto from = unbox(args[0]);
+  auto resultType = from.getType();
+  auto frompos = builder.createConvert(loc, resultType, unbox(args[1]));
+  auto len = builder.createConvert(loc, resultType, unbox(args[2]));
+  auto toAddr = unbox(args[3]);
+  assert(fir::dyn_cast_ptrEleTy(toAddr.getType()) == resultType &&
+         "mismatched mvbits types");
+  auto to = builder.create<fir::LoadOp>(loc, resultType, toAddr);
+  auto topos = builder.createConvert(loc, resultType, unbox(args[4]));
+  auto zero = builder.createIntegerConstant(loc, resultType, 0);
+  auto ones = builder.createIntegerConstant(loc, resultType, -1);
+  auto bitSize = builder.createIntegerConstant(
+      loc, resultType, resultType.cast<mlir::IntegerType>().getWidth());
+  auto shiftCount = builder.create<mlir::SubIOp>(loc, bitSize, len);
+  auto mask = builder.create<mlir::UnsignedShiftRightOp>(loc, ones, shiftCount);
+  auto unchangedTmp1 = builder.create<mlir::ShiftLeftOp>(loc, mask, topos);
+  auto unchangedTmp2 = builder.create<mlir::XOrOp>(loc, unchangedTmp1, ones);
+  auto unchanged = builder.create<mlir::AndOp>(loc, unchangedTmp2, to);
+  auto frombitsTmp1 =
+      builder.create<mlir::UnsignedShiftRightOp>(loc, from, frompos);
+  auto frombitsTmp2 = builder.create<mlir::AndOp>(loc, frombitsTmp1, mask);
+  auto frombits = builder.create<mlir::ShiftLeftOp>(loc, frombitsTmp2, topos);
+  auto resTmp = builder.create<mlir::OrOp>(loc, unchanged, frombits);
+  auto lenIsZero =
+      builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::eq, len, zero);
+  auto res = builder.create<mlir::SelectOp>(loc, lenIsZero, to, resTmp);
+  builder.create<fir::StoreOp>(loc, res, toAddr);
 }
 
 // NINT
