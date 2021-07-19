@@ -1,0 +1,56 @@
+! RUN: bbc -emit-fir %s -o - | FileCheck %s
+
+! CHECK-LABEL: func @_QPverify_test(
+! CHECK-SAME: %[[VAL_0:.*]]: !fir.boxchar<1>,
+! CHECK-SAME: %[[VAL_1:.*]]: !fir.boxchar<1>) -> i32 {
+integer function verify_test(s1, s2)
+! CHECK: %[[VAL_2:.*]] = fir.alloca !fir.box<!fir.heap<i32>> {uniq_name = ""}
+! CHECK: %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+! CHECK: %[[VAL_4:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+! CHECK: %[[VAL_5:.*]] = fir.alloca i32 {bindc_name = "verify_test", uniq_name = "_QFverify_testEverify_test"}
+! CHECK: %[[VAL_6:.*]] = constant 4 : i32
+! CHECK: %[[VAL_7:.*]] = fir.absent !fir.box<i1>
+! CHECK: %[[VAL_8:.*]] = fir.embox %[[VAL_3]]#0 typeparams %[[VAL_3]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.box<!fir.char<1,?>>
+! CHECK: %[[VAL_9:.*]] = fir.embox %[[VAL_4]]#0 typeparams %[[VAL_4]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.box<!fir.char<1,?>>
+! CHECK: %[[VAL_10:.*]] = fir.zero_bits !fir.heap<i32>
+! CHECK: %[[VAL_11:.*]] = fir.embox %[[VAL_10]] : (!fir.heap<i32>) -> !fir.box<!fir.heap<i32>>
+! CHECK: fir.store %[[VAL_11]] to %[[VAL_2]] : !fir.ref<!fir.box<!fir.heap<i32>>>
+! CHECK: %[[VAL_12:.*]] = fir.address_of(@_QQcl.{{[0-9a-z]+}}) : !fir.ref<!fir.char<1,86>>
+! CHECK: %[[VAL_13:.*]] = constant {{[0-9]+}} : i32
+! CHECK: %[[VAL_14:.*]] = fir.convert %[[VAL_2]] : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> !fir.ref<!fir.box<none>>
+! CHECK: %[[VAL_15:.*]] = fir.convert %[[VAL_8]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
+! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_9]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
+! CHECK: %[[VAL_17:.*]] = fir.convert %[[VAL_7]] : (!fir.box<i1>) -> !fir.box<none>
+! CHECK: %[[VAL_18:.*]] = fir.convert %[[VAL_12]] : (!fir.ref<!fir.char<1,86>>) -> !fir.ref<i8>
+! CHECK: %[[VAL_19:.*]] = fir.call @_FortranAVerify(%[[VAL_14]], %[[VAL_15]], %[[VAL_16]], %[[VAL_17]], %[[VAL_6]], %[[VAL_18]], %[[VAL_13]]) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, !fir.box<none>, i32, !fir.ref<i8>, i32) -> none
+! CHECK: %[[VAL_20:.*]] = fir.load %[[VAL_2]] : !fir.ref<!fir.box<!fir.heap<i32>>>
+! CHECK: %[[VAL_21:.*]] = fir.box_addr %[[VAL_20]] : (!fir.box<!fir.heap<i32>>) -> !fir.heap<i32>
+! CHECK: %[[VAL_22:.*]] = fir.load %[[VAL_21]] : !fir.heap<i32>
+! CHECK: fir.store %[[VAL_22]] to %[[VAL_5]] : !fir.ref<i32>
+! CHECK: fir.freemem %[[VAL_21]] : !fir.heap<i32>
+! CHECK: %[[VAL_23:.*]] = fir.load %[[VAL_5]] : !fir.ref<i32>
+! CHECK: return %[[VAL_23]] : i32
+  character(*) :: s1, s2
+  verify_test = verify(s1, s2, kind=4)
+end function verify_test
+
+! CHECK-LABEL: func @_QPverify_test2(
+! CHECK-SAME: %[[VAL_0:.*]]: !fir.boxchar<1>,
+! CHECK-SAME: %[[VAL_1:.*]]: !fir.boxchar<1>) -> i32 {
+integer function verify_test2(s1, s2)
+! CHECK: %[[VAL_2:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+! CHECK: %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+! CHECK: %[[VAL_4:.*]] = fir.alloca i32 {bindc_name = "verify_test2", uniq_name = "_QFverify_test2Everify_test2"}
+! CHECK: %[[VAL_5:.*]] = constant true
+! CHECK: %[[VAL_6:.*]] = fir.convert %[[VAL_2]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
+! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_2]]#1 : (index) -> i64
+! CHECK: %[[VAL_8:.*]] = fir.convert %[[VAL_3]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
+! CHECK: %[[VAL_9:.*]] = fir.convert %[[VAL_3]]#1 : (index) -> i64
+! CHECK: %[[VAL_10:.*]] = fir.call @_FortranAVerify1(%[[VAL_6]], %[[VAL_7]], %[[VAL_8]], %[[VAL_9]], %[[VAL_5]]) : (!fir.ref<i8>, i64, !fir.ref<i8>, i64, i1) -> i64
+! CHECK: %[[VAL_11:.*]] = fir.convert %[[VAL_10]] : (i64) -> i32
+! CHECK: fir.store %[[VAL_11]] to %[[VAL_4]] : !fir.ref<i32>
+! CHECK: %[[VAL_12:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
+! CHECK: return %[[VAL_12]] : i32
+  character(*) :: s1, s2
+  verify_test2 = verify(s1, s2, .true.)
+end function verify_test2
