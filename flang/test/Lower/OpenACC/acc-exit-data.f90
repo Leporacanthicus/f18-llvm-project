@@ -2,6 +2,10 @@
 
 ! RUN: bbc -fopenacc -emit-fir %s -o - | FileCheck %s
 
+! FIXME: Test is violating semantic constraint: "Argument on the ATTACH
+! clause must be a variable or array with the POINTER or ALLOCATABLE attribute"
+! XFAIL: true
+
 subroutine acc_exit_data
   integer :: async = 1
   real, dimension(10, 10) :: a, b, c
