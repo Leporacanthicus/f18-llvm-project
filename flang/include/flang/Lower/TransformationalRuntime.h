@@ -26,6 +26,10 @@ void genCshiftVector(FirOpBuilder &builder, mlir::Location loc,
                      mlir::Value resultBox, mlir::Value arrayBox,
                      mlir::Value shiftBox);
 
+mlir::Value genMatmul(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+                      mlir::Value matrixABox, mlir::Value matrixBBox,
+                      mlir::Value resultBox);
+
 void genReshape(FirOpBuilder &builder, mlir::Location loc,
                 mlir::Value resultBox, mlir::Value sourceBox,
                 mlir::Value shapeBox, mlir::Value padBox, mlir::Value orderBox);

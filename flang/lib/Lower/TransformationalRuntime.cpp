@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/TransformationalRuntime.h"
+#include "../../runtime/matmul.h"
 #include "../../runtime/transformational.h"
 #include "RTBuilder.h"
 #include "flang/Lower/Bridge.h"
@@ -50,6 +51,26 @@ void Fortran::lower::genCshiftVector(Fortran::lower::FirOpBuilder &builder,
   auto args = Fortran::lower::createArguments(
       builder, loc, fTy, resultBox, arrayBox, shiftBox, sourceFile, sourceLine);
   builder.create<fir::CallOp>(loc, cshiftFunc, args);
+}
+
+/// Generate call to Matmul intrinsic runtime routine.
+mlir::Value Fortran::lower::genMatmul(Fortran::lower::FirOpBuilder &builder,
+                                      mlir::Location loc, mlir::Value resultBox,
+                                      mlir::Value matrixABox,
+                                      mlir::Value matrixBBox) {
+  mlir::FuncOp func;
+  auto ty = matrixABox.getType();
+  auto arrTy = fir::dyn_cast_ptrOrBoxEleTy(ty);
+
+  func = Fortran::lower::getRuntimeFunc<mkRTKey(Matmul)>(loc, builder);
+  auto fTy = func.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(4));
+  auto args =
+      Fortran::lower::createArguments(builder, loc, fTy, resultBox, matrixABox,
+                                      matrixBBox, sourceFile, sourceLine);
+  return builder.create<fir::CallOp>(loc, func, args).getResult(0);
 }
 
 /// Generate call to Reshape intrinsic runtime routine.

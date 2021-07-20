@@ -482,6 +482,7 @@ struct IntrinsicLibrary {
   mlir::Value genIshftc(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genLen(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genLenTrim(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genMatmul(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genMaxloc(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genMaxval(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genMerge(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -703,6 +704,10 @@ static constexpr IntrinsicHandler handlers[]{
     {"lgt", &I::genCharacterCompare<mlir::CmpIPredicate::sgt>},
     {"lle", &I::genCharacterCompare<mlir::CmpIPredicate::sle>},
     {"llt", &I::genCharacterCompare<mlir::CmpIPredicate::slt>},
+    {"matmul",
+     &I::genMatmul,
+     {{{"matrix_a", asAddr}, {"matrix_b", asAddr}}},
+     /*isElemental=*/false},
     {"max", &I::genExtremum<Extremum::Max, ExtremumBehavior::MinMaxss>},
     {"maxloc",
      &I::genMaxloc,
@@ -2427,6 +2432,35 @@ IntrinsicLibrary::genCharacterCompare(mlir::Type type,
       fir::getBase(args[1]), fir::getLen(args[1]));
 }
 
+// MATMUL
+fir::ExtendedValue
+IntrinsicLibrary::genMatmul(mlir::Type resultType,
+                            llvm::ArrayRef<fir::ExtendedValue> args) {
+  assert(args.size() == 2);
+
+  // Handle required matmul arguments
+  fir::BoxValue matrixTmpA = builder.createBox(loc, args[0]);
+  mlir::Value matrixA = fir::getBase(matrixTmpA);
+  fir::BoxValue matrixTmpB = builder.createBox(loc, args[1]);
+  mlir::Value matrixB = fir::getBase(matrixTmpB);
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  // TODO: The result can also be of rank 1 if one of the input matrices
+  // is of rank 1. Will this info be available at compile time or should
+  // code be generated to compute the rank?
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, 2);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+  // Call runtime. The runtime is allocating the result.
+  Fortran::lower::genMatmul(builder, loc, resultIrBox, matrixA, matrixB);
+  // Read result from mutable fir.box and add it to the list of temps to be
+  // finalized by the StatementContext.
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for MATMUL");
+}
+
 // MERGE
 mlir::Value IntrinsicLibrary::genMerge(mlir::Type,
                                        llvm::ArrayRef<mlir::Value> args) {
@@ -2653,7 +2687,7 @@ IntrinsicLibrary::genReshape(mlir::Type resultType,
   // Handle shape argument
   auto shape = builder.createBox(loc, args[1]);
   fir::BoxValue shapeTmp = shape;
-  auto shapeRank = shapeTmp.rank();
+  [[maybe_unused]] auto shapeRank = shapeTmp.rank();
   assert(shapeRank == 1);
   auto shapeTy = shape.getType();
   auto shapeArrTy = fir::dyn_cast_ptrOrBoxEleTy(shapeTy);
