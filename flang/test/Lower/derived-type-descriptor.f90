@@ -15,10 +15,7 @@ end subroutine
 ! CHECK-DAG: fir.global internal @_QFfooE.di.sometype.num : i32
 ! CHECK-DAG: fir.global internal @_QFfooE.n.sometype("sometype") : !fir.char<1,8>
 
-! CHECK-LABEL: fir.global internal @_QFfooE.c.sometype {{.*}} {
-  ! CHECK: fir.address_of(@_QFfooE.n.num)
-  ! CHECK: fir.address_of(@_QFfooE.di.sometype.num) : !fir.ref<i32>
-  ! CHECK: fir.address_of(@_QFfooE.n.values)
+! CHECK-LABEL: fir.global internal @_QFfooE.di.sometype.values : !fir.type<_QFfooT.dp.sometype.values{values:!fir.box<!fir.ptr<!fir.array<?x?xf32>>>}> {
   ! CHECK: fir.address_of(@_QFfooEinit_values)
 ! CHECK: }
 
@@ -26,6 +23,13 @@ end subroutine
   !CHECK: fir.address_of(@_QFfooE.n.sometype)
   !CHECK: fir.address_of(@_QFfooE.c.sometype)
 ! CHECK:}
+
+! CHECK-LABEL: fir.global internal @_QFfooE.c.sometype {{.*}} {
+  ! CHECK: fir.address_of(@_QFfooE.n.num)
+  ! CHECK: fir.address_of(@_QFfooE.di.sometype.num) : !fir.ref<i32>
+  ! CHECK: fir.address_of(@_QFfooE.n.values)
+  ! CHECK: fir.address_of(@_QFfooE.di.sometype.values)
+! CHECK: }
 
 subroutine char_comp_init()
   implicit none  
