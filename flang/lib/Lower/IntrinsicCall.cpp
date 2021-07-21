@@ -1577,6 +1577,13 @@ IntrinsicLibrary::readAndAddCleanUp(fir::MutableBoxValue resultMutableBox,
         addCleanUpForTemp(loc, box.getAddr());
         return box;
       },
+      [&](const fir::BoxValue &box) -> fir::ExtendedValue {
+        // Add cleanup code
+        auto addr =
+            builder.create<fir::BoxAddrOp>(loc, box.getMemTy(), box.getAddr());
+        addCleanUpForTemp(loc, addr);
+        return box;
+      },
       [&](const fir::CharArrayBoxValue &box) -> fir::ExtendedValue {
         // Add cleanup code
         addCleanUpForTemp(loc, box.getAddr());
@@ -2803,35 +2810,8 @@ IntrinsicLibrary::genTransfer(mlir::Type resultType,
                                       sizeArg);
     }
   }
-
-  // Handle cleanup of allocatable result descriptor and return
-  auto res = Fortran::lower::genMutableBoxRead(builder, loc, resultMutableBox);
-  return res.match(
-      [&](const fir::ArrayBoxValue &box) -> fir::ExtendedValue {
-        // Add cleanup code
-        addCleanUpForTemp(loc, box.getAddr());
-        return box;
-      },
-      [&](const fir::CharArrayBoxValue &box) -> fir::ExtendedValue {
-        // Add cleanup code
-        addCleanUpForTemp(loc, box.getAddr());
-        return box;
-      },
-      [&](const Fortran::lower::SymbolBox::Intrinsic &box)
-          -> fir::ExtendedValue {
-        // Add cleanup code
-        auto temp = box.getAddr();
-        addCleanUpForTemp(loc, temp);
-        return builder.create<fir::LoadOp>(loc, resultType, temp);
-      },
-      [&](const fir::CharBoxValue &box) -> fir::ExtendedValue {
-        // Add cleanup code
-        addCleanUpForTemp(loc, box.getAddr());
-        return box;
-      },
-      [&](const auto &) -> fir::ExtendedValue {
-        fir::emitFatalError(loc, "unexpected result for TRANSFER");
-      });
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for TRANSFER");
 }
 
 // TRANSPOSE

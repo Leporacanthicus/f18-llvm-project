@@ -1361,6 +1361,30 @@ subroutine trans_test2(store, word)
 ! CHECK-DAG:  fir.freemem %[[a16]] : !fir.heap<!fir.array<?xi32>>
 end subroutine
 
+! TRANSFER
+! CHECK-LABEL: trans_test3
+! CHECK-SAME: %[[arg0:.*]]: !fir.ref<i32>) -> i32
+integer function trans_test3(p)
+  type obj
+    integer :: x
+  end type
+  type (obj) :: t
+  integer :: p
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a1:.*]] = fir.alloca !fir.type<_QFtrans_test3Tobj{x:i32}> {bindc_name = "t", uniq_name = "_QFtrans_test3Et"}
+! CHECK-DAG:  %[[a3:.*]] = fir.embox %[[arg0]] : (!fir.ref<i32>) -> !fir.box<i32>
+! CHECK-DAG:  %[[a4:.*]] = fir.embox %[[a1]] : (!fir.ref<!fir.type<_QFtrans_test3Tobj{x:i32}>>) -> !fir.box<!fir.type<_QFtrans_test3Tobj{x:i32}>>
+! CHECK-DAG:  %[[a8:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>>>) -> !fir.ref<!fir.box<none>>
+! CHECK-DAG:  %[[a9:.*]] = fir.convert %[[a3]] : (!fir.box<i32>) -> !fir.box<none>
+! CHECK-DAG:  %[[a10:.*]] = fir.convert %[[a4]] : (!fir.box<!fir.type<_QFtrans_test3Tobj{x:i32}>>) -> !fir.box<none>
+  t = transfer(p, t)
+! CHECK:  %{{.*}} = fir.call @_FortranATransfer(%[[a8]], %[[a9]], %[[a10]], %{{.*}}, %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, !fir.ref<i8>, i32) -> none
+! CHECK-DAG:  %[[a13:.*]] = fir.load %[[a0]] : !fir.ref<!fir.box<!fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>>>
+! CHECK-DAG: %[[a14:.*]] = fir.box_addr %[[a13]] : (!fir.box<!fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>>) -> !fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>
+! CHECK-DAG:  fir.freemem %[[a14]] : !fir.heap<!fir.type<_QFtrans_test3Tobj{x:i32}>>
+  trans_test3 = t%x
+end function 
+
 ! TRIM
 ! CHECK-LABEL: trim_test
 ! CHECK-SAME: (%[[arg0:.*]]: !fir.boxchar<1>)
