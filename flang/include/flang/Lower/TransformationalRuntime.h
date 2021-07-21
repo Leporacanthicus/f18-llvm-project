@@ -19,6 +19,13 @@ class ExtendedValue;
 namespace Fortran::lower {
 class FirOpBuilder;
 
+void genCshift(FirOpBuilder &builder, mlir::Location loc, mlir::Value resultBox,
+               mlir::Value arrayBox, mlir::Value shiftBox, mlir::Value dimBox);
+
+void genCshiftVector(FirOpBuilder &builder, mlir::Location loc,
+                     mlir::Value resultBox, mlir::Value arrayBox,
+                     mlir::Value shiftBox);
+
 void genReshape(FirOpBuilder &builder, mlir::Location loc,
                 mlir::Value resultBox, mlir::Value sourceBox,
                 mlir::Value shapeBox, mlir::Value padBox, mlir::Value orderBox);

@@ -431,6 +431,7 @@ struct IntrinsicLibrary {
   mlir::Value genConjg(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genCount(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genCpuTime(llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genCshift(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genDateAndTime(llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDim(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -628,6 +629,10 @@ static constexpr IntrinsicHandler handlers[]{
     {"cpu_time",
      &I::genCpuTime,
      {{{"time", asAddr}}},
+     /*isElemental=*/false},
+    {"cshift",
+     &I::genCshift,
+     {{{"array", asAddr}, {"shift", asAddr}, {"dim", asValue}}},
      /*isElemental=*/false},
     {"date_and_time",
      &I::genDateAndTime,
@@ -1967,6 +1972,46 @@ void IntrinsicLibrary::genCpuTime(llvm::ArrayRef<fir::ExtendedValue> args) {
   auto res2 =
       builder.createConvert(loc, fir::dyn_cast_ptrEleTy(arg->getType()), res1);
   builder.create<fir::StoreOp>(loc, res2, *arg);
+}
+
+// CSHIFT
+fir::ExtendedValue
+IntrinsicLibrary::genCshift(mlir::Type resultType,
+                            llvm::ArrayRef<fir::ExtendedValue> args) {
+  assert(args.size() == 3);
+
+  // Handle required ARRAY argument
+  auto array = builder.createBox(loc, args[0]);
+  fir::BoxValue arrayTmp = builder.createBox(loc, args[0]);
+  auto arrayRank = arrayTmp.rank();
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, arrayRank);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+
+  if (arrayRank == 1) {
+    // Vector case
+    // Handle required SHIFT argument as a scalar
+    auto shift = fir::getBase(args[1]);
+
+    Fortran::lower::genCshiftVector(builder, loc, resultIrBox, array, shift);
+  } else {
+    // Non-vector case
+    // Handle required SHIFT argument as an array
+    auto shift = builder.createBox(loc, args[1]);
+
+    // Handle optional DIM argument
+    auto dim =
+        isAbsent(args[2])
+            ? builder.createIntegerConstant(loc, builder.getIndexType(), 1)
+            : fir::getBase(args[2]);
+    Fortran::lower::genCshift(builder, loc, resultIrBox, array, shift, dim);
+  }
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for CSHIFT");
 }
 
 // DATE_AND_TIME

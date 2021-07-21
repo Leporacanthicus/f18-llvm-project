@@ -18,6 +18,40 @@
 
 using namespace Fortran::runtime;
 
+/// Generate call to Cshift intrinsic
+void Fortran::lower::genCshift(Fortran::lower::FirOpBuilder &builder,
+                               mlir::Location loc, mlir::Value resultBox,
+                               mlir::Value arrayBox, mlir::Value shiftBox,
+                               mlir::Value dimBox) {
+  auto cshiftFunc =
+      Fortran::lower::getRuntimeFunc<mkRTKey(Cshift)>(loc, builder);
+  auto fTy = cshiftFunc.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(5));
+  auto args =
+      Fortran::lower::createArguments(builder, loc, fTy, resultBox, arrayBox,
+                                      shiftBox, dimBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, cshiftFunc, args);
+}
+
+/// Generate call to the vector version of the Cshift intrinsic
+void Fortran::lower::genCshiftVector(Fortran::lower::FirOpBuilder &builder,
+                                     mlir::Location loc, mlir::Value resultBox,
+                                     mlir::Value arrayBox,
+                                     mlir::Value shiftBox) {
+  auto cshiftFunc =
+      Fortran::lower::getRuntimeFunc<mkRTKey(CshiftVector)>(loc, builder);
+  auto fTy = cshiftFunc.getType();
+
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(4));
+  auto args = Fortran::lower::createArguments(
+      builder, loc, fTy, resultBox, arrayBox, shiftBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, cshiftFunc, args);
+}
+
 /// Generate call to Reshape intrinsic runtime routine.
 void Fortran::lower::genReshape(Fortran::lower::FirOpBuilder &builder,
                                 mlir::Location loc, mlir::Value resultBox,
