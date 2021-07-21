@@ -2017,9 +2017,9 @@ IntrinsicLibrary::genCshift(mlir::Type resultType,
   assert(args.size() == 3);
 
   // Handle required ARRAY argument
-  auto array = builder.createBox(loc, args[0]);
-  fir::BoxValue arrayTmp = builder.createBox(loc, args[0]);
-  auto arrayRank = arrayTmp.rank();
+  fir::BoxValue arrayBox = builder.createBox(loc, args[0]);
+  auto array = fir::getBase(arrayBox);
+  auto arrayRank = arrayBox.rank();
 
   // Create mutable fir.box to be passed to the runtime for the result.
   auto resultArrayType = builder.getVarLenSeqTy(resultType, arrayRank);

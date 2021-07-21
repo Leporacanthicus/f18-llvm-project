@@ -152,7 +152,7 @@ subroutine cshift_test()
   ! CHECK-DAG: %[[cs19:.*]] = fir.convert %[[cs11]] : (!fir.box<!fir.array<3x3xi32>>) -> !fir.box<none>
   ! CHECK-DAG: %[[cs20:.*]] = fir.convert %[[cs13]] : (!fir.box<!fir.array<3xi32>>) -> !fir.box<none>
   ! CHECK-DAG: %[[cs21:.*]] = fir.convert %[[cs17]]
-  ! CHECK: fir.call @_FortranACshift(%[[cs18]], %[[cs19]], %[[cs20]], %{{.*}}, %[[cs21]], %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, i32, !fir.ref<i8>, i32) -> none
+  ! CHECK: fir.call @_FortranACshift(%[[cs18]], %[[cs19]], %[[cs20]], %{{.*}}, %{{.*}}, %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, i32, !fir.ref<i8>, i32) -> none
   ! CHECK-DAG: %[[cs23:.*]] = fir.load %[[cs2]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x?xi32>>>>
   ! CHECK-DAG: %[[cs26:.*]] = fir.box_addr %{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xi32>>>) -> !fir.heap<!fir.array<?x?xi32>>
   ! CHECK: fir.freemem %[[cs26]] : !fir.heap<!fir.array<?x?xi32>>
@@ -170,7 +170,7 @@ subroutine cshift_test()
   ! CHECK-DAG: %[[cs43:.*]] = fir.convert %[[cs37]] : (!fir.box<!fir.array<6xi32>>) -> !fir.box<none>
   ! CHECK-DAG: %[[cs44:.*]] = fir.convert %[[cs1]] : (!fir.ref<i32>) -> i64
   ! CHECK-DAG: %[[cs45:.*]] = fir.convert %[[cs41]]
-  ! CHECK: fir.call @_FortranACshiftVector(%[[cs42]], %[[cs43]], %[[cs44]], %[[cs45]], %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, i64, !fir.ref<i8>, i32) -> none
+  ! CHECK: fir.call @_FortranACshiftVector(%[[cs42]], %[[cs43]], %[[cs44]], %{{.*}}, %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, i64, !fir.ref<i8>, i32) -> none
   ! CHECK-DAG: %[[cs47:.*]] = fir.load %[[cs0]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
   ! CHECK-DAG: %[[cs49:.*]] = fir.box_addr %[[cs47]] : (!fir.box<!fir.heap<!fir.array<?xi32>>>) -> !fir.heap<!fir.array<?xi32>>
   ! CHECK: fir.freemem %[[cs49]] : !fir.heap<!fir.array<?xi32>>
