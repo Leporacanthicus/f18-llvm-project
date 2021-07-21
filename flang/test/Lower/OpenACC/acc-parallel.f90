@@ -2,10 +2,6 @@
 
 ! RUN: bbc -fopenacc -emit-fir %s -o - | FileCheck %s
 
-! FIXME: Test is violating semantic constraint: "Argument on the ATTACH
-! clause must be a variable or array with the POINTER or ALLOCATABLE attribute"
-! XFAIL: true
-
 subroutine acc_parallel
   integer :: i, j
 
@@ -17,10 +13,13 @@ subroutine acc_parallel
   integer :: vectorLength = 128
   logical :: ifCondition = .TRUE.
   real, dimension(10, 10) :: a, b, c
+  real, pointer :: d, e
 
 !CHECK: [[A:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Ea"}
 !CHECK: [[B:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Eb"}
 !CHECK: [[C:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Ec"}
+!CHECK: [[D:%.*]] = fir.alloca !fir.box<!fir.ptr<f32>> {bindc_name = "d", uniq_name = "{{.*}}Ed"}
+!CHECK: [[E:%.*]] = fir.alloca !fir.box<!fir.ptr<f32>> {bindc_name = "e", uniq_name = "{{.*}}Ee"}
 !CHECK: [[IFCONDITION:%.*]] = fir.address_of(@{{.*}}ifcondition) : !fir.ref<!fir.logical<4>>
 
   !$acc parallel
@@ -230,10 +229,10 @@ subroutine acc_parallel
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
 
-  !$acc parallel attach(b, c)
+  !$acc parallel attach(d, e)
   !$acc end parallel
 
-!CHECK:      acc.parallel attach([[B]]: !fir.ref<!fir.array<10x10xf32>>, [[C]]: !fir.ref<!fir.array<10x10xf32>>) {
+!CHECK:      acc.parallel attach([[D]]: !fir.ref<!fir.box<!fir.ptr<f32>>>, [[E]]: !fir.ref<!fir.box<!fir.ptr<f32>>>) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
 

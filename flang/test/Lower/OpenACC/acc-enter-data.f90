@@ -2,18 +2,16 @@
 
 ! RUN: bbc -fopenacc -emit-fir %s -o - | FileCheck %s
 
-! FIXME: Test is violating semantic constraint: "Argument on the ATTACH
-! clause must be a variable or array with the POINTER or ALLOCATABLE attribute"
-! XFAIL: true
-
 subroutine acc_enter_data
   integer :: async = 1
   real, dimension(10, 10) :: a, b, c
+  real, pointer :: d
   logical :: ifCondition = .TRUE.
 
 !CHECK: [[A:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Ea"}
 !CHECK: [[B:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Eb"}
 !CHECK: [[C:%.*]] = fir.alloca !fir.array<10x10xf32> {{{.*}}uniq_name = "{{.*}}Ec"}
+!CHECK: [[D:%.*]] = fir.alloca !fir.box<!fir.ptr<f32>> {bindc_name = "d", uniq_name = "{{.*}}Ed"}
 
   !$acc enter data create(a)
 !CHECK: acc.enter_data create([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
@@ -33,8 +31,8 @@ subroutine acc_enter_data
   !$acc enter data create(a) create(b) create(zero: c)
 !CHECK: acc.enter_data create([[A]], [[B]] : !fir.ref<!fir.array<10x10xf32>>, !fir.ref<!fir.array<10x10xf32>>) create_zero([[C]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
-  !$acc enter data copyin(a) create(b) attach(c)
-!CHECK: acc.enter_data copyin([[A]] : !fir.ref<!fir.array<10x10xf32>>) create([[B]] : !fir.ref<!fir.array<10x10xf32>>) attach([[C]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
+  !$acc enter data copyin(a) create(b) attach(d)
+!CHECK: acc.enter_data copyin([[A]] : !fir.ref<!fir.array<10x10xf32>>) create([[B]] : !fir.ref<!fir.array<10x10xf32>>) attach([[D]] : !fir.ref<!fir.box<!fir.ptr<f32>>>){{$}}
 
   !$acc enter data create(a) async
 !CHECK: acc.enter_data create([[A]] : !fir.ref<!fir.array<10x10xf32>>) attributes {async}
