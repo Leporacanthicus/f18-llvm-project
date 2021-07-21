@@ -116,8 +116,8 @@ public:
   static void visit(const GetFromTuple &args,
                     Fortran::lower::AbstractConverter &converter,
                     const Fortran::semantics::Symbol &sym,
-                    const Fortran::lower::BoxAnalyzer &sba) {
-    return SymbolCategory::getFromTuple(args, converter, sym, sba);
+                    const Fortran::lower::BoxAnalyzer &ba) {
+    return SymbolCategory::getFromTuple(args, converter, sym, ba);
   }
 };
 
@@ -221,7 +221,7 @@ public:
   static void getFromTuple(const GetFromTuple &args,
                            Fortran::lower::AbstractConverter &converter,
                            const Fortran::semantics::Symbol &sym,
-                           const Fortran::lower::BoxAnalyzer &sba) {
+                           const Fortran::lower::BoxAnalyzer &ba) {
     auto &builder = converter.getFirOpBuilder();
     auto loc = args.loc;
     // Non deferred type parameters impact the semantics of some statements
@@ -230,13 +230,13 @@ public:
     // later if the length is non deferred vs when it is deferred. So it is
     // important to keep track of the non deferred parameters here.
     llvm::SmallVector<mlir::Value> nonDeferredLenParams;
-    if (sba.isChar()) {
+    if (ba.isChar()) {
       auto idxTy = builder.getIndexType();
-      if (auto len = sba.getCharLenConst()) {
+      if (auto len = ba.getCharLenConst()) {
         nonDeferredLenParams.push_back(
             builder.createIntegerConstant(loc, idxTy, *len));
       } else if (Fortran::semantics::IsAssumedLengthCharacter(sym) ||
-                 sba.getCharLenExpr()) {
+                 ba.getCharLenExpr()) {
         // Read length from fir.box (explicit expr cannot safely be re-evaluated
         // here).
         auto readLength = [&]() {
@@ -328,15 +328,15 @@ public:
   static void getFromTuple(const GetFromTuple &args,
                            Fortran::lower::AbstractConverter &converter,
                            const Fortran::semantics::Symbol &sym,
-                           const Fortran::lower::BoxAnalyzer &sba) {
+                           const Fortran::lower::BoxAnalyzer &ba) {
     auto &builder = converter.getFirOpBuilder();
     auto loc = args.loc;
     auto box = args.valueInTuple;
     auto idxTy = builder.getIndexType();
     llvm::SmallVector<mlir::Value> lbounds;
-    if (!sba.lboundIsAllOnes()) {
-      if (sba.isStaticArray()) {
-        for (auto lb : sba.staticLBound())
+    if (!ba.lboundIsAllOnes()) {
+      if (ba.isStaticArray()) {
+        for (auto lb : ba.staticLBound())
           lbounds.emplace_back(builder.createIntegerConstant(loc, idxTy, lb));
       } else {
         // Cannot re-evaluate specification expressions here.
@@ -402,16 +402,16 @@ walkCaptureCategories(T visitor, Fortran::lower::AbstractConverter &converter,
   if (isDerivedWithLengthParameters(sym))
     TODO(converter.genLocation(sym.name()),
          "host associated derived type with length parameters");
-  Fortran::lower::BoxAnalyzer sba;
-  sba.analyze(sym);
+  Fortran::lower::BoxAnalyzer ba;
+  ba.analyze(sym);
   if (Fortran::evaluate::IsAllocatableOrPointer(sym))
-    return CapturedAllocatableAndPointer::visit(visitor, converter, sym, sba);
-  if (sba.isArray())
-    return CapturedArrays::visit(visitor, converter, sym, sba);
-  if (sba.isChar())
-    return CapturedCharacterScalars::visit(visitor, converter, sym, sba);
-  assert(sba.isTrivial() && "must be trivial scalar");
-  return CapturedSimpleScalars::visit(visitor, converter, sym, sba);
+    return CapturedAllocatableAndPointer::visit(visitor, converter, sym, ba);
+  if (ba.isArray())
+    return CapturedArrays::visit(visitor, converter, sym, ba);
+  if (ba.isChar())
+    return CapturedCharacterScalars::visit(visitor, converter, sym, ba);
+  assert(ba.isTrivial() && "must be trivial scalar");
+  return CapturedSimpleScalars::visit(visitor, converter, sym, ba);
 }
 
 // `t` should be the result of getArgumentType, which has a type of

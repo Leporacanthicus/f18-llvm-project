@@ -950,8 +950,8 @@ void Fortran::lower::mapSymbolAttributes(
   const auto isResult = Fortran::semantics::IsFunctionResult(sym);
   const auto replace = isDummy || isResult;
   Fortran::lower::CharacterExprHelper charHelp{builder, loc};
-  Fortran::lower::BoxAnalyzer sba;
-  sba.analyze(sym);
+  Fortran::lower::BoxAnalyzer ba;
+  ba.analyze(sym);
 
   // First deal with pointers an allocatables, because their handling here
   // is the same regardless of their rank.
@@ -968,8 +968,8 @@ void Fortran::lower::mapSymbolAttributes(
       boxAlloc = createNewLocal(converter, loc, var, preAlloc);
     // Lower non deferred parameters.
     llvm::SmallVector<mlir::Value> nonDeferredLenParams;
-    if (sba.isChar()) {
-      if (auto len = lowerExplicitCharLen(converter, loc, sba, symMap, stmtCtx))
+    if (ba.isChar()) {
+      if (auto len = lowerExplicitCharLen(converter, loc, ba, symMap, stmtCtx))
         nonDeferredLenParams.push_back(len);
       else if (Fortran::semantics::IsAssumedLengthCharacter(sym))
         TODO(loc, "assumed length character allocatable");
@@ -993,13 +993,13 @@ void Fortran::lower::mapSymbolAttributes(
       llvm::SmallVector<mlir::Value> explicitParams;
       // Lower lower bounds, explicit type parameters and explicit
       // extents if any.
-      if (sba.isChar())
+      if (ba.isChar())
         if (auto len =
-                lowerExplicitCharLen(converter, loc, sba, symMap, stmtCtx))
+                lowerExplicitCharLen(converter, loc, ba, symMap, stmtCtx))
           explicitParams.push_back(len);
       // TODO: derived type length parameters.
-      lowerExplicitLowerBounds(converter, loc, sba, lbounds, symMap, stmtCtx);
-      lowerExplicitExtents(converter, loc, sba, lbounds, extents, symMap,
+      lowerExplicitLowerBounds(converter, loc, ba, lbounds, symMap, stmtCtx);
+      lowerExplicitExtents(converter, loc, ba, lbounds, extents, symMap,
                            stmtCtx);
       symMap.addBoxSymbol(sym, dummyArg, lbounds, explicitParams, extents,
                           replace);
@@ -1085,7 +1085,7 @@ void Fortran::lower::mapSymbolAttributes(
     }
   };
 
-  sba.match(
+  ba.match(
       //===--------------------------------------------------------------===//
       // Trivial case.
       //===--------------------------------------------------------------===//
