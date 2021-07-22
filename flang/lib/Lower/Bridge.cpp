@@ -1868,8 +1868,8 @@ private:
               for (const auto &lbExpr : lbExprs)
                 lbounds.push_back(
                     fir::getBase(genExprValue(toEvExpr(lbExpr), stmtCtx)));
-              Fortran::lower::associateMutableBoxWithShift(
-                  *this, loc, lhs, assign.rhs, lbounds, stmtCtx);
+              Fortran::lower::associateMutableBox(*this, loc, lhs, assign.rhs,
+                                                  lbounds, stmtCtx);
             },
             [&](const Fortran::evaluate::Assignment::BoundsRemapping
                     &boundExprs) {

@@ -28,14 +28,14 @@
 // mlir tuple (a struct) inside the host containing the addresses and properties
 // of variables that are accessed by internal procedures. The address of this
 // tuple is passed as an argument by the host when calling internal procedures.
-// Internal procedures are propagating this tuple address when calling other
+// Internal procedures propagate a reference to this tuple when calling other
 // internal procedures of the host.
 //
 // This file defines how the type of the host tuple is built, how the tuple
 // value is created inside the host, and how the host associated variables are
 // instantiated inside the internal procedures from the tuple value. The
-// CapturedXXX classes are defining each of these three actions for a specific
-// kind of variables by providing a `getType`, a `placeInTuple`, and a
+// CapturedXXX classes define each of these three actions for a specific
+// kind of variables by providing a `getType`, a `instantiateHostTuple`, and a
 // `getFromTuple` method. These classes are structured as follow:
 //
 //   class CapturedKindOfVar : public CapturedSymbols<CapturedKindOfVar> {
@@ -45,14 +45,14 @@
 //     static mlir::Type getType();
 //     // Build the tuple element value for a host associated variable given its
 //     // value inside the host. This is called when lowering the host body.
-//     static void placeInTuple();
+//     static void instantiateHostTuple();
 //     // Instantiate a host variable inside an internal procedure given its
 //     // tuple element value. This is called when lowering internal procedure
 //     // bodies.
 //     static void getFromTuple();
 //   };
 //
-// If a new kind of variables requires ad-hoc handling, a new CapturedXXX class
+// If a new kind of variable requires ad-hoc handling, a new CapturedXXX class
 // should be added to handle it, and `walkCaptureCategories` should be updated
 // to dispatch this new kind of variable to this new class.
 
@@ -65,7 +65,7 @@ struct GetTypeInTuple {
 
 /// Struct to be used as argument in walkCaptureCategories when building the
 /// tuple element value for a host associated variable.
-struct PlaceInTuple {
+struct InstantiateHostTuple {
   /// walkCaptureCategories returns nothing.
   using Result = void;
   /// Value of the variable inside the host procedure.
@@ -107,11 +107,11 @@ public:
                           const Fortran::lower::BoxAnalyzer &) {
     return SymbolCategory::getType(converter, sym);
   }
-  static void visit(const PlaceInTuple &args,
+  static void visit(const InstantiateHostTuple &args,
                     Fortran::lower::AbstractConverter &converter,
                     const Fortran::semantics::Symbol &sym,
                     const Fortran::lower::BoxAnalyzer &) {
-    return SymbolCategory::placeInTuple(args, converter, sym);
+    return SymbolCategory::instantiateHostTuple(args, converter, sym);
   }
   static void visit(const GetFromTuple &args,
                     Fortran::lower::AbstractConverter &converter,
@@ -131,9 +131,9 @@ public:
     return fir::PointerType::get(converter.genType(sym));
   }
 
-  static void placeInTuple(const PlaceInTuple &args,
-                           Fortran::lower::AbstractConverter &converter,
-                           const Fortran::semantics::Symbol &) {
+  static void instantiateHostTuple(const InstantiateHostTuple &args,
+                                   Fortran::lower::AbstractConverter &converter,
+                                   const Fortran::semantics::Symbol &) {
     auto &builder = converter.getFirOpBuilder();
     auto typeInTuple = fir::dyn_cast_ptrEleTy(args.addrInTuple.getType());
     assert(typeInTuple && "addrInTuple must be an address");
@@ -165,9 +165,9 @@ public:
     return fir::BoxCharType::get(&converter.getMLIRContext(), kind);
   }
 
-  static void placeInTuple(const PlaceInTuple &args,
-                           Fortran::lower::AbstractConverter &converter,
-                           const Fortran::semantics::Symbol &) {
+  static void instantiateHostTuple(const InstantiateHostTuple &args,
+                                   Fortran::lower::AbstractConverter &converter,
+                                   const Fortran::semantics::Symbol &) {
     auto *charBox = args.hostValue.getCharBox();
     assert(charBox && "host value must be a fir::CharBoxValue");
     auto &builder = converter.getFirOpBuilder();
@@ -206,9 +206,9 @@ public:
                             const Fortran::semantics::Symbol &sym) {
     return fir::ReferenceType::get(converter.genType(sym));
   }
-  static void placeInTuple(const PlaceInTuple &args,
-                           Fortran::lower::AbstractConverter &converter,
-                           const Fortran::semantics::Symbol &) {
+  static void instantiateHostTuple(const InstantiateHostTuple &args,
+                                   Fortran::lower::AbstractConverter &converter,
+                                   const Fortran::semantics::Symbol &) {
     assert(args.hostValue.getBoxOf<fir::MutableBoxValue>() &&
            "host value must be a fir::MutableBoxValue");
     auto &builder = converter.getFirOpBuilder();
@@ -294,9 +294,9 @@ public:
     return fir::BoxType::get(fir::PointerType::get(type));
   }
 
-  static void placeInTuple(const PlaceInTuple &args,
-                           Fortran::lower::AbstractConverter &converter,
-                           const Fortran::semantics::Symbol &sym) {
+  static void instantiateHostTuple(const InstantiateHostTuple &args,
+                                   Fortran::lower::AbstractConverter &converter,
+                                   const Fortran::semantics::Symbol &sym) {
     auto &builder = converter.getFirOpBuilder();
     auto loc = args.loc;
     fir::MutableBoxValue boxInTuple(args.addrInTuple, {}, {});
@@ -312,16 +312,17 @@ public:
           loc, builder.getI1Type(), fir::getBase(args.hostValue));
       builder.genIfThenElse(loc, isPresent)
           .genThen([&]() {
-            Fortran::lower::associateMutableBoxWithShift(
-                builder, loc, boxInTuple, args.hostValue, /*shift*/ llvm::None);
+            Fortran::lower::associateMutableBox(builder, loc, boxInTuple,
+                                                args.hostValue,
+                                                /*lbounds=*/llvm::None);
           })
           .genElse([&]() {
             Fortran::lower::disassociateMutableBox(builder, loc, boxInTuple);
           })
           .end();
     } else {
-      Fortran::lower::associateMutableBoxWithShift(
-          builder, loc, boxInTuple, args.hostValue, /*shift*/ llvm::None);
+      Fortran::lower::associateMutableBox(
+          builder, loc, boxInTuple, args.hostValue, /*lbounds=*/llvm::None);
     }
   }
 
@@ -450,9 +451,9 @@ void Fortran::lower::HostAssociations::hostProcedureBindings(
     auto off = builder.createIntegerConstant(loc, offTy, indexInTuple);
     auto varTy = tupTy.getType(indexInTuple);
     auto eleOff = genTupleCoor(builder, loc, varTy, hostTuple, off);
-    PlaceInTuple placeInTuple{symMap.lookupSymbol(s.value()).toExtendedValue(),
-                              eleOff, loc};
-    walkCaptureCategories(placeInTuple, converter, *s.value());
+    InstantiateHostTuple instantiateHostTuple{
+        symMap.lookupSymbol(s.value()).toExtendedValue(), eleOff, loc};
+    walkCaptureCategories(instantiateHostTuple, converter, *s.value());
   }
 
   converter.bindHostAssocTuple(hostTuple);

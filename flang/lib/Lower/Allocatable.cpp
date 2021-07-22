@@ -1110,10 +1110,11 @@ void Fortran::lower::genFinalization(Fortran::lower::FirOpBuilder &builder,
 // MutableBoxValue writing interface implementation
 //===----------------------------------------------------------------------===//
 
-void Fortran::lower::associateMutableBoxWithShift(
-    Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
-    const fir::MutableBoxValue &box, const fir::ExtendedValue &source,
-    mlir::ValueRange lbounds) {
+void Fortran::lower::associateMutableBox(Fortran::lower::FirOpBuilder &builder,
+                                         mlir::Location loc,
+                                         const fir::MutableBoxValue &box,
+                                         const fir::ExtendedValue &source,
+                                         mlir::ValueRange lbounds) {
   MutablePropertyWriter writer(builder, loc, box);
   source.match(
       [&](const fir::UnboxedValue &addr) {
@@ -1186,7 +1187,7 @@ isArraySectionWithoutVectorSubscript(const Fortran::lower::SomeExpr &expr) {
          !Fortran::evaluate::HasVectorSubscript(expr);
 }
 
-void Fortran::lower::associateMutableBoxWithShift(
+void Fortran::lower::associateMutableBox(
     Fortran::lower::AbstractConverter &converter, mlir::Location loc,
     const fir::MutableBoxValue &box, const Fortran::lower::SomeExpr &source,
     mlir::ValueRange lbounds, Fortran::lower::StatementContext &stmtCtx) {
@@ -1202,7 +1203,7 @@ void Fortran::lower::associateMutableBoxWithShift(
   auto rhs = isArraySectionWithoutVectorSubscript(source)
                  ? converter.genExprBox(source, stmtCtx, loc)
                  : converter.genExprAddr(source, stmtCtx);
-  Fortran::lower::associateMutableBoxWithShift(builder, loc, box, rhs, lbounds);
+  Fortran::lower::associateMutableBox(builder, loc, box, rhs, lbounds);
 }
 
 void Fortran::lower::associateMutableBoxWithRemap(

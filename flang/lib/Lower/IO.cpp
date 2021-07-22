@@ -284,8 +284,8 @@ getNamelistGroup(Fortran::lower::AbstractConverter &converter,
         auto boxType = fir::BoxType::get(fir::PointerType::get(type));
         descAddr = builder.createTemporary(loc, boxType);
         auto box = fir::MutableBoxValue(descAddr, {}, {});
-        Fortran::lower::associateMutableBoxWithShift(builder, loc, box, exv,
-                                                     {});
+        Fortran::lower::associateMutableBox(builder, loc, box, exv,
+                                            /*lbounds=*/llvm::None);
       }
       descAddr = builder.createConvert(loc, descRefTy, descAddr);
       list =

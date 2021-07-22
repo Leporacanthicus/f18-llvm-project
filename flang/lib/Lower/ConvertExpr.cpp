@@ -652,8 +652,9 @@ public:
           },
           [&](const fir::MutableBoxValue &toBox) {
             if (toBox.isPointer()) {
-              Fortran::lower::associateMutableBoxWithShift(
-                  converter, loc, toBox, expr.value(), /*lbounds=*/{}, stmtCtx);
+              Fortran::lower::associateMutableBox(
+                  converter, loc, toBox, expr.value(), /*lbounds=*/llvm::None,
+                  stmtCtx);
               return;
             }
             // For allocatable components, a deep copy is needed.

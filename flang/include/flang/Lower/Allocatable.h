@@ -93,16 +93,16 @@ Fortran::lower::SymbolBox genMutableBoxRead(Fortran::lower::FirOpBuilder &,
 /// Update a MutableBoxValue to describe entity \p source (that must be in
 /// memory). If \lbounds is not empty, it is used to defined the MutableBoxValue
 /// lower bounds, otherwise, the lower bounds from \p source are used.
-void associateMutableBoxWithShift(Fortran::lower::FirOpBuilder &,
-                                  mlir::Location, const fir::MutableBoxValue &,
-                                  const fir::ExtendedValue &source,
-                                  mlir::ValueRange lbounds);
+void associateMutableBox(Fortran::lower::FirOpBuilder &, mlir::Location,
+                         const fir::MutableBoxValue &,
+                         const fir::ExtendedValue &source,
+                         mlir::ValueRange lbounds);
 
 /// Update a MutableBoxValue to describe the entity designated by the expression
 /// \p source. This version takes care of \p source lowering.
 /// If \lbounds is not empty, it is used to defined the MutableBoxValue
 /// lower bounds, otherwise, the lower bounds from \p source are used.
-void associateMutableBoxWithShift(
+void associateMutableBox(
     Fortran::lower::AbstractConverter &, mlir::Location,
     const fir::MutableBoxValue &,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &source,
