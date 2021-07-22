@@ -3054,9 +3054,9 @@ IntrinsicLibrary::genUnpack(mlir::Type resultType,
   fir::BoxValue vectorTmp = builder.createBox(loc, args[0]);
 
   // Handle required mask argument
-  auto mask = builder.createBox(loc, args[1]);
-  fir::BoxValue maskTmp = builder.createBox(loc, args[1]);
-  auto maskRank = maskTmp.rank();
+  fir::BoxValue maskBox = builder.createBox(loc, args[1]);
+  auto mask = fir::getBase(maskBox);
+  auto maskRank = maskBox.rank();
 
   // Handle required field argument
   auto field = builder.createBox(loc, args[2]);
