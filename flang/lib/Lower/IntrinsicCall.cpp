@@ -2443,12 +2443,11 @@ IntrinsicLibrary::genMatmul(mlir::Type resultType,
   mlir::Value matrixA = fir::getBase(matrixTmpA);
   fir::BoxValue matrixTmpB = builder.createBox(loc, args[1]);
   mlir::Value matrixB = fir::getBase(matrixTmpB);
+  unsigned resultRank =
+      (matrixTmpA.rank() == 1 || matrixTmpB.rank() == 1) ? 1 : 2;
 
   // Create mutable fir.box to be passed to the runtime for the result.
-  // TODO: The result can also be of rank 1 if one of the input matrices
-  // is of rank 1. Will this info be available at compile time or should
-  // code be generated to compute the rank?
-  auto resultArrayType = builder.getVarLenSeqTy(resultType, 2);
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, resultRank);
   auto resultMutableBox =
       Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
   auto resultIrBox =

@@ -54,15 +54,10 @@ void Fortran::lower::genCshiftVector(Fortran::lower::FirOpBuilder &builder,
 }
 
 /// Generate call to Matmul intrinsic runtime routine.
-mlir::Value Fortran::lower::genMatmul(Fortran::lower::FirOpBuilder &builder,
-                                      mlir::Location loc, mlir::Value resultBox,
-                                      mlir::Value matrixABox,
-                                      mlir::Value matrixBBox) {
-  mlir::FuncOp func;
-  auto ty = matrixABox.getType();
-  auto arrTy = fir::dyn_cast_ptrOrBoxEleTy(ty);
-
-  func = Fortran::lower::getRuntimeFunc<mkRTKey(Matmul)>(loc, builder);
+void Fortran::lower::genMatmul(Fortran::lower::FirOpBuilder &builder,
+                               mlir::Location loc, mlir::Value resultBox,
+                               mlir::Value matrixABox, mlir::Value matrixBBox) {
+  auto func = Fortran::lower::getRuntimeFunc<mkRTKey(Matmul)>(loc, builder);
   auto fTy = func.getType();
   auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
   auto sourceLine =
@@ -70,7 +65,7 @@ mlir::Value Fortran::lower::genMatmul(Fortran::lower::FirOpBuilder &builder,
   auto args =
       Fortran::lower::createArguments(builder, loc, fTy, resultBox, matrixABox,
                                       matrixBBox, sourceFile, sourceLine);
-  return builder.create<fir::CallOp>(loc, func, args).getResult(0);
+  builder.create<fir::CallOp>(loc, func, args);
 }
 
 /// Generate call to Reshape intrinsic runtime routine.
