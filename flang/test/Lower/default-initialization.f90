@@ -1,4 +1,4 @@
-! Test lowering of allocatable components
+! Test default initialization of local and dummy variables (dynamic initialization)
 ! RUN: bbc -emit-fir %s -o - | FileCheck %s
 
 module test_dinit
@@ -158,26 +158,6 @@ contains
     ! CHECK: return
   end subroutine 
 
-! -----------------------------------------------------------------------------
-!            Test default initialization of global variables.
-! -----------------------------------------------------------------------------
-
-! TODO: Default initialization of static variables. Hits a hard TODO
-! for now.
-
-  !subroutine saved()
-  !  type(t), save :: x
-  !end subroutine
-  !subroutine saved_eq()
-  !  type(tseq), save :: x
-  !  type(tseq), save :: y
-  !  equivalence (x, y)
-  !end subroutine
-  !subroutine saved_eq2()
-  !  type(tseq), save :: x
-  !  integer, save :: i
-  !  equivalence (x, i)
-  !end subroutine
 end module
 
 ! End-to-end test for debug pruposes.
