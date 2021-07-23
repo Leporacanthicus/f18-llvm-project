@@ -338,31 +338,32 @@ struct AllocaOpConversion : public FIROpConversion<fir::AllocaOp> {
       llvm::SmallVector<mlir::Value> lenParams;
       for (; i < end; ++i)
         lenParams.push_back(operands[i]);
-      auto i64Ty = mlir::IntegerType::get(alloc.getContext(), 64);
-      if (auto chrTy = alloc.getInType().dyn_cast<fir::CharacterType>()) {
+      auto scalarType = fir::unwrapSequenceType(alloc.getInType());
+      if (auto chrTy = scalarType.dyn_cast<fir::CharacterType>()) {
         auto rawCharTy = fir::CharacterType::getUnknownLen(chrTy.getContext(),
                                                            chrTy.getFKind());
         ty = mlir::LLVM::LLVMPointerType::get(convertType(rawCharTy));
         assert(end == 1);
-        size = lenParams[0];
-      } else if (auto recTy = alloc.getInType().dyn_cast<fir::RecordType>()) {
+        size = integerCast(loc, rewriter, ity, lenParams[0]);
+      } else if (auto recTy = scalarType.dyn_cast<fir::RecordType>()) {
         auto memSizeFn = getDependentTypeMemSizeFn(recTy, alloc, rewriter);
         auto attr = rewriter.getNamedAttr("callee",
                                           rewriter.getSymbolRefAttr(memSizeFn));
         auto call = rewriter.create<mlir::LLVM::CallOp>(
-            loc, i64Ty, lenParams, llvm::ArrayRef<mlir::NamedAttribute>{attr});
+            loc, ity, lenParams, llvm::ArrayRef<mlir::NamedAttribute>{attr});
         size = call.getResult(0);
         ty = mlir::LLVM::LLVMPointerType::get(
             mlir::IntegerType::get(alloc.getContext(), 8));
       } else {
         return emitError(loc, "unexpected type ")
-               << alloc.getInType() << " with type parameters";
+               << scalarType << " with type parameters";
       }
     }
     if (alloc.hasShapeOperands()) {
       unsigned end = operands.size();
       for (; i < end; ++i)
-        size = rewriter.create<mlir::LLVM::MulOp>(loc, ity, size, operands[i]);
+        size = rewriter.create<mlir::LLVM::MulOp>(
+            loc, ity, size, integerCast(loc, rewriter, ity, operands[i]));
     }
     if (ty == resultTy) {
       // Do not emit the bitcast if ty and resultTy are the same.
@@ -406,9 +407,14 @@ struct AllocMemOpConversion : public FIROpConversion<fir::AllocMemOp> {
     auto mallocFunc = getMalloc(heap, rewriter);
     auto loc = heap.getLoc();
     auto ity = lowerTy().indexType();
+    if (auto recTy =
+            fir::unwrapSequenceType(heap.getType()).dyn_cast<fir::RecordType>())
+      if (recTy.getNumLenParams() != 0)
+        TODO(loc, "fir.allocmem of derived type with length parameters");
     auto size = genTypeSizeInBytes(loc, ity, rewriter, ty);
     for (auto opnd : operands)
-      size = rewriter.create<mlir::LLVM::MulOp>(loc, ity, size, opnd);
+      size = rewriter.create<mlir::LLVM::MulOp>(
+          loc, ity, size, integerCast(loc, rewriter, ity, opnd));
     heap->setAttr("callee", rewriter.getSymbolRefAttr(mallocFunc));
     auto malloc = rewriter.create<mlir::LLVM::CallOp>(
         loc, getVoidPtrType(heap.getContext()), size, heap->getAttrs());
@@ -1914,8 +1920,10 @@ struct XArrayCoorOpConversion
           auto scaling = genConstantIndex(loc, idxTy, rewriter, bitsInChar / 8);
           auto scaledBySize =
               rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, off, scaling);
-          off = rewriter.create<mlir::LLVM::MulOp>(
-              loc, idxTy, scaledBySize, operands[coor.lenParamsOffset()]);
+          auto length = integerCast(loc, rewriter, idxTy,
+                                    operands[coor.lenParamsOffset()]);
+          off = rewriter.create<mlir::LLVM::MulOp>(loc, idxTy, scaledBySize,
+                                                   length);
         } else {
           TODO(loc, "compute size of derived type with type parameters");
         }

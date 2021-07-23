@@ -201,3 +201,15 @@ func @f8(%a : !fir.ref<!fir.array<2x2x!fir.type<t{i:i32}>>>, %i : i32) {
   fir.store %i to %4 : !fir.ref<i32>
   return
 }
+
+// Test casts in in array_coor offset computation when type parameters are not i64
+// CHECK-LABEL: define i8* @f9(
+// CHECK-SAME: i32 %[[I:.*]], i64 %{{.*}}, i64 %{{.*}}, i8* %[[C:.*]])
+func @f9(%i: i32, %e : i64, %j: i64, %c: !fir.ref<!fir.array<?x?x!fir.char<1,?>>>) -> !fir.ref<!fir.char<1,?>> {
+  %s = fir.shape %e, %e : (i64, i64) -> !fir.shape<2>
+  // CHECK: %[[CAST:.*]] = sext i32 %[[I]] to i64
+  // CHECK: %[[OFFSET:.*]] = mul i64 %{{.*}}, %[[CAST]]
+  // CHECK: getelementptr i8, i8* %[[C]], i64 %[[OFFSET]]
+  %a = fir.array_coor %c(%s) %j, %j typeparams %i : (!fir.ref<!fir.array<?x?x!fir.char<1,?>>>, !fir.shape<2>, i64, i64, i32) -> !fir.ref<!fir.char<1,?>>
+  return %a :  !fir.ref<!fir.char<1,?>>
+}
