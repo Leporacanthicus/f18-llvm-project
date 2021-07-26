@@ -79,7 +79,4 @@ subroutine bozchecks
 
   !ERROR: BOZ argument requires an explicit interface
   call implictSub(Z'12345')
-
-  !ERROR: Output item must not be a BOZ literal constant
-  print "(Z18)", Z"76543210"
 end subroutine
