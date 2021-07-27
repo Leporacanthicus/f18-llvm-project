@@ -632,3 +632,30 @@ llvm.func @omp_ordered(%arg0 : i32, %arg1 : i32, %arg2 : i32, %arg3 : i64,
 
   llvm.return
 }
+
+// -----
+
+// CHECK-LABEL: @omp_critical
+llvm.func @omp_critical(%x : !llvm.ptr<i32>, %xval : i32) -> () {
+  // CHECK: call void @__kmpc_critical_with_hint({{.*}}critical_user_.var{{.*}}, i32 0)
+  // CHECK: br label %omp.critical.region
+  // CHECK: omp.critical.region
+  omp.critical {
+  // CHECK: store
+    llvm.store %xval, %x : !llvm.ptr<i32>
+    omp.terminator
+  }
+  // CHECK: call void @__kmpc_end_critical({{.*}}critical_user_.var{{.*}})
+
+  // CHECK: call void @__kmpc_critical_with_hint({{.*}}critical_user_mutex.var{{.*}}, i32 2)
+  // CHECK: br label %omp.critical.region
+  // CHECK: omp.critical.region
+  omp.critical(@mutex) hint(contended) {
+  // CHECK: store
+    llvm.store %xval, %x : !llvm.ptr<i32>
+    omp.terminator
+  }
+  // CHECK: call void @__kmpc_end_critical({{.*}}critical_user_mutex.var{{.*}})
+
+  llvm.return
+}
