@@ -417,27 +417,35 @@ private:
     // Ignore lengths if already constant in the box type (this would trigger an
     // error in the embox).
     llvm::SmallVector<mlir::Value> cleanedLengths;
-    auto cleanedAddr = addr;
-    if (auto charTy = box.getEleTy().dyn_cast<fir::CharacterType>()) {
-      // Cast address to box type so that both input and output type have
-      // unknown or constant lengths.
-      auto bt = box.getBaseTy();
-      auto addrTy = addr.getType();
-      auto type = addrTy.isa<fir::HeapType>() ? fir::HeapType::get(bt)
-                                              : addrTy.isa<fir::PointerType>()
-                                                    ? fir::PointerType::get(bt)
-                                                    : builder.getRefType(bt);
-      cleanedAddr = builder.createConvert(loc, type, addr);
-      if (charTy.getLen() == fir::CharacterType::unknownLen())
-        cleanedLengths.append(lengths.begin(), lengths.end());
-    } else if (box.isDerivedWithLengthParameters()) {
-      TODO(loc, "updating mutablebox of derived type with length parameters");
-      cleanedLengths = lengths;
+    mlir::Value irBox;
+    if (addr.getType().isa<fir::BoxType>()) {
+      // The entity is already boxed.
+      irBox = builder.createConvert(loc, box.getBoxTy(), addr);
+    } else {
+      auto cleanedAddr = addr;
+      if (auto charTy = box.getEleTy().dyn_cast<fir::CharacterType>()) {
+        // Cast address to box type so that both input and output type have
+        // unknown or constant lengths.
+        auto bt = box.getBaseTy();
+        auto addrTy = addr.getType();
+        auto type = addrTy.isa<fir::HeapType>()
+                        ? fir::HeapType::get(bt)
+                        : addrTy.isa<fir::PointerType>()
+                              ? fir::PointerType::get(bt)
+                              : builder.getRefType(bt);
+        cleanedAddr = builder.createConvert(loc, type, addr);
+        if (charTy.getLen() == fir::CharacterType::unknownLen())
+          cleanedLengths.append(lengths.begin(), lengths.end());
+      } else if (box.isDerivedWithLengthParameters()) {
+        TODO(loc, "updating mutablebox of derived type with length parameters");
+        cleanedLengths = lengths;
+      }
+      irBox = builder.create<fir::EmboxOp>(loc, box.getBoxTy(), cleanedAddr,
+                                           shape, emptySlice, cleanedLengths);
     }
-    auto irBox = builder.create<fir::EmboxOp>(
-        loc, box.getBoxTy(), cleanedAddr, shape, emptySlice, cleanedLengths);
     builder.create<fir::StoreOp>(loc, irBox, box.getAddr());
   }
+
   /// Update the set of property variables of the MutableBoxValue.
   void updateMutableProperties(mlir::Value addr, mlir::ValueRange lbounds,
                                mlir::ValueRange extents,
