@@ -744,7 +744,6 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
         break;
       }
     }
-
     ompBuilder->applyDynamicWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
                                           schedType, !loop.nowait(), chunk);
   }
