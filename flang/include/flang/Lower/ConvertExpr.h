@@ -34,6 +34,7 @@ class ShapeOp;
 namespace Fortran::lower {
 
 class AbstractConverter;
+class IterationSpaceExpr;
 class MaskExpr;
 class StatementContext;
 class SymMap;
@@ -114,8 +115,24 @@ void createSomeArrayAssignment(AbstractConverter &converter,
 void createMaskedArrayAssignment(AbstractConverter &converter,
                                  const evaluate::Expr<evaluate::SomeType> &lhs,
                                  const evaluate::Expr<evaluate::SomeType> &rhs,
-                                 Fortran::lower::MaskExpr &masks,
-                                 SymMap &symMap, StatementContext &stmtCtx);
+                                 MaskExpr &masks, SymMap &symMap,
+                                 StatementContext &stmtCtx);
+
+/// Lower a scalar or array assignment expression with a user-defined iteration
+/// space and possibly with masking expression(s).
+///
+/// If the expression is scalar, then the assignment is an array assignment but
+/// the array accesses are explicitly defined by the user and not implied for
+/// each element in the array. Mask expressions are optional.
+///
+/// If the expression has rank, then the assignment has a combined user-defined
+/// iteration space as well as a inner (subordinate) implied iteration
+/// space. The implied iteration space may include WHERE conditions, `masks`.
+void createExplicitIterationSpaceArrayAssignment(
+    AbstractConverter &converter, const evaluate::Expr<evaluate::SomeType> &lhs,
+    const evaluate::Expr<evaluate::SomeType> &rhs,
+    IterationSpaceExpr &iterSpace, MaskExpr &masks, SymMap &symMap,
+    StatementContext &stmtCtx);
 
 /// Lower an assignment to an allocatable array, allocating the array if
 /// it is not allocated yet or reallocation it if it does not conform

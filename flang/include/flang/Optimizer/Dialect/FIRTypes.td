@@ -423,6 +423,12 @@ def fir_SequenceType : FIR_Type<"Sequence", "array"> {
         "mlir::Type":$eleTy), [{
       return get(eleTy.getContext(), shape, eleTy, {});
     }]>,
+    TypeBuilderWithInferredContext<(ins
+        "mlir::Type":$eleTy,
+        "size_t":$dimensions), [{
+      llvm::SmallVector<int64_t> shape(dimensions, getUnknownExtent());
+      return get(eleTy.getContext(), shape, eleTy, {});
+    }]>
   ];
 
   let extraClassDeclaration = [{

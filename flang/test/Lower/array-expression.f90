@@ -199,20 +199,6 @@ subroutine test8(a,b)
   ! CHECK: fir.array_merge_store %[[A]], %[[LOOP]] to %arg0
 end subroutine test8
 
-! This FORALL construct does present a potential loop-carried dependence if
-! implemented naively (and incorrectly). The final value of a(3) must be the
-! value of a(2) before alistair begins execution added to b(2).
-! CHECK-LABEL: func @_QPtest9
-subroutine test9(a,b,n)
-  integer :: n
-  real, intent(inout) :: a(n)
-  real, intent(in) :: b(n)
-  ! CHECK: fir.do_loop
-  alistair: FORALL (i=1:n-1)
-     a(i+1) = a(i) + b(i)
-  END FORALL alistair
-end subroutine test9
-
 ! CHECK-LABEL: func @_QPtest10
 subroutine test10(a,b,c,d)
   interface

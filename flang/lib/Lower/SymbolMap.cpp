@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SymbolMap.h"
+#include "MaskExpr.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "llvm/Support/Debug.h"
 
@@ -285,4 +286,44 @@ bool fir::BoxValue::verify() const {
   if (isCharacter() && explicitParams.size() > 1)
     return false;
   return true;
+}
+
+llvm::raw_ostream &
+Fortran::lower::operator<<(llvm::raw_ostream &s,
+                           const Fortran::lower::MaskExpr &e) {
+  for (auto &xs : e.getMasks()) {
+    s << "{ ";
+    for (auto &x : xs)
+      x->AsFortran(s << '(') << "), ";
+    s << "}\n";
+  }
+  return s;
+}
+
+llvm::raw_ostream &
+Fortran::lower::operator<<(llvm::raw_ostream &s,
+                           const Fortran::lower::IterationSpaceExpr &e) {
+  for (auto &xs : e.dims()) {
+    s << "{ ";
+    for (auto &x : xs.first) {
+      s << '(' << *std::get<0>(x);
+      std::get<1>(x)->AsFortran(s << ';');
+      std::get<2>(x)->AsFortran(s << ';');
+      if (auto *p = std::get<3>(x))
+        p->AsFortran(s << ';');
+      else
+        s << ";1";
+      s << "), ";
+    }
+    if (xs.second)
+      xs.second->AsFortran(s << ", ");
+    s << "}\n";
+  }
+  return s;
+}
+
+void Fortran::lower::MaskExpr::dump() const { llvm::errs() << *this << '\n'; }
+
+void Fortran::lower::IterationSpaceExpr::dump() const {
+  llvm::errs() << *this << '\n';
 }

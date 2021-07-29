@@ -286,21 +286,32 @@ Fortran::lower::FirOpBuilder::createStringLitOp(mlir::Location loc,
 
 mlir::Value
 Fortran::lower::FirOpBuilder::consShape(mlir::Location loc,
-                                        const fir::AbstractArrayBox &arr) {
-  if (arr.lboundsAllOne()) {
-    auto shapeType = fir::ShapeType::get(getContext(), arr.getExtents().size());
-    return create<fir::ShapeOp>(loc, shapeType, arr.getExtents());
-  }
-  auto shapeType =
-      fir::ShapeShiftType::get(getContext(), arr.getExtents().size());
-  SmallVector<mlir::Value> shapeArgs;
+                                        llvm::ArrayRef<mlir::Value> exts) {
+  auto shapeType = fir::ShapeType::get(getContext(), exts.size());
+  return create<fir::ShapeOp>(loc, shapeType, exts);
+}
+
+mlir::Value
+Fortran::lower::FirOpBuilder::consShape(mlir::Location loc,
+                                        llvm::ArrayRef<mlir::Value> shift,
+                                        llvm::ArrayRef<mlir::Value> exts) {
+  auto shapeType = fir::ShapeShiftType::get(getContext(), exts.size());
+  llvm::SmallVector<mlir::Value> shapeArgs;
   auto idxTy = getIndexType();
-  for (auto [lbnd, ext] : llvm::zip(arr.getLBounds(), arr.getExtents())) {
+  for (auto [lbnd, ext] : llvm::zip(shift, exts)) {
     auto lb = createConvert(loc, idxTy, lbnd);
     shapeArgs.push_back(lb);
     shapeArgs.push_back(ext);
   }
   return create<fir::ShapeShiftOp>(loc, shapeType, shapeArgs);
+}
+
+mlir::Value
+Fortran::lower::FirOpBuilder::consShape(mlir::Location loc,
+                                        const fir::AbstractArrayBox &arr) {
+  if (arr.lboundsAllOne())
+    return consShape(loc, arr.getExtents());
+  return consShape(loc, arr.getLBounds(), arr.getExtents());
 }
 
 mlir::Value
@@ -315,7 +326,7 @@ Fortran::lower::FirOpBuilder::createShape(mlir::Location loc,
               fir::ShiftType::get(getContext(), box.getLBounds().size());
           return create<fir::ShiftOp>(loc, shiftType, box.getLBounds());
         }
-        return mlir::Value{};
+        return {};
       },
       [&](const fir::MutableBoxValue &) -> mlir::Value {
         // MutableBoxValue must be read into another category to work with them
@@ -551,10 +562,9 @@ Fortran::lower::getExtents(Fortran::lower::FirOpBuilder &builder,
         return Fortran::lower::readExtents(builder, loc, x);
       },
       [&](const fir::MutableBoxValue &x) -> llvm::SmallVector<mlir::Value> {
-        return Fortran::lower::getExtents(
-            builder, loc,
-            Fortran::lower::genMutableBoxRead(builder, loc, x)
-                .toExtendedValue());
+        auto load = Fortran::lower::genMutableBoxRead(builder, loc, x)
+                        .toExtendedValue();
+        return Fortran::lower::getExtents(builder, loc, load);
       },
       [&](const auto &) -> llvm::SmallVector<mlir::Value> { return {}; });
 }
@@ -654,6 +664,19 @@ Fortran::lower::createStringLiteral(Fortran::lower::FirOpBuilder &builder,
   auto len = builder.createIntegerConstant(
       loc, builder.getCharacterLengthType(), str.size());
   return fir::CharBoxValue{addr, len};
+}
+
+llvm::SmallVector<mlir::Value>
+Fortran::lower::createExtents(Fortran::lower::FirOpBuilder &builder,
+                              mlir::Location loc, fir::SequenceType seqTy) {
+  llvm::SmallVector<mlir::Value> extents;
+  auto idxTy = builder.getIndexType();
+  for (auto ext : seqTy.getShape())
+    extents.emplace_back(
+        ext == fir::SequenceType::getUnknownExtent()
+            ? builder.create<fir::UndefOp>(loc, idxTy).getResult()
+            : builder.createIntegerConstant(loc, idxTy, ext));
+  return extents;
 }
 
 fir::ExtendedValue Fortran::lower::componentToExtendedValue(

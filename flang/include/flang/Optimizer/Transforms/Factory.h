@@ -18,6 +18,7 @@
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "llvm/ADT/iterator_range.h"
 
 namespace mlir {
 class Location;
@@ -151,23 +152,86 @@ inline std::vector<mlir::Value> getOrigins(mlir::Value shapeVal) {
 
 /// Convert the normalized indices on array_fetch and array_update to the
 /// dynamic (and non-zero) origin required by array_coor.
+/// Do not adjust any trailing components in the path as they specify a
+/// particular path into the array value and must already correspond to the
+/// structure of an element.
 template <typename B>
-llvm::SmallVector<mlir::Value> originateIndices(mlir::Location loc, B &builder,
-                                                mlir::Value shapeVal,
-                                                mlir::ValueRange indices) {
+llvm::SmallVector<mlir::Value>
+originateIndices(mlir::Location loc, B &builder, mlir::Type memTy,
+                 mlir::Value shapeVal, mlir::ValueRange indices) {
   llvm::SmallVector<mlir::Value> result;
   auto origins = getOrigins(shapeVal);
-  if (!origins.empty()) {
-    assert(indices.size() == origins.size());
-    for (auto [i, lb] : llvm::zip(indices, origins))
-      result.push_back(builder.template create<mlir::AddIOp>(loc, i, lb));
+  if (origins.empty()) {
+    assert(!shapeVal || mlir::isa<fir::ShapeOp>(shapeVal.getDefiningOp()));
+    auto ty = fir::dyn_cast_ptrOrBoxEleTy(memTy);
+    assert(ty && ty.isa<fir::SequenceType>());
+    auto seqTy = ty.cast<fir::SequenceType>();
+    auto one = builder.template create<mlir::ConstantIndexOp>(loc, 1);
+    const auto dimension = seqTy.getDimension();
+    if (shapeVal) {
+      assert(dimension == mlir::cast<fir::ShapeOp>(shapeVal.getDefiningOp())
+                              .getType()
+                              .getRank());
+    }
+    for (auto i : llvm::enumerate(indices)) {
+      if (i.index() < dimension) {
+        assert(fir::isa_integer(i.value().getType()));
+        result.push_back(
+            builder.template create<mlir::AddIOp>(loc, i.value(), one));
+      } else {
+        result.push_back(i.value());
+      }
+    }
     return result;
   }
-  assert(!shapeVal || mlir::isa<fir::ShapeOp>(shapeVal.getDefiningOp()));
-  auto one = builder.template create<mlir::ConstantIndexOp>(loc, 1);
-  for (auto i : indices)
-    result.push_back(builder.template create<mlir::AddIOp>(loc, i, one));
+  const auto dimension = origins.size();
+  unsigned origOff = 0;
+  for (auto i : llvm::enumerate(indices)) {
+    if (i.index() < dimension)
+      result.push_back(builder.template create<mlir::AddIOp>(
+          loc, i.value(), origins[origOff++]));
+    else
+      result.push_back(i.value());
+  }
   return result;
+}
+
+template <typename B, typename Iter>
+llvm::SmallVector<fir::DoLoopOp> createLoopNest(
+    mlir::Location loc, B &builder, llvm::iterator_range<Iter> lows,
+    llvm::iterator_range<Iter> highs, llvm::iterator_range<Iter> steps,
+    llvm::ArrayRef<mlir::Value> threadedVals, bool unordered = false) {
+  llvm::SmallVector<fir::DoLoopOp> loops;
+  llvm::SmallVector<mlir::Value> inners(threadedVals.begin(),
+                                        threadedVals.end());
+  for (auto iter0 = lows.begin(), iter1 = highs.begin(), iter2 = steps.begin();
+       iter1 != highs.end(); ++iter0, ++iter1, ++iter2) {
+    auto lp = builder.template create<fir::DoLoopOp>(
+        loc, *iter0, *iter1, *iter2, unordered,
+        /*finalCount=*/false, inners);
+    loops.push_back(lp);
+    inners.assign(lp.getRegionIterArgs().begin(), lp.getRegionIterArgs().end());
+    builder.setInsertionPointToStart(lp.getBody());
+  }
+  auto numLoops = loops.size();
+  for (decltype(numLoops) i = 0; i + 1 < numLoops; ++i) {
+    builder.setInsertionPointToEnd(loops[i].getBody());
+    builder.template create<fir::ResultOp>(loc, loops[i + 1].getResults());
+  }
+  builder.setInsertionPointAfter(loops[0]);
+  llvm::errs() << loops[0] << '\n';
+  return loops;
+}
+
+template <typename B>
+llvm::SmallVector<fir::DoLoopOp> createLoopNest(
+    mlir::Location loc, B &builder, llvm::ArrayRef<mlir::Value> lows,
+    llvm::ArrayRef<mlir::Value> highs, llvm::ArrayRef<mlir::Value> steps,
+    llvm::ArrayRef<mlir::Value> threadedVals, bool unordered = false) {
+  return createLoopNest(
+      loc, builder, llvm::make_range(lows.begin(), lows.end()),
+      llvm::make_range(highs.begin(), highs.end()),
+      llvm::make_range(steps.begin(), steps.end()), threadedVals, unordered);
 }
 
 } // namespace fir::factory

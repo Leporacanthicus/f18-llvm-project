@@ -461,6 +461,34 @@ getOrReadExtentsAndShapeOp(mlir::Location loc, mlir::PatternRewriter &rewriter,
   return loadOp.shape();
 }
 
+static mlir::Type toRefType(mlir::Type ty) {
+  if (fir::isa_ref_type(ty))
+    return ty;
+  return fir::ReferenceType::get(ty);
+}
+
+static mlir::Value genCoorOp(mlir::PatternRewriter &rewriter,
+                             mlir::Location loc, mlir::Type eleTy,
+                             mlir::Type resTy, mlir::Value alloc,
+                             mlir::Value shape, mlir::Value slice,
+                             mlir::ValueRange indices,
+                             mlir::ValueRange typeparams) {
+  auto originated = fir::factory::originateIndices(
+      loc, rewriter, alloc.getType(), shape, indices);
+  auto seqTy = fir::dyn_cast_ptrOrBoxEleTy(alloc.getType());
+  assert(seqTy && seqTy.isa<fir::SequenceType>());
+  const auto dimension = seqTy.cast<fir::SequenceType>().getDimension();
+  mlir::Value result = rewriter.create<fir::ArrayCoorOp>(
+      loc, eleTy, alloc, shape, slice,
+      llvm::ArrayRef<mlir::Value>{originated}.take_front(dimension),
+      typeparams);
+  if (dimension < originated.size())
+    result = rewriter.create<fir::CoordinateOp>(
+        loc, resTy, result,
+        llvm::ArrayRef<mlir::Value>{originated}.drop_front(dimension));
+  return result;
+}
+
 namespace {
 /// Conversion of fir.array_update Op.
 /// If there is a conflict for the update, then we need to perform a
@@ -515,11 +543,10 @@ public:
       genArrayCopy(load.getLoc(), rewriter, allocmem, load.memref(), shapeOp,
                    load.getType());
       rewriter.setInsertionPoint(op);
-      auto coor = rewriter.create<ArrayCoorOp>(
-          loc, getEleTy(load.getType()), allocmem, shapeOp, load.slice(),
-          fir::factory::originateIndices(loc, rewriter, shapeOp,
-                                         update.indices()),
-          load.typeparams());
+      auto coor =
+          genCoorOp(rewriter, loc, getEleTy(load.getType()),
+                    toRefType(update.merge().getType()), allocmem, shapeOp,
+                    load.slice(), update.indices(), load.typeparams());
       copyElement(coor);
       auto *storeOp = useMap.lookup(loadOp);
       rewriter.setInsertionPoint(storeOp);
@@ -534,11 +561,10 @@ public:
       LLVM_DEBUG(llvm::outs() << "No, conflict wasn't found\n");
       rewriter.setInsertionPoint(op);
       auto coorTy = getEleTy(load.getType());
-      auto coor = rewriter.create<ArrayCoorOp>(
-          loc, coorTy, load.memref(), load.shape(), load.slice(),
-          fir::factory::originateIndices(loc, rewriter, load.shape(),
-                                         update.indices()),
-          load.typeparams());
+      auto coor =
+          genCoorOp(rewriter, loc, coorTy, toRefType(update.merge().getType()),
+                    load.memref(), load.shape(), load.slice(), update.indices(),
+                    load.typeparams());
       copyElement(coor);
     }
     update.replaceAllUsesWith(load.getResult());
@@ -595,12 +621,14 @@ public:
     auto ty = getEleTy(arrTy);
     auto fromAddr = rewriter.create<fir::ArrayCoorOp>(
         loc, ty, src, shapeOp, mlir::Value{},
-        fir::factory::originateIndices(loc, rewriter, shapeOp, indices),
+        fir::factory::originateIndices(loc, rewriter, src.getType(), shapeOp,
+                                       indices),
         mlir::ValueRange{});
     auto load = rewriter.create<fir::LoadOp>(loc, fromAddr);
     auto toAddr = rewriter.create<fir::ArrayCoorOp>(
         loc, ty, dst, shapeOp, mlir::Value{},
-        fir::factory::originateIndices(loc, rewriter, shapeOp, indices),
+        fir::factory::originateIndices(loc, rewriter, dst.getType(), shapeOp,
+                                       indices),
         mlir::ValueRange{});
     rewriter.create<fir::StoreOp>(loc, load, toAddr);
     rewriter.restoreInsertionPoint(insPt);
@@ -624,14 +652,12 @@ public:
     rewriter.setInsertionPoint(op);
     auto load = mlir::cast<ArrayLoadOp>(useMap.lookup(op));
     auto loc = fetch.getLoc();
-    auto coor = rewriter.create<ArrayCoorOp>(
-        loc, getEleTy(load.getType()), load.memref(), load.shape(),
-        load.slice(),
-        fir::factory::originateIndices(loc, rewriter, load.shape(),
-                                       fetch.indices()),
-        load.typeparams());
+    auto coor =
+        genCoorOp(rewriter, loc, getEleTy(load.getType()),
+                  toRefType(fetch.getType()), load.memref(), load.shape(),
+                  load.slice(), fetch.indices(), load.typeparams());
     if (fir::isa_ref_type(fetch.getType()))
-      rewriter.replaceOp(fetch, coor.getResult());
+      rewriter.replaceOp(fetch, coor);
     else
       rewriter.replaceOpWithNewOp<fir::LoadOp>(fetch, coor);
     return mlir::success();
