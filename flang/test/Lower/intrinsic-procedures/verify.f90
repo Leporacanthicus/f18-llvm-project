@@ -15,13 +15,13 @@ integer function verify_test(s1, s2)
 ! CHECK: %[[VAL_10:.*]] = fir.zero_bits !fir.heap<i32>
 ! CHECK: %[[VAL_11:.*]] = fir.embox %[[VAL_10]] : (!fir.heap<i32>) -> !fir.box<!fir.heap<i32>>
 ! CHECK: fir.store %[[VAL_11]] to %[[VAL_2]] : !fir.ref<!fir.box<!fir.heap<i32>>>
-! CHECK: %[[VAL_12:.*]] = fir.address_of(@_QQcl.{{[0-9a-z]+}}) : !fir.ref<!fir.char<1,86>>
+! CHECK: %[[VAL_12:.*]] = fir.address_of(@_QQcl.{{[0-9a-z]+}}) : !fir.ref<!fir.char<1,{{[0-9]*}}>>
 ! CHECK: %[[VAL_13:.*]] = constant {{[0-9]+}} : i32
 ! CHECK: %[[VAL_14:.*]] = fir.convert %[[VAL_2]] : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK: %[[VAL_15:.*]] = fir.convert %[[VAL_8]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
 ! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_9]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
 ! CHECK: %[[VAL_17:.*]] = fir.convert %[[VAL_7]] : (!fir.box<i1>) -> !fir.box<none>
-! CHECK: %[[VAL_18:.*]] = fir.convert %[[VAL_12]] : (!fir.ref<!fir.char<1,86>>) -> !fir.ref<i8>
+! CHECK: %[[VAL_18:.*]] = fir.convert %[[VAL_12]] : (!fir.ref<!fir.char<1,{{[0-9]*}}>>) -> !fir.ref<i8>
 ! CHECK: %[[VAL_19:.*]] = fir.call @_FortranAVerify(%[[VAL_14]], %[[VAL_15]], %[[VAL_16]], %[[VAL_17]], %[[VAL_6]], %[[VAL_18]], %[[VAL_13]]) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, !fir.box<none>, i32, !fir.ref<i8>, i32) -> none
 ! CHECK: %[[VAL_20:.*]] = fir.load %[[VAL_2]] : !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK: %[[VAL_21:.*]] = fir.box_addr %[[VAL_20]] : (!fir.box<!fir.heap<i32>>) -> !fir.heap<i32>
@@ -54,3 +54,6 @@ integer function verify_test2(s1, s2)
   character(*) :: s1, s2
   verify_test2 = verify(s1, s2, .true.)
 end function verify_test2
+
+! CHECK: func private @{{.*}}Verify(
+! CHECK: func private @{{.*}}Verify1(
