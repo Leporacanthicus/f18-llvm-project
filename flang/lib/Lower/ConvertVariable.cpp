@@ -392,17 +392,7 @@ static mlir::Value createNewLocal(Fortran::lower::AbstractConverter &converter,
   const auto &ultimateSymbol = var.getSymbol().GetUltimate();
   auto symNm = toStringRef(ultimateSymbol.name());
   auto isTarg = var.isTarget();
-  if (shape.size())
-    if (auto arrTy = ty.dyn_cast<fir::SequenceType>()) {
-      // elide the constant dimensions before construction
-      assert(shape.size() == arrTy.getDimension());
-      llvm::SmallVector<mlir::Value> args;
-      auto typeShape = arrTy.getShape();
-      for (unsigned i = 0, end = arrTy.getDimension(); i < end; ++i)
-        if (typeShape[i] == fir::SequenceType::getUnknownExtent())
-          args.push_back(shape[i]);
-      return builder.allocateLocal(loc, ty, nm, symNm, args, lenParams, isTarg);
-    }
+  // Let the builder do all the heavy lifting.
   return builder.allocateLocal(loc, ty, nm, symNm, shape, lenParams, isTarg);
 }
 
