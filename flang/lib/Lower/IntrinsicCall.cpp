@@ -494,6 +494,7 @@ struct IntrinsicLibrary {
   mlir::Value genNint(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNot(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
+  fir::ExtendedValue genPack(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genPresent(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   fir::ExtendedValue genProduct(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   void genRandomInit(llvm::ArrayRef<fir::ExtendedValue>);
@@ -747,6 +748,10 @@ static constexpr IntrinsicHandler handlers[]{
     {"nint", &I::genNint},
     {"not", &I::genNot},
     {"null", &I::genNull, {{{"mold", asInquired}}}, /*isElemental=*/false},
+    {"pack",
+     &I::genPack,
+     {{{"array", asAddr}, {"mask", asAddr}, {"vector", asAddr}}},
+     /*isElemental=*/false},
     {"present",
      &I::genPresent,
      {{{"a", asInquired}}},
@@ -2602,6 +2607,38 @@ IntrinsicLibrary::genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue> args) {
                                                   mold->nonDeferredLenParams());
   builder.create<fir::StoreOp>(loc, box, boxStorage);
   return fir::MutableBoxValue(boxStorage, mold->nonDeferredLenParams(), {});
+}
+
+// PACK
+fir::ExtendedValue
+IntrinsicLibrary::genPack(mlir::Type resultType,
+                          llvm::ArrayRef<fir::ExtendedValue> args) {
+  auto numArgs = args.size();
+  assert(numArgs == 2 || numArgs == 3);
+
+  // Handle required array argument
+  auto array = builder.createBox(loc, args[0]);
+
+  // Handle required mask argument
+  auto mask = builder.createBox(loc, args[1]);
+
+  // Handle optional vector argument
+  auto vector = isAbsent(args, 2)
+                    ? builder.create<fir::AbsentOp>(
+                          loc, fir::BoxType::get(builder.getI1Type()))
+                    : builder.createBox(loc, args[2]);
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, 1);
+  auto resultMutableBox =
+      Fortran::lower::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      Fortran::lower::getMutableIRBox(builder, loc, resultMutableBox);
+
+  Fortran::lower::genPack(builder, loc, resultIrBox, array, mask, vector);
+
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for PACK");
 }
 
 // PRESENT

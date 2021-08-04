@@ -68,6 +68,22 @@ void Fortran::lower::genMatmul(Fortran::lower::FirOpBuilder &builder,
   builder.create<fir::CallOp>(loc, func, args);
 }
 
+/// Generate call to Pack intrinsic runtime routine.
+void Fortran::lower::genPack(Fortran::lower::FirOpBuilder &builder,
+                             mlir::Location loc, mlir::Value resultBox,
+                             mlir::Value arrayBox, mlir::Value maskBox,
+                             mlir::Value vectorBox) {
+  auto packFunc = Fortran::lower::getRuntimeFunc<mkRTKey(Pack)>(loc, builder);
+  auto fTy = packFunc.getType();
+  auto sourceFile = Fortran::lower::locationToFilename(builder, loc);
+  auto sourceLine =
+      Fortran::lower::locationToLineNo(builder, loc, fTy.getInput(5));
+  auto args = Fortran::lower::createArguments(builder, loc, fTy, resultBox,
+                                              arrayBox, maskBox, vectorBox,
+                                              sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, packFunc, args);
+}
+
 /// Generate call to Reshape intrinsic runtime routine.
 void Fortran::lower::genReshape(Fortran::lower::FirOpBuilder &builder,
                                 mlir::Location loc, mlir::Value resultBox,

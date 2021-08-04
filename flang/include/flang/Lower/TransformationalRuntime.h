@@ -30,6 +30,10 @@ void genMatmul(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value matrixABox, mlir::Value matrixBBox,
                mlir::Value resultBox);
 
+void genPack(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+             mlir::Value resultBox, mlir::Value arrayBox, mlir::Value maskBox,
+             mlir::Value vectorBox);
+
 void genReshape(FirOpBuilder &builder, mlir::Location loc,
                 mlir::Value resultBox, mlir::Value sourceBox,
                 mlir::Value shapeBox, mlir::Value padBox, mlir::Value orderBox);
