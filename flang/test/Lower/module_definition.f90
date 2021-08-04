@@ -21,10 +21,10 @@ module modEq1
   real :: y2(10)
   equivalence (x1(1), x2(5), x3(10)), (y1, y2(5))
 end module
-! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ex1 : tuple<!fir.array<36xi8>, !fir.array<40xi8>> {
-  ! CHECK: %[[undef:.*]] = fir.undefined tuple<!fir.array<36xi8>, !fir.array<40xi8>>
-  ! CHECK: fir.has_value %[[undef]] : tuple<!fir.array<36xi8>, !fir.array<40xi8>>
-! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ey1 : tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>> {
+! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ex3 : tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>  {
+  ! CHECK: %[[undef:.*]] = fir.undefined tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>
+  ! CHECK: fir.has_value %[[undef]] : tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>
+! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ey2 : tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>> {
   ! CHECK: %[[undef:.*]] = fir.undefined tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>
   ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
   ! CHECK: %[[init:.*]] = fir.insert_value %[[undef]], %[[cst]], [1 : index] : (tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>, f32) -> tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>

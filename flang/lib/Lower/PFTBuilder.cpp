@@ -1688,3 +1688,18 @@ Fortran::lower::pft::buildFuncResultDependencyList(
   variableList[0].pop_back();
   return variableList[0];
 }
+
+Fortran::lower::pft::Variable::AggregateStore::AggregateStore(
+    Interval &&interval, const Fortran::semantics::Scope &scope,
+    const llvm::SmallVector<const semantics::Symbol *> &unorderedVars,
+    bool isDeclaration)
+    : interval{std::move(interval)}, scope{&scope}, vars{unorderedVars},
+      isDecl{isDeclaration} {
+  // Sort the variables according to their offsets (they are coming here in
+  // source order because that is how the front-end is sorting symbol in
+  // scopes).
+  auto compare = [](const semantics::Symbol *a, const semantics::Symbol *b) {
+    return a->offset() < b->offset();
+  };
+  std::sort(vars.begin(), vars.end(), compare);
+}

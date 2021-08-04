@@ -401,11 +401,10 @@ struct Variable {
     AggregateStore(Interval &&interval, const Fortran::semantics::Scope &scope,
                    bool isDeclaration = false)
         : interval{std::move(interval)}, scope{&scope}, isDecl{isDeclaration} {}
-    AggregateStore(Interval &&interval, const Fortran::semantics::Scope &scope,
-                   const llvm::SmallVector<const semantics::Symbol *> &vars,
-                   bool isDeclaration = false)
-        : interval{std::move(interval)}, scope{&scope}, vars{vars},
-          isDecl{isDeclaration} {}
+    AggregateStore(
+        Interval &&interval, const Fortran::semantics::Scope &scope,
+        const llvm::SmallVector<const semantics::Symbol *> &unorderedVars,
+        bool isDeclaration = false);
 
     bool isGlobal() const { return vars.size() > 0; }
     bool isDeclaration() const { return isDecl; }
