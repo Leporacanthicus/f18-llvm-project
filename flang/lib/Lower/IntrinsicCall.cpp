@@ -506,6 +506,7 @@ struct IntrinsicLibrary {
                            llvm::ArrayRef<mlir::Value> args);
   fir::ExtendedValue genScan(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genSign(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  fir::ExtendedValue genSize(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genSpacing(mlir::Type resultType,
                          llvm::ArrayRef<mlir::Value> args);
   fir::ExtendedValue genSpread(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
@@ -792,6 +793,10 @@ static constexpr IntrinsicHandler handlers[]{
        {"kind", asValue}}},
      /*isElemental=*/true},
     {"sign", &I::genSign},
+    {"size",
+     &I::genSize,
+     {{{"array", asAddr}, {"dim", asValue}, {"kind", asValue}}},
+     /*isElemental=*/false},
     {"spacing", &I::genSpacing},
     {"spread",
      &I::genSpread,
@@ -2873,6 +2878,43 @@ mlir::Value IntrinsicLibrary::genSign(mlir::Type resultType,
   auto cmp = builder.create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OLT,
                                           args[1], zero);
   return builder.create<mlir::SelectOp>(loc, cmp, neg, abs);
+}
+
+// SIZE
+fir::ExtendedValue
+IntrinsicLibrary::genSize(mlir::Type resultType,
+                          llvm::ArrayRef<fir::ExtendedValue> args) {
+  // TODO: handle assumed-rank arrays, especially a dummy whose actual argument
+  // is an assumed-size array
+  assert(args.size() == 3);
+
+  // Calls to SIZE that don't have the DIM argument are handled elsewhere
+  assert(!isAbsent(args[1]));
+
+  // Handle the ARRAY argument
+  auto array = builder.createBox(loc, args[0]);
+
+  // Handle the DIM argument.  Note that the lowering code never sees a call
+  // to SIZE that doesn't have a DIM argument.  If the Fortran source has such
+  // a call, the front end changes it to an expression that consists of the
+  // product of a set of calls to SIZE(ARRAY, DIM) where DIM goes from 1 to N
+  // where N is the rank of an array.  For N == 2, for example, a call to
+  // "SIZE(ARRAY)" gets changed to "SIZE(ARRAY, 1) * SIZE(ARRAY, 2)".
+
+  // Convert the Fortran 1-based index to the FIR 0-based index
+  auto indexType = builder.getIndexType();
+  auto oneBasedDim =
+      builder.createConvert(loc, indexType, fir::getBase(args[1]));
+  auto one = builder.createIntegerConstant(loc, indexType, 1);
+  auto zeroBasedDim = builder.create<mlir::SubIOp>(loc, oneBasedDim, one);
+
+  // The value of the KIND argument is already reflected in the resultType
+
+  auto result = builder
+                    .create<fir::BoxDimsOp>(loc, indexType, indexType,
+                                            indexType, array, zeroBasedDim)
+                    .getResult(1);
+  return builder.createConvert(loc, resultType, result);
 }
 
 // SPACING
