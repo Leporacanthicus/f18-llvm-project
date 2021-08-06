@@ -205,6 +205,22 @@ public:
       declareFunction(f);
   }
 
+  /// Return the host symbol if \p sym is a symbol inside an internal procedure
+  /// of a variable that belongs to the host procedure.
+  const Fortran::semantics::Symbol *
+  getIfHostProcedureSymbol(const Fortran::semantics::Symbol &sym) {
+    if (const auto *details =
+            sym.detailsIf<Fortran::semantics::HostAssocDetails>()) {
+      const auto &ultimateSym = details->symbol().GetUltimate();
+      const auto &refScope = Fortran::semantics::GetProgramUnitContaining(sym);
+      const auto &owningScope =
+          Fortran::semantics::GetProgramUnitContaining(ultimateSym);
+      if (refScope != owningScope && !owningScope.IsModule())
+        return &ultimateSym;
+    }
+    return nullptr;
+  }
+
   /// Collects the canonical list of all host associated symbols. These bindings
   /// must be aggregated into a tuple which can then be added to each of the
   /// internal procedure declarations and passed at each call site.
@@ -213,10 +229,9 @@ public:
       llvm::SetVector<const Fortran::semantics::Symbol *> &escapees) {
     for (const auto &var : funit.getOrderedSymbolTable()) {
       const auto &sym = var.getSymbol();
-      if (const auto *details =
-              sym.detailsIf<Fortran::semantics::HostAssocDetails>()) {
+      if (const auto *escapingSym = getIfHostProcedureSymbol(sym)) {
         LLVM_DEBUG(llvm::dbgs() << "host associated symbol " << sym << '\n');
-        escapees.insert(&details->symbol());
+        escapees.insert(escapingSym);
       }
     }
   }
@@ -2265,9 +2280,10 @@ private:
     // The front-end is currently not adding module variables referenced
     // in a module procedure as host associated. As a result we need to
     // instantiate all module variables here if this is a module procedure.
-    // It is likely that the front-end behaviour should change here.
-    if (auto *module =
-            funit.parent.getIf<Fortran::lower::pft::ModuleLikeUnit>())
+    // It is likely that the front-end behavior should change here.
+    // This also applies to internal procedures inside module procedures.
+    if (auto *module = Fortran::lower::pft::getAncestor<
+            Fortran::lower::pft::ModuleLikeUnit>(funit))
       for (const auto &var : module->getOrderedSymbolTable())
         instantiateVar(var, storeMap);
 
@@ -2282,9 +2298,8 @@ private:
       // Never instantitate host associated variables, as they are already
       // instantiated from an argument tuple. Instead, just bind the symbol to
       // the reference to the host variable, which must be in the map.
-      if (const auto *varDetails =
-              sym.detailsIf<Fortran::semantics::HostAssocDetails>()) {
-        auto hostBox = localSymbols.lookupSymbol(varDetails->symbol());
+      if (const auto *escapingSym = getIfHostProcedureSymbol(sym)) {
+        auto hostBox = localSymbols.lookupSymbol(escapingSym);
         assert(hostBox && "host association is not in map");
         localSymbols.addSymbol(sym, hostBox.toExtendedValue());
         continue;

@@ -740,6 +740,16 @@ static parser::CharBlock stmtSourceLoc(const T &stmt) {
   return stmt.visit(common::visitors{[](const auto &x) { return x.source; }});
 }
 
+/// Get the first PFT ancestor node that has type ParentType.
+template <typename ParentType, typename A>
+ParentType *getAncestor(A &node) {
+  if (auto *seekedParent = node.parent.template getIf<ParentType>())
+    return seekedParent;
+  return node.parent.visit(common::visitors{
+      [](Program &p) -> ParentType * { return nullptr; },
+      [](auto &p) -> ParentType * { return getAncestor<ParentType>(p); }});
+}
+
 } // namespace Fortran::lower::pft
 
 namespace Fortran::lower {
