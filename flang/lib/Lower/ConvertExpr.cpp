@@ -3576,18 +3576,35 @@ public:
       } break;
       case PassBy::BaseAddressValueAttribute: {
         // VALUE attribute or pass-by-reference to a copy semantics. (byval*)
-        PushSemantics(ConstituentSemantics::ByValueArg);
-        auto lambda = genarr(*expr);
-        operands[arg.firArgument] = [=](IterSpace iters) {
-          return lambda(iters);
-        };
+        if (isArray(*expr)) {
+          PushSemantics(ConstituentSemantics::ByValueArg);
+          auto lambda = genarr(*expr);
+          operands[arg.firArgument] = [=](IterSpace iters) {
+            return lambda(iters);
+          };
+        } else {
+          // Store scalar value in a temp to fulfill VALUE attribute.
+          auto val = fir::getBase(asScalar(*expr));
+          auto temp = builder.createTemporary(
+              loc, val.getType(),
+              llvm::ArrayRef<mlir::NamedAttribute>{getAdaptToByRefAttr()});
+          builder.create<fir::StoreOp>(loc, val, temp);
+          operands[arg.firArgument] = [=](IterSpace iters) -> ExtValue {
+            return temp;
+          };
+        }
       } break;
       case PassBy::BaseAddress: {
-        PushSemantics(ConstituentSemantics::RefOpaque);
-        auto lambda = genarr(*expr);
-        operands[arg.firArgument] = [=](IterSpace iters) {
-          return lambda(iters);
-        };
+        if (isArray(*expr)) {
+          PushSemantics(ConstituentSemantics::RefOpaque);
+          auto lambda = genarr(*expr);
+          operands[arg.firArgument] = [=](IterSpace iters) {
+            return lambda(iters);
+          };
+        } else {
+          auto exv = asScalarRef(*expr);
+          operands[arg.firArgument] = [=](IterSpace iters) { return exv; };
+        }
       } break;
       case PassBy::CharBoxValueAttribute:
         TODO(loc, "CHARACTER, VALUE");
