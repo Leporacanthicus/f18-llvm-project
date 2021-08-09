@@ -123,6 +123,9 @@ static bool ParseFrontendArgs(FrontendOptions &opts, llvm::opt::ArgList &args,
     case clang::driver::options::OPT_fsyntax_only:
       opts.programAction = ParseSyntaxOnly;
       break;
+    case clang::driver::options::OPT_emit_fir:
+      opts.programAction = EmitFir;
+      break;
     case clang::driver::options::OPT_emit_obj:
       opts.programAction = EmitObj;
       break;

@@ -1,3 +1,5 @@
+get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
+
 add_flang_library(flangFrontend
   CompilerInstance.cpp
   CompilerInvocation.cpp
@@ -19,6 +21,15 @@ add_flang_library(flangFrontend
   FortranLower
   clangBasic
   clangDriver
+  FIRDialect
+  FIRAnalysis
+  FIRSupport
+  FIRTransforms
+  FIRBuilder
+  FIRRuntime
+  ${dialect_libs}
+  MLIRAffineToStandard
+  MLIRSCFToStandard
 
   LINK_COMPONENTS
   Option

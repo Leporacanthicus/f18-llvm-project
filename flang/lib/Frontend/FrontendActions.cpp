@@ -11,7 +11,9 @@
 #include "flang/Frontend/CompilerInstance.h"
 #include "flang/Frontend/FrontendOptions.h"
 #include "flang/Frontend/PreprocessorOptions.h"
+#include "flang/Lower/Bridge.h"
 #include "flang/Lower/PFTBuilder.h"
+#include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Parser/dump-parse-tree.h"
 #include "flang/Parser/parsing.h"
 #include "flang/Parser/provenance.h"
@@ -22,8 +24,16 @@
 #include "flang/Semantics/unparse-with-symbols.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/raw_ostream.h"
 #include <clang/Basic/Diagnostic.h>
 #include <memory>
+#include "mlir/IR/Dialect.h"
+#include "flang/Optimizer/Support/InitFIR.h"
+#include "flang/Optimizer/Support/KindMapping.h"
+#include "flang/Lower/Bridge.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LogicalResult.h"
+#include "flang/Lower/Support/Verifier.h"
 
 using namespace Fortran::frontend;
 
@@ -43,6 +53,10 @@ bool PrescanAndSemaAction::BeginSourceFileAction() {
 bool PrescanAndSemaDebugAction::BeginSourceFileAction() {
   // Semantic checks are made to succeed unconditionally.
   return RunPrescan() && RunParse() && (RunSemanticChecks() || true);
+}
+
+bool CodeGenAction::BeginSourceFileAction() {
+  return RunPrescan() & RunParse() && RunSemanticChecks();
 }
 
 //===----------------------------------------------------------------------===//
@@ -355,6 +369,65 @@ void GetSymbolsSourcesAction::ExecuteAction() {
 
   ci.semantics().DumpSymbolsSources(llvm::outs());
 }
+
+// Translate front-end KINDs for use in the IR and code gen. Extracted from
+// bbc.cpp.
+// TODO: How to share this with bbc.cpp?
+static std::vector<fir::KindTy>
+fromDefaultKinds(const Fortran::common::IntrinsicTypeDefaultKinds &defKinds) {
+  return {static_cast<fir::KindTy>(defKinds.GetDefaultKind(
+              Fortran::common::TypeCategory::Character)),
+          static_cast<fir::KindTy>(
+              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Complex)),
+          static_cast<fir::KindTy>(defKinds.doublePrecisionKind()),
+          static_cast<fir::KindTy>(
+              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Integer)),
+          static_cast<fir::KindTy>(
+              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Logical)),
+          static_cast<fir::KindTy>(
+              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Real))};
+}
+
+void EmitFirAction::ExecuteAction() {
+  CompilerInstance &ci = this->instance();
+
+  // Load the MLIR dialects required by Flang
+  mlir::DialectRegistry registry;
+  mlir::MLIRContext ctx(registry);
+  fir::support::registerNonCodegenDialects(registry);
+  fir::support::loadNonCodegenDialects(ctx);
+
+  // Create a LoweringBridge
+  auto &defKinds = ci.invocation().semanticsContext().defaultKinds();
+  fir::KindMapping kindMap(
+      &ctx, llvm::ArrayRef<fir::KindTy>{fromDefaultKinds(defKinds)});
+  auto lb = Fortran::lower::LoweringBridge::create(ctx, defKinds,
+      ci.invocation().semanticsContext().intrinsics(), ci.parsing().allCooked(),
+      "", kindMap);
+
+  // Create PFT and lower it to FIR
+  auto &parseTree{*ci.parsing().parseTree()};
+  lb.lower(parseTree, ci.invocation().semanticsContext());
+
+  // Run the default passes.
+  mlir::PassManager pm(&ctx, mlir::OpPassManager::Nesting::Implicit);
+  pm.enableVerifier(/*verifyPasses=*/true);
+  pm.addPass(std::make_unique<Fortran::lower::VerifierPass>());
+  mlir::ModuleOp mlirModule = lb.getModule();
+  if (mlir::failed(pm.run(mlirModule))) {
+    // TODO: Replace with a diagnostic
+    llvm::errs() << "FATAL: verification of lowering to FIR failed";
+  }
+
+  // Print the output
+  auto os{ci.CreateDefaultOutputFile(
+          /*Binary=*/true, /*InFile=*/GetCurrentFileOrBufferName(), "mlir")};
+  if (!os) {
+    return;
+  }
+
+  mlirModule.print(*os);
+  }
 
 void EmitObjAction::ExecuteAction() {
   CompilerInstance &ci = this->instance();
