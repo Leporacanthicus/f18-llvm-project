@@ -504,6 +504,7 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genReshape(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genRRSpacing(mlir::Type resultType,
                            llvm::ArrayRef<mlir::Value> args);
+  mlir::Value genScale(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genScan(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genSign(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genSize(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
@@ -786,6 +787,10 @@ static constexpr IntrinsicHandler handlers[]{
        {"order", asAddr}}},
      /*isElemental=*/false},
     {"rrspacing", &I::genRRSpacing},
+    {"scale",
+     &I::genScale,
+     {{{"x", asValue}, {"i", asValue}}},
+     /*isElemental=*/true},
     {"scan",
      &I::genScan,
      {{{"string", asAddr},
@@ -2777,6 +2782,18 @@ mlir::Value IntrinsicLibrary::genRRSpacing(mlir::Type resultType,
   return builder.createConvert(
       loc, resultType,
       Fortran::lower::genRRSpacing(builder, loc, fir::getBase(args[0])));
+}
+
+// SCALE
+mlir::Value IntrinsicLibrary::genScale(mlir::Type resultType,
+                                       llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 2);
+
+  auto realX = fir::getBase(args[0]);
+  auto intI = fir::getBase(args[1]);
+
+  return builder.createConvert(
+      loc, resultType, Fortran::lower::genScale(builder, loc, realX, intI));
 }
 
 // SCAN

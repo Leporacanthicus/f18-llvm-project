@@ -6,6 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "flang/Lower/NumericRuntime.h"
 #include "../../runtime/numeric.h"
 #include "RTBuilder.h"
 #include "flang/Lower/Bridge.h"
@@ -14,7 +15,6 @@
 #include "flang/Lower/Support/BoxValue.h"
 #include "flang/Lower/Todo.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "flang/Lower/NumericRuntime.h"
 
 using namespace Fortran::runtime;
 
@@ -45,6 +45,30 @@ struct ForcedRRSpacing16 {
   }
 };
 
+/// Placeholder for real*10 version of Scale Intrinsic
+struct ForcedScale10 {
+  static constexpr const char *name = ExpandAndQuoteKey(RTNAME(Scale10));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto fltTy = mlir::FloatType::getF80(ctx);
+      auto intTy = mlir::IntegerType::get(ctx, 64);
+      return mlir::FunctionType::get(ctx, {fltTy, intTy}, {fltTy});
+    };
+  }
+};
+
+/// Placeholder for real*16 version of Scale Intrinsic
+struct ForcedScale16 {
+  static constexpr const char *name = ExpandAndQuoteKey(RTNAME(Scale16));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto fltTy = mlir::FloatType::getF128(ctx);
+      auto intTy = mlir::IntegerType::get(ctx, 64);
+      return mlir::FunctionType::get(ctx, {fltTy, intTy}, {fltTy});
+    };
+  }
+};
+
 /// Placeholder for real*10 version of Spacing Intrinsic
 struct ForcedSpacing10 {
   static constexpr const char *name = ExpandAndQuoteKey(RTNAME(Spacing10));
@@ -67,10 +91,9 @@ struct ForcedSpacing16 {
   }
 };
 
-/// Generate call to RRSpacing intrinsic runtime routine. 
-mlir::Value
-Fortran::lower::genRRSpacing(Fortran::lower::FirOpBuilder &builder, 
-                           mlir::Location loc, mlir::Value x) { 
+/// Generate call to RRSpacing intrinsic runtime routine.
+mlir::Value Fortran::lower::genRRSpacing(Fortran::lower::FirOpBuilder &builder,
+                                         mlir::Location loc, mlir::Value x) {
   mlir::FuncOp func;
   mlir::Type fltTy = x.getType();
 
@@ -87,16 +110,38 @@ Fortran::lower::genRRSpacing(Fortran::lower::FirOpBuilder &builder,
 
   auto funcTy = func.getType();
   llvm::SmallVector<mlir::Value> args = {
-    builder.createConvert(loc, funcTy.getInput(0), x)
-  };
+      builder.createConvert(loc, funcTy.getInput(0), x)};
 
   return builder.create<fir::CallOp>(loc, func, args).getResult(0);
 }
 
-/// Generate call to Spacing intrinsic runtime routine. 
-mlir::Value
-Fortran::lower::genSpacing(Fortran::lower::FirOpBuilder &builder, 
-                           mlir::Location loc, mlir::Value x) { 
+/// Generate call to Scale intrinsic runtime routine.
+mlir::Value Fortran::lower::genScale(Fortran::lower::FirOpBuilder &builder,
+                                     mlir::Location loc, mlir::Value x,
+                                     mlir::Value i) {
+  mlir::FuncOp func;
+  mlir::Type fltTy = x.getType();
+
+  if (fltTy.isF32())
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(Scale4)>(loc, builder);
+  else if (fltTy.isF64())
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(Scale8)>(loc, builder);
+  else if (fltTy.isF80())
+    func = Fortran::lower::getRuntimeFunc<ForcedScale10>(loc, builder);
+  else if (fltTy.isF128())
+    func = Fortran::lower::getRuntimeFunc<ForcedScale16>(loc, builder);
+  else
+    fir::emitFatalError(loc, "unsupported REAL kind in Scale lowering");
+
+  auto funcTy = func.getType();
+  auto args = Fortran::lower::createArguments(builder, loc, funcTy, x, i);
+
+  return builder.create<fir::CallOp>(loc, func, args).getResult(0);
+}
+
+/// Generate call to Spacing intrinsic runtime routine.
+mlir::Value Fortran::lower::genSpacing(Fortran::lower::FirOpBuilder &builder,
+                                       mlir::Location loc, mlir::Value x) {
   mlir::FuncOp func;
   mlir::Type fltTy = x.getType();
 
@@ -113,8 +158,7 @@ Fortran::lower::genSpacing(Fortran::lower::FirOpBuilder &builder,
 
   auto funcTy = func.getType();
   llvm::SmallVector<mlir::Value> args = {
-    builder.createConvert(loc, funcTy.getInput(0), x)
-  };
+      builder.createConvert(loc, funcTy.getInput(0), x)};
 
   return builder.create<fir::CallOp>(loc, func, args).getResult(0);
 }

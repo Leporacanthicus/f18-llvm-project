@@ -19,14 +19,16 @@ namespace Fortran::lower {
 class FirOpBuilder;
 
 /// Generate call to RRSpacing intrinsic runtime routine.
-mlir::Value
-genRRSpacing(Fortran::lower::FirOpBuilder &builder,
-           mlir::Location loc, mlir::Value x);
+mlir::Value genRRSpacing(Fortran::lower::FirOpBuilder &builder,
+                         mlir::Location loc, mlir::Value x);
+
+/// Generate call to Scale intrinsic runtime routine.
+mlir::Value genScale(Fortran::lower::FirOpBuilder &builder, mlir::Location loc,
+                     mlir::Value x, mlir::Value i);
 
 /// Generate call to Spacing intrinsic runtime routine.
-mlir::Value
-genSpacing(Fortran::lower::FirOpBuilder &builder,
-           mlir::Location loc, mlir::Value x);
+mlir::Value genSpacing(Fortran::lower::FirOpBuilder &builder,
+                       mlir::Location loc, mlir::Value x);
 
-}
+} // namespace Fortran::lower
 #endif
