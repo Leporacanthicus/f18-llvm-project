@@ -1165,3 +1165,101 @@ subroutine test_forall_with_ranked_dimension
   ! CHECK: fir.array_merge_store %[[VAL_5]], %[[V_0]] to %[[VAL_3]] : !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>, !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>, !fir.ref<!fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>>
   ! CHECK: return
 end subroutine test_forall_with_ranked_dimension
+
+! CHECK-LABEL: func @_QPforall_with_allocatable(
+! CHECK-SAME: %[[arg0:[^:]*]]: !fir.box<!fir.array<?xf32>>) {
+subroutine forall_with_allocatable(a1)
+  real :: a1(:)
+  real, allocatable :: arr(:)
+  ! CHECK: %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK: %[[VAL_1:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xf32>>> {bindc_name = "arr", uniq_name = "_QFforall_with_allocatableEarr"}
+  ! CHECK: %[[VAL_2:.*]] = fir.alloca !fir.heap<!fir.array<?xf32>> {uniq_name = "_QFforall_with_allocatableEarr.addr"}
+  ! CHECK: %[[VAL_3:.*]] = fir.alloca index {uniq_name = "_QFforall_with_allocatableEarr.lb0"}
+  ! CHECK: %[[VAL_4:.*]] = fir.alloca index {uniq_name = "_QFforall_with_allocatableEarr.ext0"}
+  ! CHECK: %[[VAL_5:.*]] = fir.zero_bits !fir.heap<!fir.array<?xf32>>
+  ! CHECK: fir.store %[[VAL_5]] to %[[VAL_2]] : !fir.ref<!fir.heap<!fir.array<?xf32>>>
+  ! CHECK: %[[VAL_6:.*]] = fir.load %[[VAL_3]] : !fir.ref<index>
+  ! CHECK: %[[VAL_7:.*]] = fir.load %[[VAL_4]] : !fir.ref<index>
+  ! CHECK: %[[VAL_8:.*]] = fir.load %[[VAL_2]] : !fir.ref<!fir.heap<!fir.array<?xf32>>>
+  ! CHECK: %[[VAL_9:.*]] = fir.shape_shift %[[VAL_6]], %[[VAL_7]] : (index, index) -> !fir.shapeshift<1>
+  ! CHECK: %[[VAL_10:.*]] = fir.array_load %[[VAL_8]](%[[VAL_9]]) : (!fir.heap<!fir.array<?xf32>>, !fir.shapeshift<1>) -> !fir.array<?xf32>
+  ! CHECK: %[[VAL_11:.*]] = fir.array_load %[[arg0]] : (!fir.box<!fir.array<?xf32>>) -> !fir.array<?xf32>
+  ! CHECK: %[[VAL_13:.*]] = constant 5 : i32
+  ! CHECK: %[[VAL_14:.*]] = fir.convert %[[VAL_13]] : (i32) -> index
+  ! CHECK: %[[VAL_15:.*]] = constant 15 : i32
+  ! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i32) -> index
+  ! CHECK: %[[VAL_17:.*]] = constant 1 : index
+
+  ! CHECK: %[[V_0:.*]] = fir.do_loop %[[V_1:.*]] = %[[VAL_14]] to %[[VAL_16]] step %[[VAL_17]] unordered iter_args(%[[V_2:.*]] = %[[VAL_10]]) -> (!fir.array<?xf32>) {
+  ! CHECK: %[[V_3:.*]] = fir.convert %[[V_1]] : (index) -> i32
+  ! CHECK: fir.store %[[V_3]] to %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_4:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_5:.*]] = fir.convert %[[V_4]] : (i32) -> i64
+  ! CHECK: %[[V_6:.*]] = fir.convert %[[V_5]] : (i64) -> index
+  ! CHECK: %[[V_7:.*]] = fir.array_fetch %[[VAL_11]], %[[V_6]] : (!fir.array<?xf32>, index) -> f32
+  ! CHECK: %[[V_8:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_9:.*]] = fir.convert %[[V_8]] : (i32) -> i64
+  ! CHECK: %[[V_10:.*]] = fir.convert %[[V_9]] : (i64) -> index
+  ! CHECK: %[[V_11:.*]] = fir.array_update %[[V_2]], %[[V_7]], %[[V_10]] : (!fir.array<?xf32>, f32, index) -> !fir.array<?xf32>
+  ! CHECK: fir.result %[[V_11]] : !fir.array<?xf32>
+  forall (i=5:15)
+     arr(i) = a1(i)
+  end forall
+  ! CHECK: }
+  ! CHECK: fir.array_merge_store %[[VAL_10]], %[[V_0]] to %[[VAL_8]] : !fir.array<?xf32>, !fir.array<?xf32>, !fir.heap<!fir.array<?xf32>>
+  ! CHECK: return
+end subroutine forall_with_allocatable
+
+! CHECK-LABEL: func @_QPforall_with_allocatable2(
+! CHECK-SAME: %[[arg0:[^:]*]]: !fir.box<!fir.array<?xf32>>) {
+subroutine forall_with_allocatable2(a1)
+  ! CHECK: %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK: %[[VAL_1:.*]] = fir.alloca !fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}> {bindc_name = "thing", uniq_name = "_QFforall_with_allocatable2Ething"}
+  ! CHECK: %[[VAL_2:.*]] = fir.embox %[[VAL_1]] : (!fir.ref<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>
+  ! CHECK: %[[VAL_3:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,{{[0-9]+}}>>
+  ! CHECK: %[[VAL_4:.*]] = constant {{[0-9]+}} : i32
+  ! CHECK: %[[VAL_5:.*]] = fir.convert %[[VAL_2]] : (!fir.box<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<none>
+  ! CHECK: %[[VAL_6:.*]] = fir.convert %[[VAL_3]] : (!fir.ref<!fir.char<1,{{[0-9]+}}>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_7:.*]] = fir.call @_FortranAInitialize(%[[VAL_5]], %[[VAL_6]], %[[VAL_4]]) : (!fir.box<none>, !fir.ref<i8>, i32) -> none
+  ! CHECK: %[[VAL_8:.*]] = fir.field_index arr, !fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>
+  ! CHECK: %[[VAL_9:.*]] = fir.coordinate_of %[[VAL_1]], %[[VAL_8]] : (!fir.ref<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>, !fir.field) -> !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
+  ! CHECK: %[[VAL_10:.*]] = fir.load %[[VAL_9]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
+  ! CHECK: %[[VAL_11:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_12:.*]]:3 = fir.box_dims %[[VAL_10]], %[[VAL_11]] : (!fir.box<!fir.heap<!fir.array<?xf32>>>, index) -> (index, index, index)
+  ! CHECK: %[[VAL_13:.*]] = fir.box_addr %[[VAL_10]] : (!fir.box<!fir.heap<!fir.array<?xf32>>>) -> !fir.heap<!fir.array<?xf32>>
+  ! CHECK: %[[VAL_14:.*]] = fir.shape_shift %[[VAL_12]]#0, %[[VAL_12]]#1 : (index, index) -> !fir.shapeshift<1>
+  ! CHECK: %[[VAL_15:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_16:.*]] = fir.slice %[[VAL_12]]#0, %[[VAL_12]]#1, %[[VAL_15]] : (index, index, index) -> !fir.slice<1>
+  ! CHECK: %[[VAL_17:.*]] = fir.array_load %[[VAL_13]](%[[VAL_14]]) {{\[}}%[[VAL_16]]] : (!fir.heap<!fir.array<?xf32>>, !fir.shapeshift<1>, !fir.slice<1>) -> !fir.array<?xf32>
+  ! CHECK: %[[VAL_18:.*]] = fir.array_load %[[arg0]] : (!fir.box<!fir.array<?xf32>>) -> !fir.array<?xf32>
+  ! CHECK: %[[VAL_20:.*]] = constant 5 : i32
+  ! CHECK: %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i32) -> index
+  ! CHECK: %[[VAL_22:.*]] = constant 15 : i32
+  ! CHECK: %[[VAL_23:.*]] = fir.convert %[[VAL_22]] : (i32) -> index
+  ! CHECK: %[[VAL_24:.*]] = constant 1 : index
+  real :: a1(:)
+  type t
+     integer :: i
+     real, allocatable :: arr(:)
+  end type t
+  type(t) :: thing
+
+  ! CHECK: %[[V_0:.*]] = fir.do_loop %[[V_1:.*]] = %[[VAL_21]] to %[[VAL_23]] step %[[VAL_24]] unordered iter_args(%[[V_2:.*]] = %[[VAL_17]]) -> (!fir.array<?xf32>) {
+  ! CHECK: %[[V_3:.*]] = fir.convert %[[V_1]] : (index) -> i32
+  ! CHECK: fir.store %[[V_3]] to %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_4:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_5:.*]] = fir.convert %[[V_4]] : (i32) -> i64
+  ! CHECK: %[[V_6:.*]] = fir.convert %[[V_5]] : (i64) -> index
+  ! CHECK: %[[V_7:.*]] = fir.array_fetch %[[VAL_18]], %[[V_6]] : (!fir.array<?xf32>, index) -> f32
+  ! CHECK: %[[V_8:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK: %[[V_9:.*]] = fir.convert %[[V_8]] : (i32) -> i64
+  ! CHECK: %[[V_10:.*]] = fir.convert %[[V_9]] : (i64) -> index
+  ! CHECK: %[[V_11:.*]] = fir.array_update %[[V_2]], %[[V_7]], %[[V_10]] : (!fir.array<?xf32>, f32, index) -> !fir.array<?xf32>
+  ! CHECK: fir.result %[[V_11]] : !fir.array<?xf32>
+  ! CHECK: }
+  forall (i=5:15)
+     thing%arr(i) = a1(i)
+  end forall
+  ! CHECK: fir.array_merge_store %[[VAL_17]], %[[V_0]] to %[[VAL_13]]{{\[}}%[[VAL_16]]] : !fir.array<?xf32>, !fir.array<?xf32>, !fir.heap<!fir.array<?xf32>>, !fir.slice<1>
+  ! CHECK: return
+end subroutine forall_with_allocatable2

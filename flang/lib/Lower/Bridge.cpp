@@ -13,7 +13,7 @@
 #include "flang/Lower/Bridge.h"
 #include "../../runtime/iostat.h"
 #include "ConvertVariable.h"
-#include "MaskExpr.h"
+#include "IterationSpace.h"
 #include "StatementContext.h"
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/CallInterface.h"
@@ -1188,7 +1188,7 @@ private:
   }
 
   void genFIR(const Fortran::parser::ConcurrentHeader &header) {
-    iterSpaces.growStack();
+    explicitIterSpace.growStack();
     // Create our iteration space from the header spec.
     localSymbols.pushScope();
     for (auto &ctrl :
@@ -1201,13 +1201,13 @@ private:
       const auto *step = optStep.has_value()
                              ? Fortran::semantics::GetExpr(optStep.value())
                              : nullptr; /* default; step is 1 */
-      iterSpaces.emplace_back(ctrlVar, lo, hi, step);
+      explicitIterSpace.emplace_back(ctrlVar, lo, hi, step);
     }
     // If it exists, add the mask expression to the stack.
     if (auto &mask =
             std::get<std::optional<Fortran::parser::ScalarLogicalExpr>>(
                 header.t))
-      iterSpaces.setMaskExpr(Fortran::semantics::GetExpr(*mask));
+      explicitIterSpace.setMaskExpr(Fortran::semantics::GetExpr(*mask));
   }
 
   void genFIR(const Fortran::parser::ForallAssignmentStmt &stmt) {
@@ -1216,7 +1216,7 @@ private:
 
   /// Cleanup the FORALL context information when we exit.
   void genCleanupForall() {
-    iterSpaces.shrinkStack();
+    explicitIterSpace.shrinkStack();
     localSymbols.popScope();
   }
 
@@ -1671,29 +1671,31 @@ private:
                                            localSymbols, stmtCtx);
   }
 
+  /// Return true if the current context is a conditionalized and implied
+  /// iteration space.
+  bool implicitIterationSpace() { return !implicitIterSpace.empty(); }
+
   /// Return true if context is currently an explicit iteration space. A scalar
   /// assignment expression may be contextually within a user-defined iteration
   /// space, transforming it into an array expression.
-  bool explicitIterationSpace() { return !iterSpaces.empty(); }
+  bool explicitIterationSpace() { return !explicitIterSpace.empty(); }
 
   /// Generate an array assignment.
   /// This is an assignment expression with rank > 0. The assignment may or may
-  /// not be in a WHERE context.
+  /// not be in a WHERE and/or FORALL context.
   void genArrayAssignment(const Fortran::evaluate::Assignment &assign,
                           Fortran::lower::StatementContext &stmtCtx) {
     if (isWholeAllocatable(assign.lhs)) {
       // Assignment to allocatables may require the lhs to be
       // deallocated/reallocated. See Fortran 2018 10.2.1.3 p3
       auto lhs = genExprMutableBox(toLocation(), assign.lhs);
-      // FIXME: This cannot be correct in a WHERE and/or FORALL context.
-      if (!iterSpaces.empty() || !masks.empty())
-        TODO(toLocation(), "allocatable assignment in WHERE or FORALL context");
-      Fortran::lower::createAllocatableArrayAssignment(*this, lhs, assign.rhs,
-                                                       localSymbols, stmtCtx);
+      Fortran::lower::createAllocatableArrayAssignment(
+          *this, lhs, assign.rhs, explicitIterSpace, implicitIterSpace,
+          localSymbols, stmtCtx);
       return;
     }
 
-    if (masks.empty() && !explicitIterationSpace()) {
+    if (!implicitIterationSpace() && !explicitIterationSpace()) {
       // No masks and the iteration space is implied by the array, so create a
       // simple array assignment.
       Fortran::lower::createSomeArrayAssignment(*this, assign.lhs, assign.rhs,
@@ -1701,24 +1703,20 @@ private:
       return;
     }
 
-    if (explicitIterationSpace()) {
-      // Generate an array assignment with a user-specified iteration space and
-      // possibly with masks. These assignments may *appear* to be scalar
-      // expressions, but the scalar expression is evaluated at all points in
-      // the user-defined space much like an ordinary array assignment. More
-      // specifically, the semantics inside the FORALL much more closely
-      // resembles that of WHERE than a scalar assignment.
-      Fortran::lower::createExplicitIterationSpaceArrayAssignment(
-          *this, assign.lhs, assign.rhs, iterSpaces, masks, localSymbols,
-          iterSpaces.stmtContext());
-      return;
-    }
-
-    // Generate a masked array assignment. The iteration space is implied by the
-    // lhs array expression.
-    Fortran::lower::createMaskedArrayAssignment(*this, assign.lhs, assign.rhs,
-                                                masks, localSymbols,
-                                                masks.stmtContext());
+    // If there is an explicit iteration space, generate an array assignment
+    // with a user-specified iteration space and possibly with masks. These
+    // assignments may *appear* to be scalar expressions, but the scalar
+    // expression is evaluated at all points in the user-defined space much like
+    // an ordinary array assignment. More specifically, the semantics inside the
+    // FORALL much more closely resembles that of WHERE than a scalar
+    // assignment.
+    // Otherwise, generate a masked array assignment. The iteration space is
+    // implied by the lhs array expression.
+    Fortran::lower::createAnyMaskedArrayAssignment(
+        *this, assign.lhs, assign.rhs, explicitIterSpace, implicitIterSpace,
+        localSymbols,
+        explicitIterationSpace() ? explicitIterSpace.stmtContext()
+                                 : implicitIterSpace.stmtContext());
   }
 
   static bool isArraySectionWithoutVectorSubscript(
@@ -1959,7 +1957,7 @@ private:
   }
 
   void genFIR(const Fortran::parser::WhereConstruct &c) {
-    masks.growStack();
+    implicitIterSpace.growStack();
     genNestedStatement(
         std::get<
             Fortran::parser::Statement<Fortran::parser::WhereConstructStmt>>(
@@ -1995,7 +1993,7 @@ private:
         body.u);
   }
   void genFIR(const Fortran::parser::WhereConstructStmt &stmt) {
-    masks.append(Fortran::semantics::GetExpr(
+    implicitIterSpace.append(Fortran::semantics::GetExpr(
         std::get<Fortran::parser::LogicalExpr>(stmt.t)));
   }
   void genFIR(const Fortran::parser::WhereConstruct::MaskedElsewhere &ew) {
@@ -2008,7 +2006,7 @@ private:
       genFIR(body);
   }
   void genFIR(const Fortran::parser::MaskedElsewhereStmt &stmt) {
-    masks.append(Fortran::semantics::GetExpr(
+    implicitIterSpace.append(Fortran::semantics::GetExpr(
         std::get<Fortran::parser::LogicalExpr>(stmt.t)));
   }
   void genFIR(const Fortran::parser::WhereConstruct::Elsewhere &ew) {
@@ -2020,18 +2018,20 @@ private:
       genFIR(body);
   }
   void genFIR(const Fortran::parser::ElsewhereStmt &stmt) {
-    masks.append(nullptr);
+    implicitIterSpace.append(nullptr);
   }
-  void genFIR(const Fortran::parser::EndWhereStmt &) { masks.shrinkStack(); }
+  void genFIR(const Fortran::parser::EndWhereStmt &) {
+    implicitIterSpace.shrinkStack();
+  }
 
   void genFIR(const Fortran::parser::WhereStmt &stmt) {
     Fortran::lower::StatementContext stmtCtx;
     const auto &assign = std::get<Fortran::parser::AssignmentStmt>(stmt.t);
-    masks.growStack();
-    masks.append(Fortran::semantics::GetExpr(
+    implicitIterSpace.growStack();
+    implicitIterSpace.append(Fortran::semantics::GetExpr(
         std::get<Fortran::parser::LogicalExpr>(stmt.t)));
     genAssignment(*assign.typedAssignment->v);
-    masks.shrinkStack();
+    implicitIterSpace.shrinkStack();
   }
 
   void genFIR(const Fortran::parser::PointerAssignmentStmt &stmt) {
@@ -2520,10 +2520,10 @@ private:
   Fortran::parser::CharBlock currentPosition;
 
   /// WHERE statement/construct mask expression stack.
-  Fortran::lower::MaskExpr masks;
+  Fortran::lower::ImplicitIterSpace implicitIterSpace;
 
   /// FORALL context
-  Fortran::lower::IterationSpaceExpr iterSpaces;
+  Fortran::lower::ExplicitIterSpace explicitIterSpace;
 
   /// Tuple of host assoicated variables.
   mlir::Value hostAssocTuple;

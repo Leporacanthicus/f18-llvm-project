@@ -34,8 +34,8 @@ class ShapeOp;
 namespace Fortran::lower {
 
 class AbstractConverter;
-class IterationSpaceExpr;
-class MaskExpr;
+class ExplicitIterSpace;
+class ImplicitIterSpace;
 class StatementContext;
 class SymMap;
 
@@ -100,7 +100,11 @@ void createSomeArrayAssignment(AbstractConverter &converter,
                                const fir::ExtendedValue &rhs, SymMap &symMap,
                                StatementContext &stmtCtx);
 
-/// Lower an array assignment expression with masking expression(s).
+/// Common entry point for both explicit iteration spaces and implicit iteration
+/// spaces with masks.
+///
+/// For an implicit iteration space with masking, lowers an array assignment
+/// expression with masking expression(s).
 ///
 /// 1. Evaluate the lhs to determine the rank and how to form the ArrayLoad
 /// (e.g., if there is a slicing op).
@@ -112,14 +116,10 @@ void createSomeArrayAssignment(AbstractConverter &converter,
 /// 5. Evaluate the elemental expression, threading the results.
 /// 6. Copy the resulting array back with ArrayMergeStore to the lhs as
 /// determined per step 1.
-void createMaskedArrayAssignment(AbstractConverter &converter,
-                                 const evaluate::Expr<evaluate::SomeType> &lhs,
-                                 const evaluate::Expr<evaluate::SomeType> &rhs,
-                                 MaskExpr &masks, SymMap &symMap,
-                                 StatementContext &stmtCtx);
-
-/// Lower a scalar or array assignment expression with a user-defined iteration
-/// space and possibly with masking expression(s).
+///
+/// For an explicit iteration space, lower a scalar or array assignment
+/// expression with a user-defined iteration space and possibly with masking
+/// expression(s).
 ///
 /// If the expression is scalar, then the assignment is an array assignment but
 /// the array accesses are explicitly defined by the user and not implied for
@@ -128,19 +128,20 @@ void createMaskedArrayAssignment(AbstractConverter &converter,
 /// If the expression has rank, then the assignment has a combined user-defined
 /// iteration space as well as a inner (subordinate) implied iteration
 /// space. The implied iteration space may include WHERE conditions, `masks`.
-void createExplicitIterationSpaceArrayAssignment(
+void createAnyMaskedArrayAssignment(
     AbstractConverter &converter, const evaluate::Expr<evaluate::SomeType> &lhs,
     const evaluate::Expr<evaluate::SomeType> &rhs,
-    IterationSpaceExpr &iterSpace, MaskExpr &masks, SymMap &symMap,
-    StatementContext &stmtCtx);
+    ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
+    SymMap &symMap, StatementContext &stmtCtx);
 
 /// Lower an assignment to an allocatable array, allocating the array if
 /// it is not allocated yet or reallocation it if it does not conform
 /// with the right hand side.
 void createAllocatableArrayAssignment(
     AbstractConverter &converter, const fir::MutableBoxValue &lhs,
-    const evaluate::Expr<evaluate::SomeType> &rhs, SymMap &symMap,
-    StatementContext &stmtCtx);
+    const evaluate::Expr<evaluate::SomeType> &rhs,
+    ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
+    SymMap &symMap, StatementContext &stmtCtx);
 
 /// Lower an array expression with "parallel" semantics. Such a rhs expression
 /// is fully evaluated prior to being assigned back to a temporary array.

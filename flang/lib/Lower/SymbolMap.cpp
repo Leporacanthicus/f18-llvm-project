@@ -11,7 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SymbolMap.h"
-#include "MaskExpr.h"
+#include "IterationSpace.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "llvm/Support/Debug.h"
 
@@ -290,7 +290,7 @@ bool fir::BoxValue::verify() const {
 
 llvm::raw_ostream &
 Fortran::lower::operator<<(llvm::raw_ostream &s,
-                           const Fortran::lower::MaskExpr &e) {
+                           const Fortran::lower::ImplicitIterSpace &e) {
   for (auto &xs : e.getMasks()) {
     s << "{ ";
     for (auto &x : xs)
@@ -302,7 +302,7 @@ Fortran::lower::operator<<(llvm::raw_ostream &s,
 
 llvm::raw_ostream &
 Fortran::lower::operator<<(llvm::raw_ostream &s,
-                           const Fortran::lower::IterationSpaceExpr &e) {
+                           const Fortran::lower::ExplicitIterSpace &e) {
   for (auto &xs : e.dims()) {
     s << "{ ";
     for (auto &x : xs.first) {
@@ -322,8 +322,10 @@ Fortran::lower::operator<<(llvm::raw_ostream &s,
   return s;
 }
 
-void Fortran::lower::MaskExpr::dump() const { llvm::errs() << *this << '\n'; }
+void Fortran::lower::ImplicitIterSpace::dump() const {
+  llvm::errs() << *this << '\n';
+}
 
-void Fortran::lower::IterationSpaceExpr::dump() const {
+void Fortran::lower::ExplicitIterSpace::dump() const {
   llvm::errs() << *this << '\n';
 }

@@ -13,7 +13,7 @@
 #include "flang/Lower/ConvertExpr.h"
 #include "BuiltinModules.h"
 #include "ConvertVariable.h"
-#include "MaskExpr.h"
+#include "IterationSpace.h"
 #include "RTBuilder.h"
 #include "StatementContext.h"
 #include "flang/Common/default-kinds.h"
@@ -2497,41 +2497,24 @@ public:
   }
 
   //===--------------------------------------------------------------------===//
-  // WHERE array assignment
-  //===--------------------------------------------------------------------===//
-
-  /// Entry point for masked array assignment, Fortran's WHERE. This has the
-  /// same semantics as ordinary array assignment except that the RHS is a
-  /// projected array value based on the mask condition(s).
-  static void lowerMaskedArrayAssignment(
-      Fortran::lower::AbstractConverter &converter,
-      Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
-      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
-      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
-      Fortran::lower::MaskExpr &masks) {
-    ArrayExprLowering ael{converter, stmtCtx, symMap,
-                          ConstituentSemantics::CopyInCopyOut, &masks};
-    ael.lowerArrayAssignment(lhs, rhs);
-  }
-
-  //===--------------------------------------------------------------------===//
-  // FORALL assignment and FORALL+WHERE array assignment
+  // WHERE array assignment, FORALL assignment, and FORALL+WHERE array
+  // assignment
   //===--------------------------------------------------------------------===//
 
   /// Entry point for array assignment when the iteration space is explicitly
-  /// defined, Fortran's FORALL. This may also include a masked assignment,
-  /// either via the FORALL specification or a WHERE inside the FORALL. This has
-  /// the same semantics as an ordinary masked array assignment except that the
-  /// iteration space and access expressions are explicitly defined by the user.
-  static void lowerExplicitIterSpaceArrayAssignment(
+  /// defined (Fortran's FORALL) with or without masks, and/or the implied
+  /// iteration space involves masks (Fortran's WHERE). Both contexts (explicit
+  /// space and implicit space with masks) may be present.
+  static void lowerAnyMaskedArrayAssignment(
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
-      Fortran::lower::IterationSpaceExpr &iters,
-      Fortran::lower::MaskExpr &masks) {
+      Fortran::lower::ExplicitIterSpace &explicitSpace,
+      Fortran::lower::ImplicitIterSpace &implicitSpace) {
     ArrayExprLowering ael(converter, stmtCtx, symMap,
-                          ConstituentSemantics::CopyInCopyOut, &iters, &masks);
+                          ConstituentSemantics::CopyInCopyOut, &explicitSpace,
+                          &implicitSpace);
     ael.lowerArrayAssignment(lhs, rhs);
   }
 
@@ -2544,15 +2527,20 @@ public:
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const fir::MutableBoxValue &lhs,
-      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs) {
-    // The allocatable must take lower bounds from the expr if reallocated.
-    // An expr has lbounds only if it is an array symbol or component.
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+      Fortran::lower::ExplicitIterSpace &explicitSpace,
+      Fortran::lower::ImplicitIterSpace &implicitSpace) {
     ArrayExprLowering ael(converter, stmtCtx, symMap,
-                          ConstituentSemantics::CopyInCopyOut);
+                          ConstituentSemantics::CopyInCopyOut, &explicitSpace,
+                          &implicitSpace);
     ael.lowerAllocatableArrayAssignment(lhs, rhs);
   }
 
   /// Assignment to allocatable array.
+  ///
+  /// The semantics are reverse that of a "regular" array assignment. The rhs
+  /// defines the iteration space of the computation and the lhs is
+  /// resized/reallocated to fit if necessary.
   void lowerAllocatableArrayAssignment(
       const fir::MutableBoxValue &mutableBox,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs) {
@@ -2575,6 +2563,8 @@ public:
         mutableBox.isDerivedWithLengthParameters())
       TODO(loc, "gather rhs length parameters in assignment to allocatable");
 
+    // The allocatable must take lower bounds from the expr if reallocated.
+    // An expr has lbounds only if it is an array symbol or component.
     llvm::SmallVector<mlir::Value> lbounds;
     // takeLboundsIfRealloc is only true iff the rhs is a single dataref.
     const bool takeLboundsIfRealloc =
@@ -2883,7 +2873,7 @@ public:
   /// 3. Return the temporary array and the shape op that describes it.
   Fortran::lower::MaskAddrAndShape
   genExplicitMaskExpr(Fortran::lower::FrontEndExpr fex) {
-    using FESymbol = Fortran::lower::IterationSpaceExpr::FrontEndSymbol;
+    using FESymbol = Fortran::lower::ExplicitIterSpace::FrontEndSymbol;
     assert(explicitSpace);
     auto loc = getLoc();
 
@@ -3125,7 +3115,7 @@ public:
 
   std::pair<llvm::SmallVector<mlir::Value>, fir::DoLoopOp>
   genExplicitLoopsForWhereMasks(fir::ArrayLoadOp resLd) {
-    using FESymbol = Fortran::lower::IterationSpaceExpr::FrontEndSymbol;
+    using FESymbol = Fortran::lower::ExplicitIterSpace::FrontEndSymbol;
     assert(explicitSpace && "must be a FORALL context");
     auto loc = getLoc();
     auto idxTy = builder.getIndexType();
@@ -4268,9 +4258,11 @@ public:
         x.u);
   }
 
-  template <typename A>
-  std::pair<CC, mlir::Type> raiseBase(const A &x) {
+  std::pair<CC, mlir::Type> raiseBase(const Fortran::semantics::SymbolRef &x) {
     return {genarr(x), raiseBaseType(x)};
+  }
+  std::pair<CC, mlir::Type> raiseBase(const Fortran::evaluate::Component &x) {
+    return {genComponent(x), raiseBaseType(x)};
   }
   template <typename A>
   std::pair<CC, mlir::Type> raiseRankedBase(const A &x) {
@@ -4330,8 +4322,7 @@ public:
                 auto [fopt2, ty2] = raiseRankedBase(s);
                 return {fopt2, ty2, false, true};
               }
-              auto [fopt2, ty2] = raiseBase(s);
-              return {fopt2, ty2, false, false};
+              return {llvm::None, mlir::Type{}, false, false};
             },
             [&](const Fortran::evaluate::CoarrayRef &) -> RaiseRT {
               TODO(getLoc(), "coarray reference");
@@ -4357,6 +4348,50 @@ public:
       return {fopt2, ty2, ranked, true};
     }
     return {fopt, ty, inrank, ranked};
+  }
+  RaiseRT
+  raiseToArray(const Fortran::evaluate::ArrayRef &x,
+               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet) {
+    const auto &base = x.base();
+    auto accessUsesControlVariable = [&]() {
+      for (const auto &subs : x.subscript())
+        if (auto *intExpr =
+                std::get_if<Fortran::evaluate::IndirectSubscriptIntegerExpr>(
+                    &subs.u)) {
+          if (symbolSetsIntersect(
+                  ctrlSet, Fortran::evaluate::CollectSymbols(intExpr->value())))
+            return true;
+        } else {
+          // Subscript is a triplet, so x.Rank() should have been
+          // greater than zero.
+          llvm_unreachable("front end reported the rank of this "
+                           "component 0 but it has triple notation");
+        }
+      return false;
+    };
+    return raiseSubscript(
+        [&]() -> RaiseRT {
+          if (base.IsSymbol()) {
+            auto &sym = base.GetFirstSymbol();
+            if (x.Rank() > 0 || accessUsesControlVariable()) {
+              auto [fopt2, ty2] = raiseBase(sym);
+              return RaiseRT{fopt2, fir::unwrapSequenceType(ty2), false,
+                             x.Rank() > 0};
+            }
+            return RaiseRT{llvm::None, mlir::Type{}, false, false};
+          }
+          // Otherwise, it's a component.
+          auto [fopt, ty, inrank, ranked] =
+              raiseToArray(base.GetComponent(), ctrlSet);
+          if (fopt.hasValue())
+            return RaiseRT{fopt, ty, inrank, ranked};
+          if (x.Rank() > 0 || accessUsesControlVariable()) {
+            auto [fopt2, ty2] = raiseBase(base.GetComponent());
+            return RaiseRT{fopt2, ty2, inrank, x.Rank() > 0};
+          }
+          return RaiseRT{fopt, ty, inrank, ranked};
+        }(),
+        x);
   }
   RaiseRT raiseSubscript(const RaiseRT &tup,
                          const Fortran::evaluate::ArrayRef &x) {
@@ -4470,51 +4505,6 @@ public:
                      prevRanked, ranked};
     }
     return tup;
-  }
-  RaiseRT
-  raiseToArray(const Fortran::evaluate::ArrayRef &x,
-               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet) {
-    const auto &base = x.base();
-    return raiseSubscript(
-        [&]() -> RaiseRT {
-          if (base.IsSymbol()) {
-            auto &sym = base.GetFirstSymbol();
-            auto [fopt2, ty2] = raiseBase(sym);
-            return RaiseRT{fopt2, fir::unwrapSequenceType(ty2), false,
-                           x.Rank() > 0};
-          }
-          auto [fopt, ty, inrank, ranked] =
-              raiseToArray(base.GetComponent(), ctrlSet);
-          if (fopt.hasValue())
-            return RaiseRT{fopt, ty, inrank, ranked};
-          if (x.Rank() > 0) {
-            auto [fopt2, ty2] = raiseBase(x);
-            return RaiseRT{fopt2, ty2, false, true};
-          }
-          auto accessUsesControlVariable = [&]() {
-            for (const auto &subs : x.subscript())
-              if (auto *intExpr = std::get_if<
-                      Fortran::evaluate::IndirectSubscriptIntegerExpr>(
-                      &subs.u)) {
-                if (symbolSetsIntersect(
-                        ctrlSet,
-                        Fortran::evaluate::CollectSymbols(intExpr->value())))
-                  return true;
-              } else {
-                // Subscript is a triplet, so x.Rank() should have been
-                // greater than zero.
-                llvm_unreachable("front end reported the rank of this "
-                                 "component 0 but it has triple notation");
-              }
-            return false;
-          };
-          if (accessUsesControlVariable()) {
-            auto [fopt2, ty2] = raiseBase(base.GetComponent());
-            return RaiseRT{fopt2, ty2, false, false};
-          }
-          return RaiseRT{fopt, ty, inrank, ranked};
-        }(),
-        x);
   }
 
   /// Get all the explicit (user-defined) control symbols.
@@ -4778,10 +4768,13 @@ public:
     return arrTy;
   }
 
+  /// Lower a component path with rank or raise it from a scalar expression to
+  /// have array semantics.
   /// Example: <code>array%baz%qux%waldo</code>
   CC genarr(const Fortran::evaluate::Component &x) {
-    if (explicitSpace)
-      return raiseToArray(x);
+    return explicitSpace ? raiseToArray(x) : genComponent(x);
+  }
+  CC genComponent(const Fortran::evaluate::Component &x) {
     ComponentCollection cmptData;
     auto tup = buildComponentsPath(cmptData, x);
     auto lambda = genSlicePath(std::get<ExtValue>(tup), cmptData.trips,
@@ -5417,19 +5410,13 @@ private:
                              Fortran::lower::StatementContext &stmtCtx,
                              Fortran::lower::SymMap &symMap,
                              ConstituentSemantics sem,
-                             Fortran::lower::MaskExpr *masks)
-      : converter{converter}, builder{converter.getFirOpBuilder()},
-        stmtCtx{stmtCtx}, symMap{symMap}, masks{masks}, semant{sem} {}
-
-  explicit ArrayExprLowering(Fortran::lower::AbstractConverter &converter,
-                             Fortran::lower::StatementContext &stmtCtx,
-                             Fortran::lower::SymMap &symMap,
-                             ConstituentSemantics sem,
-                             Fortran::lower::IterationSpaceExpr *iters,
-                             Fortran::lower::MaskExpr *masks)
+                             Fortran::lower::ExplicitIterSpace *expSpace,
+                             Fortran::lower::ImplicitIterSpace *impSpace)
       : converter{converter}, builder{converter.getFirOpBuilder()},
         stmtCtx{stmtCtx}, symMap{symMap},
-        explicitSpace{iters}, masks{masks}, semant{sem} {}
+        explicitSpace(expSpace->empty() ? nullptr : expSpace),
+        masks(expSpace->empty() && impSpace->empty() ? nullptr : impSpace),
+        semant{sem} {}
 
   mlir::Location getLoc() { return converter.getCurrentLocation(); }
 
@@ -5477,12 +5464,12 @@ private:
   llvm::SmallVector<mlir::Value> slicePath;
   /// If there is a user-defined iteration space, explicitShape will hold the
   /// information from the front end.
-  Fortran::lower::IterationSpaceExpr *explicitSpace = nullptr;
+  Fortran::lower::ExplicitIterSpace *explicitSpace = nullptr;
   /// Even in an explicitly defined iteration space, one can have an
   /// assignment with rank > 0 and thus an implied shape on a component in the
   /// path.
   llvm::SmallVector<mlir::Value> explicitImpliedShape;
-  Fortran::lower::MaskExpr *masks = nullptr;
+  Fortran::lower::ImplicitIterSpace *masks = nullptr;
   ConstituentSemantics semant = ConstituentSemantics::RefTransparent;
   bool inSlice = false;
   // Does the lhs, if any, must take lbounds from rhs if lhs is reallocated ?
@@ -5542,45 +5529,36 @@ void Fortran::lower::createSomeArrayAssignment(
   ArrayExprLowering::lowerArrayAssignment(converter, symMap, stmtCtx, lhs, rhs);
 }
 
-void Fortran::lower::createMaskedArrayAssignment(
+void Fortran::lower::createAnyMaskedArrayAssignment(
     Fortran::lower::AbstractConverter &converter,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
-    Fortran::lower::MaskExpr &masks, Fortran::lower::SymMap &symMap,
-    Fortran::lower::StatementContext &stmtCtx) {
+    Fortran::lower::ExplicitIterSpace &explicitSpace,
+    Fortran::lower::ImplicitIterSpace &implicitSpace,
+    Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx) {
   LLVM_DEBUG(lhs.AsFortran(llvm::dbgs() << "onto array: ") << '\n';
              rhs.AsFortran(llvm::dbgs() << "assign expression: ")
-             << " given mask conditions\n"
-             << masks << '\n';);
-  ArrayExprLowering::lowerMaskedArrayAssignment(converter, symMap, stmtCtx, lhs,
-                                                rhs, masks);
-}
-
-void Fortran::lower::createExplicitIterationSpaceArrayAssignment(
-    Fortran::lower::AbstractConverter &converter,
-    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
-    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
-    Fortran::lower::IterationSpaceExpr &iterSpace,
-    Fortran::lower::MaskExpr &masks, Fortran::lower::SymMap &symMap,
-    Fortran::lower::StatementContext &stmtCtx) {
-  LLVM_DEBUG(lhs.AsFortran(llvm::dbgs() << "onto array: ") << '\n';
-             rhs.AsFortran(llvm::dbgs() << "assign expression: ")
-             << " given iteration space:\n"
-             << iterSpace << "\n and mask conditions:\n"
-             << masks << '\n';);
-  ArrayExprLowering::lowerExplicitIterSpaceArrayAssignment(
-      converter, symMap, stmtCtx, lhs, rhs, iterSpace, masks);
+             << " given the explicit iteration space:\n"
+             << explicitSpace << "\n and implied mask conditions:\n"
+             << implicitSpace << '\n';);
+  ArrayExprLowering::lowerAnyMaskedArrayAssignment(
+      converter, symMap, stmtCtx, lhs, rhs, explicitSpace, implicitSpace);
 }
 
 void Fortran::lower::createAllocatableArrayAssignment(
     Fortran::lower::AbstractConverter &converter,
     const fir::MutableBoxValue &lhs,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+    Fortran::lower::ExplicitIterSpace &explicitSpace,
+    Fortran::lower::ImplicitIterSpace &implicitSpace,
     Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx) {
-  LLVM_DEBUG(llvm::dbgs() << "onto array: " << lhs << '\n';
-             rhs.AsFortran(llvm::dbgs() << "assign expression: ") << '\n';);
-  ArrayExprLowering::lowerAllocatableArrayAssignment(converter, symMap, stmtCtx,
-                                                     lhs, rhs);
+  LLVM_DEBUG(llvm::dbgs() << "defining array: " << lhs << '\n';
+             rhs.AsFortran(llvm::dbgs() << "assign expression: ")
+             << " given the explicit iteration space:\n"
+             << explicitSpace << "\n and implied mask conditions:\n"
+             << implicitSpace << '\n';);
+  ArrayExprLowering::lowerAllocatableArrayAssignment(
+      converter, symMap, stmtCtx, lhs, rhs, explicitSpace, implicitSpace);
 }
 
 fir::ExtendedValue Fortran::lower::createSomeArrayTempValue(

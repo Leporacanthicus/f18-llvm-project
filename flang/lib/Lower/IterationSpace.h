@@ -1,4 +1,4 @@
-//===-- MaskExpr.h ----------------------------------------------*- C++ -*-===//
+//===-- IterationSpace.h ----------------------------------------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_MASKEXPR_H
-#define FORTRAN_LOWER_MASKEXPR_H
+#ifndef FORTRAN_LOWER_ITERATIONSPACE_H
+#define FORTRAN_LOWER_ITERATIONSPACE_H
 
 #include "StatementContext.h"
 #include "flang/Lower/FIRBuilder.h"
@@ -81,17 +81,26 @@ protected:
   StatementContext stmtCtx;
 };
 
-class MaskExpr;
-llvm::raw_ostream &operator<<(llvm::raw_ostream &, const MaskExpr &);
+class ImplicitIterSpace;
+llvm::raw_ostream &operator<<(llvm::raw_ostream &, const ImplicitIterSpace &);
 
-/// Collect WHERE construct mask expressions in the bridge and forward lowering
-/// results in an "evaluate once" semantics. See 10.2.3.2p3, 10.2.3.2p13, etc.
-class MaskExpr
+/// All array expressions have an implicit iteration space, which is isomorphic
+/// to the shape of the base array that facilitates the expression having a
+/// non-zero rank. This implied iteration space may be conditionalized
+/// (disjunctively) with an if-elseif-else like structure, specifically
+/// Fortran's WHERE construct.
+///
+/// This class is used in the bridge to collect the expressions from the
+/// front end (the WHERE construct mask expressions), forward them for lowering
+/// as array expressions in an "evaluate once" (copy-in, copy-out) semantics.
+/// See 10.2.3.2p3, 10.2.3.2p13, etc.
+class ImplicitIterSpace
     : public StackableConstructExpr<llvm::SmallVector<FrontEndExpr>> {
 public:
   using FrontEndMaskExpr = FrontEndExpr;
 
-  friend llvm::raw_ostream &operator<<(llvm::raw_ostream &, const MaskExpr &);
+  friend llvm::raw_ostream &operator<<(llvm::raw_ostream &,
+                                       const ImplicitIterSpace &);
 
   LLVM_DUMP_METHOD void dump() const;
 
@@ -118,12 +127,21 @@ private:
   }
 };
 
-class IterationSpaceExpr;
-llvm::raw_ostream &operator<<(llvm::raw_ostream &, const IterationSpaceExpr &);
+class ExplicitIterSpace;
+llvm::raw_ostream &operator<<(llvm::raw_ostream &, const ExplicitIterSpace &);
 
-/// Capture a stack of lists of concurrent-control expressions to be used to
-/// generate the iteration space for a set of nested FORALL constructs.
-class IterationSpaceExpr
+/// Fortran also allows arrays to be evaluated under constructs which allow the
+/// user to explicitly specify the iteration space using concurrent-control
+/// expressions. These constructs allow the user to define both an iteration
+/// space and explicit access vectors on arrays. These need not be isomorphic.
+/// The explicit iteration spaces may be conditionalized (conjunctively) with an
+/// "and" structure and may be found in FORALL (and DO CONCURRENT) constructs.
+///
+/// This class is used in the bridge to collect a stack of lists of
+/// concurrent-control expressions to be used to generate the iteration space
+/// and associated masks (if any) for a set of nested FORALL constructs around
+/// assignment and WHERE constructs.
+class ExplicitIterSpace
     : public StackableConstructExpr<std::pair<
           llvm::SmallVector<std::tuple<const semantics::Symbol *, FrontEndExpr,
                                        FrontEndExpr, FrontEndExpr>>,
@@ -136,7 +154,7 @@ public:
       std::pair<llvm::SmallVector<IterSpaceDim>, FrontEndExpr>;
 
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &,
-                                       const IterationSpaceExpr &);
+                                       const ExplicitIterSpace &);
 
   LLVM_DUMP_METHOD void dump() const;
 
@@ -202,4 +220,4 @@ private:
 } // namespace lower
 } // namespace Fortran
 
-#endif // FORTRAN_LOWER_MASKEXPR_H
+#endif // FORTRAN_LOWER_ITERATIONSPACE_H
