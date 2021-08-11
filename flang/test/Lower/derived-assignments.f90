@@ -45,7 +45,7 @@ contains
   ! Swap elements on assignment.
   ! CHECK-LABEL: func @_QMm2Pt_to_t(
   ! CHECK-SAME: %[[a1:[^:]*]]: !fir.ref<!fir.type<_QMm2Tt{a:i32,b:i32}>>,
-  ! CHECK-SAME: %[[b1:[^:]*]]: !fir.ref<!fir.type<_QMm2Tt{a:i32,b:i32}>>) 
+  ! CHECK-SAME: %[[b1:[^:]*]]: !fir.ref<!fir.type<_QMm2Tt{a:i32,b:i32}>>)
   subroutine t_to_t(a1,b1)
     type(t), intent(out) :: a1
     type(t), intent(in) :: b1
@@ -136,5 +136,23 @@ subroutine test_ptr_comp(t1, t2)
   ! CHECK: fir.store %[[ptr]] to %[[ptr1coor]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.complex<4>>>>>
 
   ! CHECK: fir.field_index m_i, !fir.type<_QFtest_ptr_compTt{ptr:!fir.box<!fir.ptr<!fir.array<?x!fir.complex<4>>>>,m_i:i32}>
+  t1 = t2
+end subroutine
+
+! CHECK-LABEL: func @_QPtest_box_assign(
+! CHECK-SAME: %[[t1:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>>,
+! CHECK-SAME: %[[t2:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>>)
+subroutine test_box_assign(t1, t2)
+  type t
+     integer :: i
+  end type t
+  type(t), pointer :: t1, t2
+  ! CHECK: %[[t2Load:.*]] = fir.load %[[t2]] : !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>>
+  ! CHECK: %[[t1Load:.*]] = fir.load %[[t1]] : !fir.ref<!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>>
+  ! CHECK: %[[ifield:.*]] = fir.field_index i, !fir.type<_QFtest_box_assignTt{i:i32}>
+  ! CHECK: %[[t2Coor:.*]] = fir.coordinate_of %[[t2Load]], %[[ifield]] : (!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>, !fir.field) -> !fir.ref<i32>
+  ! CHECK: %[[t1Coor:.*]] = fir.coordinate_of %[[t1Load]], %[[ifield]] : (!fir.box<!fir.ptr<!fir.type<_QFtest_box_assignTt{i:i32}>>>, !fir.field) -> !fir.ref<i32>
+  ! CHECK: %[[val:.*]] = fir.load %[[t2Coor]] : !fir.ref<i32>
+  ! CHECK: fir.store %[[val]] to %[[t1Coor]] : !fir.ref<i32>
   t1 = t2
 end subroutine

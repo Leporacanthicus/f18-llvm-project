@@ -1731,7 +1731,7 @@ private:
                            const fir::ExtendedValue &rhs,
                            Fortran::lower::StatementContext &stmtCtx) {
     auto loc = genLocation();
-    auto baseTy = fir::dyn_cast_ptrEleTy(fir::getBase(lhs).getType());
+    auto baseTy = fir::dyn_cast_ptrOrBoxEleTy(fir::getBase(lhs).getType());
     assert(baseTy && "must be a memory type");
     auto lhsTy = baseTy.dyn_cast<fir::RecordType>();
     assert(lhsTy && "must be a record type");
