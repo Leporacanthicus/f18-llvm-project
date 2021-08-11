@@ -657,11 +657,7 @@ subroutine test_forall_with_array_assignment(a,b)
   ! CHECK: %[[VAL_3:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_4:.*]] = fir.array_load %[[a]](%[[VAL_3]]) : (!fir.ref<!fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>>, !fir.shape<1>) -> !fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>
   ! CHECK-DAG: %[[VAL_6:.*]] = constant 64 : i64
-  ! CHECK-DAG: %[[VAL_7:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[VAL_8:.*]] = subi %[[VAL_6]], %{{.*}} : i64
-  ! CHECK-DAG: %[[VAL_9:.*]] = constant 1 : i64
-  ! CHECK: %[[VAL_10:.*]] = addi %[[VAL_8]], %{{.*}} : i64
-  ! CHECK: %[[VAL_11:.*]] = fir.convert %[[VAL_10]] : (i64) -> index
+  ! CHECK: %[[VAL_11:.*]] = fir.convert %[[VAL_6]] : (i64) -> index
   ! CHECK: %[[VAL_12:.*]] = fir.shape %[[VAL_2]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_13:.*]] = fir.array_load %[[b]](%[[VAL_12]]) : (!fir.ref<!fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>>, !fir.shape<1>) -> !fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>
   ! CHECK-DAG: %[[VAL_15:.*]] = constant 1 : index
@@ -717,11 +713,7 @@ subroutine test_nested_forall_where(a,b)
   ! CHECK: %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
   ! CHECK: %[[VAL_6:.*]] = fir.array_load %[[a]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
   ! CHECK-DAG: %[[VAL_8:.*]] = constant 100 : i64
-  ! CHECK-DAG: %[[VAL_9:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[VAL_10:.*]] = subi %[[VAL_8]], %{{.*}} : i64
-  ! CHECK-DAG: %[[VAL_11:.*]] = constant 1 : i64
-  ! CHECK: %[[VAL_12:.*]] = addi %[[VAL_10]], %{{.*}} : i64
-  ! CHECK: %[[VAL_13:.*]] = fir.convert %[[VAL_12]] : (i64) -> index
+  ! CHECK: %[[VAL_13:.*]] = fir.convert %[[VAL_8]] : (i64) -> index
   ! CHECK: %[[VAL_14:.*]] = fir.array_load %[[b]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
   ! CHECK-DAG: %[[VAL_16:.*]] = constant 3.140000e+00 : f32
   ! CHECK-DAG: %[[VAL_17:.*]] = constant 1 : i32
@@ -930,11 +922,7 @@ subroutine test_nested_forall_where(a,b)
      elsewhere
   ! CHECK: %[[YAL_45:.*]] = fir.array_load %[[a]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
   ! CHECK-DAG: %[[YAL_46:.*]] = constant 100 : i64
-  ! CHECK-DAG: %[[YAL_47:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[YAL_48:.*]] = subi %[[YAL_46]], %{{.*}} : i64
-  ! CHECK-DAG: %[[YAL_49:.*]] = constant 1 : i64
-  ! CHECK: %[[YAL_50:.*]] = addi %[[YAL_48]], %{{.*}} : i64
-  ! CHECK: %[[YAL_51:.*]] = fir.convert %[[YAL_50]] : (i64) -> index
+  ! CHECK: %[[YAL_51:.*]] = fir.convert %[[YAL_46]] : (i64) -> index
   ! CHECK: %[[YAL_52:.*]] = fir.array_load %[[b]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
   ! CHECK-DAG: %[[YAL_53:.*]] = constant 1 : index
   ! CHECK-DAG: %[[YAL_54:.*]] = constant 0 : index
@@ -1031,11 +1019,7 @@ subroutine test_forall_with_slice(i1,i2)
   ! CHECK: %[[VAL_4:.*]] = fir.alloca !fir.array<10x10x!fir.type<_QFtest_forall_with_sliceTt{arr:!fir.array<11xi32>}>> {bindc_name = "a", uniq_name = "_QFtest_forall_with_sliceEa"}
   ! CHECK: %[[VAL_5:.*]] = fir.shape %[[VAL_2]], %[[VAL_3]] : (index, index) -> !fir.shape<2>
   ! CHECK: %[[VAL_6:.*]] = fir.array_load %[[VAL_4]](%[[VAL_5]]) : (!fir.ref<!fir.array<10x10x!fir.type<_QFtest_forall_with_sliceTt{arr:!fir.array<11xi32>}>>>, !fir.shape<2>) -> !fir.array<10x10x!fir.type<_QFtest_forall_with_sliceTt{arr:!fir.array<11xi32>}>>
-  ! CHECK-DAG: %[[VAL_7:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[VAL_8:.*]] = constant 5 : i64
-  ! CHECK-DAG: %[[VAL_9:.*]] = constant 15 : i64
-  ! CHECK-DAG: %[[VAL_10:.*]] = subi %[[VAL_9]], %[[VAL_8]] : i64
-  ! CHECK: %[[VAL_11:.*]] = addi %[[VAL_10]], %[[VAL_7]] : i64
+  ! CHECK: %[[VAL_11:.*]] = constant 11 : i64
   ! CHECK: %[[VAL_12:.*]] = fir.convert %[[VAL_11]] : (i64) -> index
   ! CHECK: %[[VAL_13:.*]] = constant 1 : index
   ! CHECK: %[[VAL_14:.*]] = constant 1 : index
