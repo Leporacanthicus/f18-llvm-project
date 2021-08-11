@@ -1108,20 +1108,9 @@ subroutine test_forall_with_ranked_dimension
   ! CHECK-DAG: %[[VAL_3:.*]] = fir.alloca !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>> {bindc_name = "a", uniq_name = "_QFtest_forall_with_ranked_dimensionEa"}
   ! CHECK: %[[VAL_4:.*]] = fir.shape %[[VAL_1]], %[[VAL_2]] : (index, index) -> !fir.shape<2>
   ! CHECK: %[[VAL_5:.*]] = fir.array_load %[[VAL_3]](%[[VAL_4]]) : (!fir.ref<!fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>>, !fir.shape<2>) -> !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>
-  ! CHECK-DAG: %[[VAL_6:.*]] = constant 10 : i64
-  ! CHECK-DAG: %[[VAL_7:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[VAL_8:.*]] = subi %[[VAL_6]], %{{.*}} : i64
-  ! CHECK-DAG: %[[VAL_9:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[VAL_10:.*]] = addi %[[VAL_8]], %{{.*}} : i64
-  ! CHECK-DAG: %[[VAL_11:.*]] = constant 1 : i64
-  ! CHECK-NEXT: %[[VAL_12:.*]] = divi_signed %[[VAL_10]], %{{.*}} : i64
-  ! CHECK: %[[VAL_13:.*]] = constant 0 : i64
-  ! CHECK: %[[VAL_14:.*]] = cmpi sgt, %[[VAL_12]], %[[VAL_13]] : i64
-  ! CHECK: %[[VAL_15:.*]] = select %[[VAL_14]], %[[VAL_12]], %[[VAL_13]] : i64
-  ! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i64) -> index
   ! CHECK: %[[VAL_17:.*]] = constant 1 : index
   ! CHECK: %[[VAL_18:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_19:.*]] = subi %[[VAL_16]], %[[VAL_17]] : index
+  ! CHECK: %[[VAL_19:.*]] = subi %[[VAL_1]], %[[VAL_17]] : index
   ! CHECK: %[[VAL_20:.*]] = constant 1 : i32
   ! CHECK: %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i32) -> index
   ! CHECK: %[[VAL_22:.*]] = constant 5 : i32

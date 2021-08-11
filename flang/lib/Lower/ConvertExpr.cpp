@@ -4411,11 +4411,9 @@ public:
         // from the explicit space, then those dimensions should not be
         // considered as contributing to the implied part of the iteration
         // space.
-        auto optShape = Fortran::evaluate::GetShape(x);
-        assert(optShape.has_value());
         if (explicitImpliedShape.empty()) {
-          llvm::SmallVector<mlir::Value> feShape;
-          convertFEShape(*optShape, feShape);
+          assert(destination && "destination must be set");
+          auto feShape = getShape(destination);
           if (subs.empty()) {
             explicitImpliedShape.assign(feShape);
           } else {
@@ -4433,6 +4431,8 @@ public:
                   vectorCoor[vi++] = genarr(intExpr->value());
                 }
               } else {
+                // This is a triple which may be using an explicit control
+                // variable.
                 explicitImpliedShape.push_back(feShape[ii++]);
               }
           }
