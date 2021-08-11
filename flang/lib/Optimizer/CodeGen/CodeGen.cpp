@@ -251,6 +251,20 @@ protected:
   }
 };
 
+namespace {
+/// Helper function for generating the LLVM IR that computes the size
+/// in bytes for a derived type.
+mlir::Value computeDerivedTypeSize(mlir::Location loc, mlir::Type ptrTy,
+                                   mlir::Type idxTy,
+                                   mlir::ConversionPatternRewriter &rewriter) {
+  auto nullPtr = rewriter.create<mlir::LLVM::NullOp>(loc, ptrTy);
+  mlir::Value one = genConstantIndex(loc, idxTy, rewriter, 1);
+  llvm::SmallVector<mlir::Value> args{nullPtr, one};
+  auto gep = rewriter.create<mlir::LLVM::GEPOp>(loc, ptrTy, args);
+  return rewriter.create<mlir::LLVM::PtrToIntOp>(loc, idxTy, gep);
+}
+} // namespace
+
 /// FIR conversion pattern template
 template <typename FromOp>
 class FIROpAndTypeConversion : public FIROpConversion<FromOp> {
@@ -434,11 +448,7 @@ struct AllocMemOpConversion : public FIROpConversion<fir::AllocMemOp> {
       return genConstantIndex(loc, idxTy, rewriter, size / 8);
 
     // Otherwise, generate the GEP trick in LLVM IR to compute the size.
-    auto nullPtr = rewriter.create<mlir::LLVM::NullOp>(loc, ptrTy);
-    auto one = genConstantIndex(loc, lowerTy().offsetType(), rewriter, 1);
-    auto gep = rewriter.create<mlir::LLVM::GEPOp>(
-        loc, ptrTy, mlir::ValueRange{nullPtr, one});
-    return rewriter.create<mlir::LLVM::PtrToIntOp>(loc, idxTy, gep);
+    return computeDerivedTypeSize(loc, ptrTy, idxTy, rewriter);
   }
 };
 } // namespace
@@ -1309,6 +1319,23 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
         }
       }
 
+    auto hasSubcomp = !xbox.subcomponent().empty();
+    mlir::Value stepExpr;
+    if (hasSubcomp) {
+      // We have a subcomponent. The step value needs to be the number of
+      // bytes per element (which is a derived type).
+      auto ty0 = base.getType();
+      auto ptrTy = ty0.dyn_cast<mlir::LLVM::LLVMPointerType>();
+      assert(ptrTy && "expected pointer type");
+      auto memEleTy = fir::dyn_cast_ptrEleTy(xbox.memref().getType());
+      assert(memEleTy && "expected fir pointer type");
+      auto seqTy = memEleTy.dyn_cast<fir::SequenceType>();
+      assert(seqTy && "expected sequence type");
+      auto seqEleTy = seqTy.getEleTy();
+      auto eleTy = mlir::LLVM::LLVMPointerType::get(convertType(seqEleTy));
+      stepExpr = computeDerivedTypeSize(loc, eleTy, i64Ty, rewriter);
+    }
+
     // Process the array subspace arguments (shape, shift, etc.), if any,
     // translating everything to values in the descriptor wherever the entity
     // has a dynamic array dimension.
@@ -1357,7 +1384,8 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
         dest = insertExtent(rewriter, loc, dest, descIdx, extent);
 
         // store step (scaled by shaped extent)
-        mlir::Value step = prevDim;
+
+        mlir::Value step = hasSubcomp ? stepExpr : prevDim;
         if (hasSlice)
           step = rewriter.create<mlir::LLVM::MulOp>(loc, i64Ty, step,
                                                     operands[sliceOff + 2]);
@@ -1379,15 +1407,19 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
       if (hasSlice)
         sliceOff += 3;
     }
-    auto hasSubcomp = !xbox.subcomponent().empty();
     if (hasSlice || hasSubcomp) {
       llvm::SmallVector<mlir::Value> args = {base, ptrOffset};
       args.append(gepArgs.rbegin(), gepArgs.rend());
       if (hasSubcomp) {
         // For each field in the path add the offset to base via the args list.
-        // In the most general case, some offsets must be computed since they
-        // are not be known until runtime.
-        TODO(loc, "intra-entity slice in fir.embox codegen");
+        // In the most general case, some offsets must be computed since
+        // they are not be known until runtime.
+        if (fir::hasDynamicSize(fir::unwrapSequenceType(
+                fir::unwrapPassByRefType(xbox.memref().getType()))))
+          TODO(loc, "fir.embox codegen dynamic size component in derived type");
+        auto beginOffset = xbox.subcomponentOffset() + operands.begin();
+        auto lastOffset = beginOffset + xbox.subcomponent().size();
+        args.append(beginOffset, lastOffset);
       }
       base = rewriter.create<mlir::LLVM::GEPOp>(loc, base.getType(), args);
     }
