@@ -62,6 +62,8 @@ public:
   /// Take care of type conversions before emboxing.
   /// \p len is converted to the integer type for character lengths if needed.
   mlir::Value createEmboxChar(mlir::Value addr, mlir::Value len);
+  /// Create a fir.boxchar for \p str. If \p str is not in memory, a temp is
+  /// allocated to create the fir.boxchar.
   mlir::Value createEmbox(const fir::CharBoxValue &str);
   /// Embox a string array. Note that the size/shape of the array is not
   /// retrievable from the resulting mlir::Value.
@@ -81,6 +83,9 @@ public:
   /// Allocate a temp of compile time constant length.
   /// Returns related fir.ref<fir.array<len x fir.char<kind>>>.
   fir::CharBoxValue createCharacterTemp(mlir::Type type, int len);
+
+  /// Create a temporary with the same kind, length, and value as source.
+  fir::CharBoxValue createTempFrom(const fir::ExtendedValue &source);
 
   /// Return true if \p type is a character literal type (is
   /// `fir.array<len x fir.char<kind>>`).;

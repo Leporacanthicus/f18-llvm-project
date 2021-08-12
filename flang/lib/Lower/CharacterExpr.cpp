@@ -180,13 +180,21 @@ static mlir::Type getSingletonCharType(mlir::MLIRContext *ctxt, int kind) {
 
 mlir::Value
 Fortran::lower::CharacterExprHelper::createEmbox(const fir::CharBoxValue &box) {
-  // BoxChar require a reference. Base CharBoxValue of CharArrayBoxValue
-  // are ok here (do not require a scalar type)
+  // Base CharBoxValue of CharArrayBoxValue are ok here (do not require a scalar
+  // type)
   auto charTy = recoverCharacterType(box.getBuffer().getType());
   auto boxCharType =
       fir::BoxCharType::get(builder.getContext(), charTy.getFKind());
   auto refType = fir::ReferenceType::get(boxCharType.getEleTy());
-  auto buff = builder.createConvert(loc, refType, box.getBuffer());
+  mlir::Value buff = box.getBuffer();
+  // fir.boxchar requires a memory reference. Allocate temp if the character is
+  // not in memory.
+  if (!fir::isa_ref_type(buff.getType())) {
+    auto temp = builder.createTemporary(loc, buff.getType());
+    builder.create<fir::StoreOp>(loc, buff, temp);
+    buff = temp;
+  }
+  buff = builder.createConvert(loc, refType, buff);
   // Convert in case the provided length is not of the integer type that must
   // be used in boxchar.
   auto len = builder.createConvert(loc, builder.getCharacterLengthType(),
@@ -396,6 +404,24 @@ Fortran::lower::CharacterExprHelper::createCharacterTemp(mlir::Type type,
   auto ref = builder.allocateLocal(loc, charTy, ".chrtmp", "",
                                    /*shape=*/llvm::None, lenParams);
   return {ref, len};
+}
+
+fir::CharBoxValue Fortran::lower::CharacterExprHelper::createTempFrom(
+    const fir::ExtendedValue &source) {
+  const auto *charBox = source.getCharBox();
+  if (!charBox)
+    fir::emitFatalError(loc, "source must be a fir::CharBoxValue");
+  auto len = charBox->getLen();
+  auto sourceTy = charBox->getBuffer().getType();
+  auto temp = createCharacterTemp(sourceTy, len);
+  if (fir::isa_ref_type(sourceTy)) {
+    createCopy(temp, *charBox, len);
+  } else {
+    auto ref = builder.createConvert(loc, builder.getRefType(sourceTy),
+                                     temp.getBuffer());
+    builder.create<fir::StoreOp>(loc, charBox->getBuffer(), ref);
+  }
+  return temp;
 }
 
 // Simple length one character assignment without loops.
