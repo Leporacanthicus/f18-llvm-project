@@ -105,7 +105,7 @@
       ! CHECK: cond_br
       case (.true.)
         n8 = 2
-      ! CHECK-NOT: 888
+      ! CHECK-NOT: constant 888
       case default ! dead
         n8 = 888
     end select

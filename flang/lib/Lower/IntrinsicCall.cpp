@@ -469,7 +469,10 @@ struct IntrinsicLibrary {
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
   template <Extremum, ExtremumBehavior>
   mlir::Value genExtremum(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genExponent(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genFloor(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genFraction(mlir::Type resultType,
+                          mlir::ArrayRef<mlir::Value> args);
   mlir::Value genIand(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genIbclr(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genIbits(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -506,6 +509,8 @@ struct IntrinsicLibrary {
                            llvm::ArrayRef<mlir::Value> args);
   mlir::Value genScale(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genScan(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
+  mlir::Value genSetExponent(mlir::Type resultType,
+                             llvm::ArrayRef<mlir::Value> args);
   mlir::Value genSign(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genSize(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genSpacing(mlir::Type resultType,
@@ -685,7 +690,9 @@ static constexpr IntrinsicHandler handlers[]{
      {{{"vector_a", asAddr}, {"vector_b", asAddr}}},
      /*isElemental=*/false},
     {"dprod", &I::genDprod},
+    {"exponent", &I::genExponent},
     {"floor", &I::genFloor},
+    {"fraction", &I::genFraction},
     {"iachar", &I::genIchar},
     {"iand", &I::genIand},
     {"ibclr", &I::genIbclr},
@@ -798,6 +805,7 @@ static constexpr IntrinsicHandler handlers[]{
        {"back", asValue},
        {"kind", asValue}}},
      /*isElemental=*/true},
+    {"set_exponent", &I::genSetExponent},
     {"sign", &I::genSign},
     {"size",
      &I::genSize,
@@ -2129,6 +2137,17 @@ mlir::Value IntrinsicLibrary::genDprod(mlir::Type resultType,
   return builder.create<mlir::MulFOp>(loc, a, b);
 }
 
+// EXPONENT
+mlir::Value IntrinsicLibrary::genExponent(mlir::Type resultType,
+                                          llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 1);
+
+  return builder.createConvert(
+      loc, resultType,
+      Fortran::lower::genExponent(builder, loc, resultType,
+                                  fir::getBase(args[0])));
+}
+
 // FLOOR
 mlir::Value IntrinsicLibrary::genFloor(mlir::Type resultType,
                                        llvm::ArrayRef<mlir::Value> args) {
@@ -2139,6 +2158,17 @@ mlir::Value IntrinsicLibrary::genFloor(mlir::Type resultType,
   auto floor = genRuntimeCall("floor", arg.getType(), {arg});
   return builder.createConvert(loc, resultType, floor);
 }
+
+// FRACTION
+mlir::Value IntrinsicLibrary::genFraction(mlir::Type resultType,
+                                          llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 1);
+
+  return builder.createConvert(
+      loc, resultType,
+      Fortran::lower::genFraction(builder, loc, fir::getBase(args[0])));
+}
+
 // IAND
 mlir::Value IntrinsicLibrary::genIand(mlir::Type resultType,
                                       llvm::ArrayRef<mlir::Value> args) {
@@ -2880,6 +2910,17 @@ IntrinsicLibrary::genScan(mlir::Type resultType,
       [&](const auto &) -> fir::ExtendedValue {
         fir::emitFatalError(loc, "unexpected result for SCAN");
       });
+}
+
+// SET_EXPONENT
+mlir::Value IntrinsicLibrary::genSetExponent(mlir::Type resultType,
+                                             llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 2);
+
+  return builder.createConvert(
+      loc, resultType,
+      Fortran::lower::genSetExponent(builder, loc, fir::getBase(args[0]),
+                                     fir::getBase(args[1])));
 }
 
 // SIGN
