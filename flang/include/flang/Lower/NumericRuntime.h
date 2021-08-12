@@ -27,6 +27,10 @@ mlir::Value genExponent(Fortran::lower::FirOpBuilder &builder,
 mlir::Value genFraction(Fortran::lower::FirOpBuilder &builder,
                         mlir::Location loc, mlir::Value x);
 
+/// Generate call to Nearest intrinsic runtime routine.
+mlir::Value genNearest(Fortran::lower::FirOpBuilder &builder,
+                       mlir::Location loc, mlir::Value x, mlir::Value s);
+
 /// Generate call to RRSpacing intrinsic runtime routine.
 mlir::Value genRRSpacing(Fortran::lower::FirOpBuilder &builder,
                          mlir::Location loc, mlir::Value x);

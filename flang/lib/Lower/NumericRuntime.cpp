@@ -91,6 +91,30 @@ struct ForcedFraction16 {
   }
 };
 
+/// Placeholder for real*10 version of Nearest Intrinsic
+struct ForcedNearest10 {
+  static constexpr const char *name = ExpandAndQuoteKey(RTNAME(Nearest10));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto fltTy = mlir::FloatType::getF80(ctx);
+      auto boolTy = mlir::IntegerType::get(ctx, 1);
+      return mlir::FunctionType::get(ctx, {fltTy, boolTy}, {fltTy});
+    };
+  }
+};
+
+/// Placeholder for real*16 version of Nearest Intrinsic
+struct ForcedNearest16 {
+  static constexpr const char *name = ExpandAndQuoteKey(RTNAME(Nearest16));
+  static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+    return [](mlir::MLIRContext *ctx) {
+      auto fltTy = mlir::FloatType::getF128(ctx);
+      auto boolTy = mlir::IntegerType::get(ctx, 1);
+      return mlir::FunctionType::get(ctx, {fltTy, boolTy}, {fltTy});
+    };
+  }
+};
+
 /// Placeholder for real*10 version of RRSpacing Intrinsic
 struct ForcedRRSpacing10 {
   static constexpr const char *name = ExpandAndQuoteKey(RTNAME(RRSpacing10));
@@ -216,6 +240,42 @@ mlir::Value Fortran::lower::genFraction(Fortran::lower::FirOpBuilder &builder,
   auto funcTy = func.getType();
   llvm::SmallVector<mlir::Value> args = {
       builder.createConvert(loc, funcTy.getInput(0), x)};
+
+  return builder.create<fir::CallOp>(loc, func, args).getResult(0);
+}
+
+/// Generate call to Nearest intrinsic runtime routine.
+mlir::Value Fortran::lower::genNearest(Fortran::lower::FirOpBuilder &builder,
+                                       mlir::Location loc, mlir::Value x,
+                                       mlir::Value s) {
+  mlir::FuncOp func;
+  mlir::Type fltTy = x.getType();
+
+  if (fltTy.isF32())
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(Nearest4)>(loc, builder);
+  else if (fltTy.isF64())
+    func = Fortran::lower::getRuntimeFunc<mkRTKey(Nearest8)>(loc, builder);
+  else if (fltTy.isF80())
+    func = Fortran::lower::getRuntimeFunc<ForcedNearest10>(loc, builder);
+  else if (fltTy.isF128())
+    func = Fortran::lower::getRuntimeFunc<ForcedNearest16>(loc, builder);
+  else
+    fir::emitFatalError(loc, "unsupported REAL kind in Nearest lowering");
+
+  auto funcTy = func.getType();
+
+  mlir::Type sTy = s.getType();
+  mlir::Value zero = builder.createRealZeroConstant(loc, sTy);
+  auto cmp =
+      builder.create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OGT, s, zero);
+
+  mlir::Type boolTy = mlir::IntegerType::get(builder.getContext(), 1);
+  mlir::Value False = builder.createIntegerConstant(loc, boolTy, 0);
+  mlir::Value True = builder.createIntegerConstant(loc, boolTy, 1);
+
+  mlir::Value positive = builder.create<mlir::SelectOp>(loc, cmp, True, False);
+  auto args =
+      Fortran::lower::createArguments(builder, loc, funcTy, x, positive);
 
   return builder.create<fir::CallOp>(loc, func, args).getResult(0);
 }

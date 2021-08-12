@@ -494,6 +494,7 @@ struct IntrinsicLibrary {
   mlir::Value genMod(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genModulo(mlir::Type, llvm::ArrayRef<mlir::Value>);
   void genMvbits(llvm::ArrayRef<fir::ExtendedValue>);
+  mlir::Value genNearest(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNint(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genNot(mlir::Type, llvm::ArrayRef<mlir::Value>);
   fir::ExtendedValue genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
@@ -755,6 +756,7 @@ static constexpr IntrinsicHandler handlers[]{
        {"len", asValue},
        {"to", asAddr},
        {"topos", asValue}}}},
+    {"nearest", &I::genNearest},
     {"nint", &I::genNint},
     {"not", &I::genNot},
     {"null", &I::genNull, {{{"mold", asInquired}}}, /*isElemental=*/false},
@@ -2620,6 +2622,18 @@ void IntrinsicLibrary::genMvbits(llvm::ArrayRef<fir::ExtendedValue> args) {
       builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::eq, len, zero);
   auto res = builder.create<mlir::SelectOp>(loc, lenIsZero, to, resTmp);
   builder.create<fir::StoreOp>(loc, res, toAddr);
+}
+
+// NEAREST
+mlir::Value IntrinsicLibrary::genNearest(mlir::Type resultType,
+                                         llvm::ArrayRef<mlir::Value> args) {
+  assert(args.size() == 2);
+
+  auto realX = fir::getBase(args[0]);
+  auto realS = fir::getBase(args[1]);
+
+  return builder.createConvert(
+      loc, resultType, Fortran::lower::genNearest(builder, loc, realX, realS));
 }
 
 // NINT
