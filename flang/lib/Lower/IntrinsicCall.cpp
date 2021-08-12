@@ -2658,7 +2658,7 @@ IntrinsicLibrary::genNull(mlir::Type, llvm::ArrayRef<fir::ExtendedValue> args) {
 fir::ExtendedValue
 IntrinsicLibrary::genPack(mlir::Type resultType,
                           llvm::ArrayRef<fir::ExtendedValue> args) {
-  auto numArgs = args.size();
+  [[maybe_unused]] auto numArgs = args.size();
   assert(numArgs == 2 || numArgs == 3);
 
   // Handle required array argument
