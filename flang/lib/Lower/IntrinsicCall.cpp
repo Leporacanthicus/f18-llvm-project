@@ -467,9 +467,9 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genDotProduct(mlir::Type,
                                    llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  mlir::Value genExponent(mlir::Type, llvm::ArrayRef<mlir::Value>);
   template <Extremum, ExtremumBehavior>
   mlir::Value genExtremum(mlir::Type, llvm::ArrayRef<mlir::Value>);
-  mlir::Value genExponent(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genFloor(mlir::Type, llvm::ArrayRef<mlir::Value>);
   mlir::Value genFraction(mlir::Type resultType,
                           mlir::ArrayRef<mlir::Value> args);
