@@ -30,6 +30,7 @@
 #include "flang/Lower/ComplexExpr.h"
 #include "flang/Lower/ConvertType.h"
 #include "flang/Lower/IntrinsicCall.h"
+#include "flang/Lower/Mangler.h"
 #include "flang/Lower/Runtime.h"
 #include "flang/Lower/Support/Utils.h"
 #include "flang/Lower/Todo.h"
@@ -3946,7 +3947,7 @@ public:
     auto loc = getLoc();
     auto idxTy = builder.getIndexType();
     auto arrTy = converter.genType(toEvExpr(x));
-    auto globalName = Fortran::lower::LiteralNameHelper{x}.getName(builder);
+    std::string globalName = Fortran::lower::mangle::mangleArrayLiteral(x);
     auto global = builder.getNamedGlobal(globalName);
     if (!global) {
       global = builder.createGlobalConstant(

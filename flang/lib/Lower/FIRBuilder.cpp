@@ -9,17 +9,14 @@
 #include "flang/Lower/FIRBuilder.h"
 #include "SymbolMap.h"
 #include "flang/Lower/Allocatable.h"
-#include "flang/Lower/Bridge.h"
 #include "flang/Lower/CharacterExpr.h"
 #include "flang/Lower/ComplexExpr.h"
-#include "flang/Lower/ConvertType.h"
 #include "flang/Lower/Support/BoxValue.h"
 #include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
-#include "flang/Semantics/symbol.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringExtras.h"
@@ -79,7 +76,6 @@ mlir::Value Fortran::lower::FirOpBuilder::createRealConstant(
     mlir::Location loc, mlir::Type fltTy, llvm::APFloat::integerPart val) {
   auto apf = [&]() -> llvm::APFloat {
     if (auto ty = fltTy.dyn_cast<fir::RealType>()) {
-      fltTy = Fortran::lower::convertReal(ty.getContext(), ty.getFKind());
       return llvm::APFloat(kindMap.getFloatSemantics(ty.getFKind()), val);
     } else {
       if (fltTy.isF16())
@@ -610,20 +606,6 @@ std::string Fortran::lower::uniqueCGIdent(llvm::StringRef prefix,
   std::string nm = prefix.str();
   return fir::NameUniquer::doGenerated(
       nm.append(".").append(llvm::toHex(name)));
-}
-
-std::string Fortran::lower::LiteralNameHelper::getName(
-    Fortran::lower::FirOpBuilder &builder) {
-  auto name = fir::NameUniquer::doGenerated("ro."s.append(typeId).append("."));
-  if (!size)
-    return name += "null";
-  llvm::MD5 hashValue{};
-  hashValue.update(ArrayRef<uint8_t>{address, size});
-  llvm::MD5::MD5Result hashResult;
-  hashValue.final(hashResult);
-  llvm::SmallString<32> hashString;
-  llvm::MD5::stringifyResult(hashResult, hashString);
-  return name += hashString.c_str();
 }
 
 mlir::Value
