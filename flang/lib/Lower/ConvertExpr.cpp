@@ -2412,10 +2412,17 @@ class ArrayExprLowering {
   };
 
   using ExtValue = fir::ExtendedValue;
-  using IterSpace = const IterationSpace &;      // active iteration space
-  using CC = std::function<ExtValue(IterSpace)>; // current continuation
-  using PC =
-      std::function<IterationSpace(IterSpace)>; // projection continuation
+  /// Active iteration space.
+  using IterSpace = const IterationSpace &;
+  /// Current continuation. Function that we generate IR for a single iteration
+  /// of the pending iterative loop structure.
+  using CC = std::function<ExtValue(IterSpace)>;
+  /// Projection continuation. Function that will project one iteration space
+  /// into another.
+  using PC = std::function<IterationSpace(IterSpace)>;
+  /// Loop bounds continuation. Function that will generate IR to compute loop
+  /// bounds in a future context.
+  using LBC = std::function<llvm::SmallVector<mlir::Value>()>;
   using ArrayBaseTy =
       std::variant<std::monostate, const Fortran::evaluate::ArrayRef *,
                    const Fortran::evaluate::DataRef *>;
@@ -2686,6 +2693,7 @@ public:
     }
   }
 
+  /// Returns true iff the Ev::Shape is constant.
   static bool evalShapeIsConstant(const Fortran::evaluate::Shape &shape) {
     for (const auto &s : shape)
       if (!s || !Fortran::evaluate::IsConstantExpr(*s))
@@ -2693,6 +2701,7 @@ public:
     return true;
   }
 
+  /// Convert an Ev::Shape to IR values.
   void convertFEShape(const Fortran::evaluate::Shape &shape,
                       llvm::SmallVectorImpl<mlir::Value> &result) {
     if (evalShapeIsConstant(shape)) {
@@ -2831,7 +2840,7 @@ public:
   /// this returns any implicit shape component, if it exists.
   llvm::SmallVector<mlir::Value> genIterationShape() {
     if (explicitSpace)
-      return explicitImpliedShape;
+      return {};
     // Use the precomputed destination shape.
     if (!destShape.empty())
       return destShape;
@@ -3199,6 +3208,51 @@ public:
     return {indices, loops[0]};
   }
 
+  llvm::SmallVector<mlir::Value> genImplicitLoopBounds(
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &e) {
+    struct Filter : public Fortran::evaluate::AnyTraverse<
+                        Filter, std::optional<llvm::SmallVector<mlir::Value>>> {
+      using Base = Fortran::evaluate::AnyTraverse<
+          Filter, std::optional<llvm::SmallVector<mlir::Value>>>;
+      using Base::operator();
+
+      Filter(const llvm::SmallVector<mlir::Value> init)
+          : Base(*this), bounds(init) {}
+
+      std::optional<llvm::SmallVector<mlir::Value>>
+      operator()(const Fortran::evaluate::ArrayRef &ref) {
+        if ((ref.base().IsSymbol() || ref.base().Rank() == 0) &&
+            ref.Rank() > 0 && !ref.subscript().empty()) {
+          assert(ref.subscript().size() == bounds.size());
+          llvm::SmallVector<mlir::Value> result;
+          auto bdIter = bounds.begin();
+          for (auto ss : ref.subscript()) {
+            mlir::Value bound = *bdIter++;
+            std::visit(Fortran::common::visitors{
+                           [&](const Fortran::evaluate::Triplet &triple) {
+                             result.push_back(bound);
+                           },
+                           [&](const auto &intExpr) {
+                             if (intExpr.value().Rank() > 0)
+                               result.push_back(bound);
+                           }},
+                       ss.u);
+          }
+          return {result};
+        }
+        return {};
+      }
+
+      llvm::SmallVector<mlir::Value> bounds;
+    };
+
+    auto originalShape = getShape(converter.genType(e));
+    Filter filter(originalShape);
+    if (auto res = filter(e))
+      return *res;
+    return originalShape;
+  }
+
   void genMasks() {
     auto loc = getLoc();
     // Lower explicit mask expressions, if any.
@@ -3215,8 +3269,8 @@ public:
         for (const auto *e : masks->getExprs())
           if (e && !masks->isLowered(e)) {
             auto extents = genExplicitExtents();
-            extents.append(explicitImpliedShape.rbegin(),
-                           explicitImpliedShape.rend());
+            auto loopBounds = genImplicitLoopBounds(*e);
+            extents.append(loopBounds.rbegin(), loopBounds.rend());
             // Allocate a temporary to cache the mask results.
             auto tmpShape = builder.consShape(loc, extents);
             auto tmp = createAndLoadSomeArrayTemp(
@@ -3230,7 +3284,8 @@ public:
             // Evaluate like any other nested array expression.
             ArrayExprLowering ael{converter, masks->stmtContext(), symMap,
                                   ConstituentSemantics::ProjectedCopyInCopyOut};
-            ael.lowerArrayAssignment(tmp, *e, indices, explicitImpliedShape);
+            ael.lowerArrayAssignment(tmp, *e, indices,
+                                     explicitImpliedLoopBounds.getValue()());
             masks->bind(e, tmp.memref(), tmpShape);
             builder.setInsertionPointAfter(loop0);
             builder.create<fir::ArrayMergeStoreOp>(loc, tmp, loop0.getResult(0),
@@ -3289,14 +3344,18 @@ public:
     llvm::SmallVector<fir::DoLoopOp> loops;
     llvm::SmallVector<mlir::Value> explicitOffsets;
     // FORALL loops are outermost.
-    if (explicitSpace)
+    if (explicitSpace) {
       genExplicitIterSpace(loops, explicitOffsets, innerArg);
+      if (explicitImpliedLoopBounds.hasValue())
+        loopUppers = explicitImpliedLoopBounds.getValue()();
+    }
 
     // Now handle the implicit loops.
     const auto loopFirst = loops.size();
     const auto loopDepth = loopUppers.size();
     llvm::SmallVector<mlir::Value> ivars;
     if (loopDepth > 0) {
+      auto *startBlock = builder.getBlock();
       for (auto i : llvm::enumerate(llvm::reverse(loopUppers))) {
         if (i.index() > 0) {
           assert(!loops.empty());
@@ -3311,8 +3370,11 @@ public:
       }
       // Add the fir.result for all loops except the innermost one. We must also
       // terminate the innermost explicit bounds loop here as well.
-      for (std::remove_const_t<decltype(loopFirst)> i =
-               loopFirst ? loopFirst - 1 : 0;
+      if (loopFirst > 0) {
+         builder.setInsertionPointToEnd(startBlock);
+         builder.create<fir::ResultOp>(loc, loops[loopFirst].getResult(0));
+      }
+      for (std::remove_const_t<decltype(loopFirst)> i = loopFirst;
            i + 1 < loopFirst + loopDepth; ++i) {
         builder.setInsertionPointToEnd(loops[i].getBody());
         builder.create<fir::ResultOp>(loc, loops[i + 1].getResult(0));
@@ -3365,17 +3427,18 @@ public:
       // structure is produced.
       auto maskExprs = masks->getExprs();
       const auto size = maskExprs.size() - 1;
-      for (std::remove_const_t<decltype(size)> i = 0; i < size; ++i) {
-        auto ifOp = builder.create<fir::IfOp>(
-            loc, mlir::TypeRange{innerArg.getType()},
-            fir::getBase(
-                genCond(masks->getBindingWithShape(maskExprs[i]), iters)),
-            /*withElseRegion=*/true);
-        builder.create<fir::ResultOp>(loc, ifOp.getResult(0));
-        builder.setInsertionPointToStart(&ifOp.thenRegion().front());
-        builder.create<fir::ResultOp>(loc, innerArg);
-        builder.setInsertionPointToStart(&ifOp.elseRegion().front());
-      }
+      for (std::remove_const_t<decltype(size)> i = 0; i < size; ++i)
+        if (maskExprs[i]) {
+          auto ifOp = builder.create<fir::IfOp>(
+              loc, mlir::TypeRange{innerArg.getType()},
+              fir::getBase(
+                  genCond(masks->getBindingWithShape(maskExprs[i]), iters)),
+              /*withElseRegion=*/true);
+          builder.create<fir::ResultOp>(loc, ifOp.getResult(0));
+          builder.setInsertionPointToStart(&ifOp.thenRegion().front());
+          builder.create<fir::ResultOp>(loc, innerArg);
+          builder.setInsertionPointToStart(&ifOp.elseRegion().front());
+        }
 
       // The last condition is either non-negated or unconditionally negated.
       if (maskExprs[size]) {
@@ -4264,11 +4327,8 @@ public:
   template <typename A>
   std::pair<CC, mlir::Type> raiseRankedBase(const A &x) {
     auto result = raiseBase(x);
-    if (isProjectedCopyInCopyOut()) {
-      auto optShape = Fortran::evaluate::GetShape(x);
-      assert(optShape.has_value());
-      convertFEShape(*optShape, explicitImpliedShape);
-    }
+    if (isProjectedCopyInCopyOut())
+      explicitImpliedLoopBounds = [=]() { return getShape(x); };
     return result;
   }
   template <typename A>
@@ -4299,11 +4359,8 @@ public:
   std::pair<CC, mlir::Type> raiseRankedComponent(llvm::Optional<CC> cc,
                                                  const A &x, mlir::Type inTy) {
     auto result = raiseComponent(cc, x, inTy, false);
-    if (isProjectedCopyInCopyOut()) {
-      auto optShape = Fortran::evaluate::GetShape(x);
-      assert(optShape.has_value());
-      convertFEShape(*optShape, explicitImpliedShape);
-    }
+    if (isProjectedCopyInCopyOut())
+      explicitImpliedLoopBounds = [=]() { return getShape(x); };
     return result;
   }
 
@@ -4372,8 +4429,7 @@ public:
             auto &sym = base.GetFirstSymbol();
             if (x.Rank() > 0 || accessUsesControlVariable()) {
               auto [fopt2, ty2] = raiseBase(sym);
-              return RaiseRT{fopt2, fir::unwrapSequenceType(ty2), false,
-                             x.Rank() > 0};
+              return RaiseRT{fopt2, ty2, false, x.Rank() > 0};
             }
             return RaiseRT{llvm::None, mlir::Type{}, false, false};
           }
@@ -4390,11 +4446,54 @@ public:
         }(),
         x);
   }
+  static mlir::Type unwrapBoxEleTy(mlir::Type ty) {
+    if (auto boxTy = ty.dyn_cast<fir::BoxType>()) {
+      ty = boxTy.getEleTy();
+      if (auto refTy = fir::dyn_cast_ptrEleTy(ty))
+        ty = refTy;
+    }
+    return ty;
+  }
+  llvm::SmallVector<mlir::Value> getShape(mlir::Type ty) {
+    llvm::SmallVector<mlir::Value> result;
+    ty = unwrapBoxEleTy(ty);
+    auto loc = getLoc();
+    auto idxTy = builder.getIndexType();
+    for (auto extent : ty.cast<fir::SequenceType>().getShape()) {
+      auto v = extent == fir::SequenceType::getUnknownExtent()
+                   ? builder.create<fir::UndefOp>(loc, idxTy).getResult()
+                   : builder.createIntegerConstant(loc, idxTy, extent);
+      result.push_back(v);
+    }
+    return result;
+  }
+  llvm::SmallVector<mlir::Value>
+  getShape(const Fortran::semantics::SymbolRef &x) {
+    if (x.get().Rank() == 0)
+      return {};
+    return getFrontEndShape(x);
+  }
+  template <typename A>
+  llvm::SmallVector<mlir::Value> getShape(const A &x) {
+    if (x.Rank() == 0)
+      return {};
+    return getFrontEndShape(x);
+  }
+  template <typename A>
+  llvm::SmallVector<mlir::Value> getFrontEndShape(const A &x) {
+    if (auto optShape = Fortran::evaluate::GetShape(x)) {
+      llvm::SmallVector<mlir::Value> result;
+      convertFEShape(*optShape, result);
+      if (!result.empty())
+        return result;
+    }
+    return {};
+  }
   RaiseRT raiseSubscript(const RaiseRT &tup,
                          const Fortran::evaluate::ArrayRef &x) {
     auto fopt = std::get<llvm::Optional<CC>>(tup);
     if (fopt.hasValue()) {
-      auto ty = std::get<mlir::Type>(tup);
+      auto arrTy = std::get<mlir::Type>(tup);
       auto prevRanked = std::get<2>(tup);
       auto ranked = std::get<3>(tup);
       auto lambda = fopt.getValue();
@@ -4408,30 +4507,64 @@ public:
         // from the explicit space, then those dimensions should not be
         // considered as contributing to the implied part of the iteration
         // space.
-        if (explicitImpliedShape.empty()) {
-          assert(destination && "destination must be set");
-          auto feShape = getShape(destination);
+        if (!explicitImpliedLoopBounds.hasValue()) {
           if (subs.empty()) {
-            explicitImpliedShape.assign(feShape);
+            explicitImpliedLoopBounds = [=]() { return getShape(x); };
           } else {
-            unsigned ii = 0;
+            auto desShape = getShape(x);
             unsigned vi = 0;
-            vectorCoor.resize(feShape.size());
+            vectorCoor.resize(desShape.size());
             // Filter out subscripts that are scalar expressions. If it is a
-            // scalar expression it is either loop-invariant or a function of
-            // the explicit loop control variables.
-            for (const auto &ss : subs)
+            // scalar expression it is either loop-invariant or a function
+            // of the explicit loop control variables.
+            for (const auto &ss : subs) {
               if (auto *intExpr = std::get_if<
-                      Fortran::evaluate::IndirectSubscriptIntegerExpr>(&ss.u)) {
-                if (intExpr->value().Rank() > 0) {
-                  explicitImpliedShape.push_back(feShape[ii++]);
+                      Fortran::evaluate::IndirectSubscriptIntegerExpr>(&ss.u))
+                if (intExpr->value().Rank() > 0)
                   vectorCoor[vi++] = genarr(intExpr->value());
-                }
-              } else {
-                // This is a triple which may be using an explicit control
-                // variable.
-                explicitImpliedShape.push_back(feShape[ii++]);
-              }
+            }
+            explicitImpliedLoopBounds = [=]() {
+              llvm::SmallVector<mlir::Value> result;
+              unsigned ii = 0;
+              for (const auto &ss : subs)
+                std::visit(
+                    Fortran::common::visitors{
+                        [&](const Fortran::evaluate::
+                                IndirectSubscriptIntegerExpr &intExpr) {
+                          if (intExpr.value().Rank() > 0)
+                            result.push_back(builder.createConvert(
+                                loc, idxTy, desShape[ii++]));
+                        },
+                        [&](const Fortran::evaluate::Triplet &triple) {
+                          // This is a triple which may be using an
+                          // explicit control variable.
+                          auto ou = triple.upper();
+                          auto up = builder.createConvert(
+                              loc, idxTy,
+                              ou.has_value() ? fir::getBase(asScalar(*ou))
+                                             : desShape[ii]);
+                          auto ol = triple.lower();
+                          auto lo =
+                              ol.has_value()
+                                  ? builder.createConvert(
+                                        loc, idxTy, fir::getBase(asScalar(*ol)))
+                                  : builder.createIntegerConstant(loc, idxTy,
+                                                                  1);
+                          auto step = builder.createConvert(
+                              loc, idxTy,
+                              fir::getBase(asScalar(triple.stride())));
+                          auto diff = builder.create<mlir::SubIOp>(loc, up, lo);
+                          auto sum =
+                              builder.create<mlir::AddIOp>(loc, diff, step);
+                          mlir::Value count =
+                              builder.create<mlir::SignedDivIOp>(loc, sum,
+                                                                 step);
+                          result.push_back(count);
+                          ii++;
+                        }},
+                    ss.u);
+              return result;
+            };
           }
         }
       }
@@ -4498,6 +4631,7 @@ public:
         }
         return newIters;
       };
+      auto ty = fir::unwrapSequenceType(unwrapBoxEleTy(arrTy));
       return RaiseRT{[=](IterSpace iters) { return lambda(pc(iters)); }, ty,
                      prevRanked, ranked};
     }
@@ -4584,7 +4718,9 @@ public:
 
   static mlir::Type adjustedArraySubtype(mlir::Type ty,
                                          mlir::ValueRange indices) {
-    return adjustedArrayElementType(fir::applyPathToType(ty, indices));
+    auto pathTy = fir::applyPathToType(ty, indices);
+    assert(pathTy && "indices failed to apply to type");
+    return adjustedArrayElementType(pathTy);
   }
 
   /// Build an ExtendedValue from a fir.array<?x...?xT> without actually
@@ -5465,7 +5601,7 @@ private:
   /// Even in an explicitly defined iteration space, one can have an
   /// assignment with rank > 0 and thus an implied shape on a component in the
   /// path.
-  llvm::SmallVector<mlir::Value> explicitImpliedShape;
+  llvm::Optional<LBC> explicitImpliedLoopBounds;
   Fortran::lower::ImplicitIterSpace *masks = nullptr;
   ConstituentSemantics semant = ConstituentSemantics::RefTransparent;
   bool inSlice = false;

@@ -1912,6 +1912,8 @@ private:
             },
             [&](const Fortran::evaluate::ProcedureRef &procRef) {
               // User defined assignment: call the procedure.
+              if (explicitIterationSpace())
+                TODO(loc, "user defined assignment within FORALL");
               Fortran::semantics::SomeExpr expr{procRef};
               createFIRExpr(toLocation(), &expr, stmtCtx);
             },
