@@ -138,6 +138,7 @@ subroutine cshift_test()
   ! CHECK-DAG: %[[cs3:.*]] = fir.alloca !fir.array<3x3xi32> {bindc_name = "array", uniq_name = "_QMtest2Fcshift_testEarray"}
   ! CHECK-DAG: %[[cs5:.*]] = fir.alloca !fir.array<3xi32> {bindc_name = "shift", uniq_name = "_QMtest2Fcshift_testEshift"}
   ! CHECK-DAG: %[[cs6:.*]] = fir.alloca !fir.array<6xi32> {bindc_name = "vector", uniq_name = "_QMtest2Fcshift_testEvector"}
+  ! CHECK-DAG: %[[cs7:.*]] = fir.alloca !fir.array<6xi32> {bindc_name = "vectorresult", uniq_name = "_QMtest2Fcshift_testEvectorresult"}
   ! CHECK: %[[cs8:.*]] = fir.shape %{{.*}}, %{{.*}} : (index, index) -> !fir.shape<2>
   ! CHECK: fir.array_load
   ! CHECK: %[[cs10:.*]] = fir.shape %{{.*}}, %{{.*}} : (index, index) -> !fir.shape<2>
@@ -160,18 +161,21 @@ subroutine cshift_test()
   result = cshift(array, shift, -2) ! non-vector case
   vectorResult = cshift(vector, 3) ! vector case
   ! CHECK-DAG: %[[cs34:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
-  ! CHECK-DAG: %[[cs36:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
-  ! CHECK: %[[cs37:.*]] = fir.embox %[[cs6]](%[[cs36]]) : (!fir.ref<!fir.array<6xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<6xi32>>
-  ! CHECK-DAG: %[[cs38:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi32>>
-  ! CHECK-DAG: %[[cs39:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
-  ! CHECK: %[[cs40:.*]] = fir.embox %[[cs38]](%[[cs39]]) : (!fir.heap<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.heap<!fir.array<?xi32>>>
-  ! CHECK: fir.store %[[cs40]] to %[[cs0]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
-  ! CHECK-DAG: %[[cs41:.*]] = fir.address_of({{.*}})
-  ! CHECK-DAG: %[[cs42:.*]] = fir.convert %[[cs0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
-  ! CHECK-DAG: %[[cs43:.*]] = fir.convert %[[cs37]] : (!fir.box<!fir.array<6xi32>>) -> !fir.box<none>
-  ! CHECK-DAG: %[[cs44:.*]] = fir.convert %[[cs1]] : (!fir.ref<i32>) -> i64
-  ! CHECK-DAG: %[[cs45:.*]] = fir.convert %[[cs41]]
-  ! CHECK: fir.call @_FortranACshiftVector(%[[cs42]], %[[cs43]], %[[cs44]], %{{.*}}, %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, i64, !fir.ref<i8>, i32) -> none
+  ! CHECK-DAG: %[[cs35:.*]] = fir.array_load %[[cs7]](%[[cs34]]) : (!fir.ref<!fir.array<6xi32>>, !fir.shape<1>) -> !fir.array<6xi32>
+  ! CHECK-DAG: %[[cs36:.*]] = fir.convert %{{.*}} : (i64) -> index
+  ! CHECK: %[[cs37:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
+  ! CHECK-DAG: %[[cs38:.*]] = fir.embox %[[cs6]](%[[cs37]]) : (!fir.ref<!fir.array<6xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<6xi32>>
+  ! CHECK-DAG: %[[cs39:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi32>>
+  ! CHECK: %[[cs40:.*]] = fir.shape %{{.*}} : (index) -> !fir.shape<1>
+  ! CHECK: %[[cs41:.*]] = fir.embox %[[cs39]](%[[cs40]]) : (!fir.heap<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.heap<!fir.array<?xi32>>>
+  ! CHECK: fir.store %[[cs41]] to %[[cs0]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
+  ! CHECK: %[[cs42:.*]] = fir.load %[[cs1]] : !fir.ref<i32>
+  ! CHECK: %[[cs43:.*]] = fir.address_of({{.*}})
+  ! CHECK: %[[cs44:.*]] = fir.convert %[[cs0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
+  ! CHECK: %[[cs45:.*]] = fir.convert %[[cs38]] : (!fir.box<!fir.array<6xi32>>) -> !fir.box<none>
+  ! CHECK: %[[cs46:.*]] = fir.convert %[[cs42]] : (i32) -> i64
+  ! CHECK: %[[cs47:.*]] = fir.convert %[[cs43]]
+  ! CHECK: fir.call @_FortranACshiftVector(%[[cs44]], %[[cs45]], %[[cs46]], %{{.*}}, %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, i64, !fir.ref<i8>, i32) -> none
   ! CHECK: %[[cs47:.*]] = fir.load %[[cs0]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>
   ! CHECK: %[[cs49:.*]] = fir.box_addr %[[cs47]] : (!fir.box<!fir.heap<!fir.array<?xi32>>>) -> !fir.heap<!fir.array<?xi32>>
   ! CHECK: fir.freemem %[[cs49]] : !fir.heap<!fir.array<?xi32>>

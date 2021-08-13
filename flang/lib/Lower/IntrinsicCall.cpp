@@ -2064,7 +2064,9 @@ IntrinsicLibrary::genCshift(mlir::Type resultType,
   if (arrayRank == 1) {
     // Vector case
     // Handle required SHIFT argument as a scalar
-    auto shift = fir::getBase(args[1]);
+    auto shiftAddr = args[1].getUnboxed();
+    assert(shiftAddr && "nonscalar CSHIFT argument");
+    auto shift = builder.create<fir::LoadOp>(loc, *shiftAddr);
 
     Fortran::lower::genCshiftVector(builder, loc, resultIrBox, array, shift);
   } else {
