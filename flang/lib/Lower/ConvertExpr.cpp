@@ -1680,15 +1680,11 @@ public:
     // Explicitly map statement function host associated symbols to their
     // parent scope lowered symbol box.
     for (const Fortran::semantics::SymbolRef &sym :
-         Fortran::evaluate::CollectSymbols(*details.stmtFunction())) {
+         Fortran::evaluate::CollectSymbols(*details.stmtFunction()))
       if (const auto *details =
-              sym->detailsIf<Fortran::semantics::HostAssocDetails>()) {
-        if (!symMap.lookupSymbol(*sym)) {
-          symMap.addSymbol(
-              *sym, symMap.lookupSymbol(details->symbol()).toExtendedValue());
-        }
-      }
-    }
+              sym->detailsIf<Fortran::semantics::HostAssocDetails>())
+        if (!symMap.lookupSymbol(*sym))
+          symMap.addSymbol(*sym, gen(details->symbol()));
 
     auto result = genval(details.stmtFunction().value());
     LLVM_DEBUG(llvm::dbgs() << "stmt-function: " << result << '\n');

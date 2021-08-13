@@ -2216,7 +2216,7 @@ struct CoordinateOpConversion
   }
 
   int64_t getIntValue(mlir::Value val) const {
-    if (val)
+    if (val) {
       if (auto defop = val.getDefiningOp()) {
         if (auto constOp = dyn_cast<mlir::ConstantIntOp>(defop))
           return constOp.getValue();
@@ -2224,7 +2224,9 @@ struct CoordinateOpConversion
           if (auto attr = llConstOp.value().dyn_cast<mlir::IntegerAttr>())
             return attr.getValue().getSExtValue();
       }
-    llvm_unreachable("must be a constant");
+      fir::emitFatalError(val.getLoc(), "must be a constant");
+    }
+    llvm_unreachable("must not be null value");
   }
 }; // namespace
 
