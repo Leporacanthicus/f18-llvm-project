@@ -2414,8 +2414,8 @@ class ArrayExprLowering {
   using ExtValue = fir::ExtendedValue;
   /// Active iteration space.
   using IterSpace = const IterationSpace &;
-  /// Current continuation. Function that we generate IR for a single iteration
-  /// of the pending iterative loop structure.
+  /// Current continuation. Function that will generate IR for a single
+  /// iteration of the pending iterative loop structure.
   using CC = std::function<ExtValue(IterSpace)>;
   /// Projection continuation. Function that will project one iteration space
   /// into another.
@@ -3371,8 +3371,8 @@ public:
       // Add the fir.result for all loops except the innermost one. We must also
       // terminate the innermost explicit bounds loop here as well.
       if (loopFirst > 0) {
-         builder.setInsertionPointToEnd(startBlock);
-         builder.create<fir::ResultOp>(loc, loops[loopFirst].getResult(0));
+        builder.setInsertionPointToEnd(startBlock);
+        builder.create<fir::ResultOp>(loc, loops[loopFirst].getResult(0));
       }
       for (std::remove_const_t<decltype(loopFirst)> i = loopFirst;
            i + 1 < loopFirst + loopDepth; ++i) {
@@ -4505,8 +4505,7 @@ public:
     if (auto optShape = Fortran::evaluate::GetShape(x)) {
       llvm::SmallVector<mlir::Value> result;
       convertFEShape(*optShape, result);
-      if (!result.empty())
-        return result;
+      return result;
     }
     return {};
   }
