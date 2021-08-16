@@ -110,7 +110,7 @@ public:
   }
 
   // An array expression may have user-defined lower bound values.
-  // If this vector is empty, the default in all dimensions is `1`.
+  // If this vector is empty, the default in all dimensions in `1`.
   const llvm::SmallVectorImpl<mlir::Value> &getLBounds() const {
     return lbounds;
   }
@@ -346,7 +346,7 @@ public:
   bool isAllocatable() const {
     return getBoxTy().getEleTy().isa<fir::HeapType>();
   }
-  /// Does this entity have any non deferred length parameters ?
+  /// Does this entity has any non deferred length parameters ?
   bool hasNonDeferredLenParams() const { return !lenParams.empty(); }
   /// Return the non deferred length parameters.
   llvm::ArrayRef<mlir::Value> nonDeferredLenParams() const { return lenParams; }
@@ -354,7 +354,7 @@ public:
                                        const MutableBoxValue &);
   LLVM_DUMP_METHOD void dump() const { llvm::errs() << *this; }
 
-  /// Set of variables is used instead of a descriptor to hold the entity
+  /// Set of variable is used instead of a descriptor to hold the entity
   /// properties instead of a fir.ref<fir.box<>>.
   bool isDescribedByVariables() const { return !mutableProperties.isEmpty(); }
 
@@ -410,10 +410,12 @@ public:
                    ProcBoxValue, BoxValue, MutableBoxValue>;
 
   ExtendedValue() : box{UnboxedValue{}} {}
+  ExtendedValue(const ExtendedValue &) = default;
+  ExtendedValue(ExtendedValue &&) = default;
   template <typename A, typename = std::enable_if_t<
                             !std::is_same_v<std::decay_t<A>, ExtendedValue>>>
   constexpr ExtendedValue(A &&a) : box{std::forward<A>(a)} {
-    if (const auto *b = getUnboxed()) {
+    if (auto b = getUnboxed()) {
       if (*b) {
         auto type = b->getType();
         if (type.template isa<fir::BoxCharType>())

@@ -153,12 +153,6 @@ public:
   /// Returns integer value held in a character singleton.
   mlir::Value extractCodeFromSingleton(mlir::Value singleton);
 
-  /// Create a value for the length of a character based on its memory reference
-  /// that may be a boxchar, box or !fir.[ptr|ref|heap]<fir.char<kind, len>>. If
-  /// the memref is a simple address and the length is not constant in type, the
-  /// returned length will be empty.
-  mlir::Value getLength(mlir::Value memref);
-
   /// Compute length given a fir.box describing a character entity.
   /// It adjusts the length from the number of bytes per the descriptor
   /// to the number of characters per the Fortran KIND.
@@ -177,6 +171,7 @@ private:
   void createAssign(const fir::CharBoxValue &lhs, const fir::CharBoxValue &rhs);
   mlir::Value createBlankConstantCode(fir::CharacterType type);
 
+private:
   FirOpBuilder &builder;
   mlir::Location loc;
 };

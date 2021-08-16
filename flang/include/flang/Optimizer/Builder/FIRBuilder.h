@@ -21,9 +21,13 @@
 #include "flang/Optimizer/Support/KindMapping.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/Optional.h"
 
 namespace fir {
+class AbstractArrayBox;
 class ExtendedValue;
+class BoxValue;
 
 //===----------------------------------------------------------------------===//
 // FirOpBuilder
@@ -35,9 +39,6 @@ class FirOpBuilder : public mlir::OpBuilder {
 public:
   explicit FirOpBuilder(mlir::Operation *op, const fir::KindMapping &kindMap)
       : OpBuilder{op}, kindMap{kindMap} {}
-  explicit FirOpBuilder(mlir::OpBuilder &builder,
-                        const fir::KindMapping &kindMap)
-      : OpBuilder{builder}, kindMap{kindMap} {}
 
   /// Get the current Region of the insertion point.
   mlir::Region &getRegion() { return *getBlock()->getParent(); }
@@ -54,6 +55,13 @@ public:
 
   /// Get a reference to the kind map.
   const fir::KindMapping &getKindMap() { return kindMap; }
+
+  /// The LHS and RHS are not always in agreement in terms of
+  /// type. In some cases, the disagreement is between COMPLEX and other scalar
+  /// types. In that case, the conversion must insert/extract out of a COMPLEX
+  /// value to have the proper semantics and be strongly typed.
+  mlir::Value convertWithSemantics(mlir::Location loc, mlir::Type toTy,
+                                   mlir::Value val);
 
   /// Get the entry block of the current Function
   mlir::Block *getEntryBlock() { return &getFunction().front(); }
@@ -105,12 +113,7 @@ public:
   }
 
   /// Create a slot for a local on the stack. Besides the variable's type and
-  /// shape, it may be given name, pinned, or target attributes.
-  mlir::Value allocateLocal(mlir::Location loc, mlir::Type ty,
-                            llvm::StringRef uniqName, llvm::StringRef name,
-                            bool pinned, llvm::ArrayRef<mlir::Value> shape,
-                            llvm::ArrayRef<mlir::Value> lenParams,
-                            bool asTarget = false);
+  /// shape, it may be given name or target attributes.
   mlir::Value allocateLocal(mlir::Location loc, mlir::Type ty,
                             llvm::StringRef uniqName, llvm::StringRef name,
                             llvm::ArrayRef<mlir::Value> shape,
@@ -187,11 +190,6 @@ public:
 
   mlir::StringAttr createWeakLinkage() { return getStringAttr("weak"); }
 
-  /// Cast the input value to IndexType.
-  mlir::Value convertToIndexType(mlir::Location loc, mlir::Value val) {
-    return createConvert(loc, getIndexType(), val);
-  }
-
   /// Get a function by name. If the function exists in the current module, it
   /// is returned. Otherwise, a null FuncOp is returned.
   mlir::FuncOp getNamedFunction(llvm::StringRef name) {
@@ -241,6 +239,33 @@ public:
     return createFunction(loc, module, name, ty);
   }
 
+  /// Cast the input value to IndexType.
+  mlir::Value convertToIndexType(mlir::Location loc, mlir::Value val) {
+    return createConvert(loc, getIndexType(), val);
+  }
+
+  /// Construct one of the two forms of shape op from an array box.
+  mlir::Value consShape(mlir::Location loc, const fir::AbstractArrayBox &arr);
+  mlir::Value consShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> shift,
+                        llvm::ArrayRef<mlir::Value> exts);
+  mlir::Value consShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> exts);
+
+  /// Create one of the shape ops given an extended value. For a boxed value,
+  /// this may create a `fir.shift` op.
+  mlir::Value createShape(mlir::Location loc, const fir::ExtendedValue &exv);
+
+  /// Create a slice op extended value. The value to be sliced, `exv`, must be
+  /// an array.
+  mlir::Value createSlice(mlir::Location loc, const fir::ExtendedValue &exv,
+                          mlir::ValueRange triples, mlir::ValueRange path);
+
+  /// Create a boxed value (Fortran descriptor) to be passed to the runtime.
+  /// \p exv is an extended value holding a memory reference to the object that
+  /// must be boxed. This function will crash if provided something that is not
+  /// a memory reference type.
+  /// Array entities are boxed with a shape and character with their length.
+  mlir::Value createBox(mlir::Location loc, const fir::ExtendedValue &exv);
+
   /// Create constant i1 with value 1. if \p b is true or 0. otherwise
   mlir::Value createBool(mlir::Location loc, bool b) {
     return createIntegerConstant(loc, getIntegerType(1), b ? 1 : 0);
@@ -251,7 +276,7 @@ public:
   //===--------------------------------------------------------------------===//
 
   /// Helper class to create if-then-else in a structured way:
-  /// Usage: genIfOp().genThen([&](){...}).genElse([&](){...}).end();
+  /// Usage: genIfOp().then([&](){...}).else([&](){...}).end();
   /// Alternatively, getResults() can be used instead of end() to end the ifOp
   /// and get the ifOp results.
   class IfBuilder {
@@ -278,8 +303,6 @@ public:
       end();
       return ifOp.getResults();
     }
-
-    fir::IfOp &getIfOp() { return ifOp; };
 
   private:
     fir::IfOp ifOp;
@@ -311,23 +334,61 @@ public:
   /// Generate code testing \p addr is not a null address.
   mlir::Value genIsNotNull(mlir::Location loc, mlir::Value addr);
 
-  /// Generate code testing \p addr is a null address.
-  mlir::Value genIsNull(mlir::Location loc, mlir::Value addr);
-
 private:
-  const KindMapping &kindMap;
+  const fir::KindMapping &kindMap;
 };
 
 } // namespace fir
 
 namespace fir::factory {
 
-//===----------------------------------------------------------------------===//
+//===--------------------------------------------------------------------===//
+// ExtendedValue inquiry helpers
+//===--------------------------------------------------------------------===//
+
+/// Read or get character length from \p box that must contain a character
+/// entity. If the length value is contained in the ExtendedValue, this will
+/// not generate any code, otherwise this will generate a read of the fir.box
+/// describing the entity.
+mlir::Value readCharLen(fir::FirOpBuilder &builder, mlir::Location loc,
+                        const fir::ExtendedValue &box);
+
+/// Read or get the extent in dimension \p dim of the array described by \p box.
+mlir::Value readExtent(fir::FirOpBuilder &builder, mlir::Location loc,
+                       const fir::ExtendedValue &box, unsigned dim);
+
+/// Read or get the lower bound in dimension \p dim of the array described by
+/// \p box. If the lower bound is left default in the ExtendedValue,
+/// \p defaultValue will be returned.
+mlir::Value readLowerBound(fir::FirOpBuilder &builder, mlir::Location loc,
+                           const fir::ExtendedValue &box, unsigned dim,
+                           mlir::Value defaultValue);
+
+/// Read extents from \p box.
+llvm::SmallVector<mlir::Value> readExtents(fir::FirOpBuilder &builder,
+                                           mlir::Location loc,
+                                           const fir::BoxValue &box);
+
+/// Get extents from \p box. For fir::BoxValue and
+/// fir::MutableBoxValue, this will generate code to read the extents.
+llvm::SmallVector<mlir::Value> getExtents(fir::FirOpBuilder &builder,
+                                          mlir::Location loc,
+                                          const fir::ExtendedValue &box);
+
+/// Read a fir::BoxValue into an fir::UnboxValue, a fir::ArrayBoxValue or a
+/// fir::CharArrayBoxValue. This should only be called if the fir::BoxValue is
+/// known to be contiguous given the context (or if the resulting address will
+/// not be used). If the value is polymorphic, its dynamic type will be lost.
+/// This must not be used on unlimited polymorphic and assumed rank entities.
+fir::ExtendedValue readBoxValue(fir::FirOpBuilder &builder, mlir::Location loc,
+                                const fir::BoxValue &box);
+
+//===--------------------------------------------------------------------===//
 // String literal helper helpers
-//===----------------------------------------------------------------------===//
+//===--------------------------------------------------------------------===//
 
 /// Create a !fir.char<1> string literal global and returns a
-/// fir::CharBoxValue with its address and length.
+/// fir::CharBoxValue with its address en length.
 fir::ExtendedValue createStringLiteral(fir::FirOpBuilder &, mlir::Location,
                                        llvm::StringRef string);
 
@@ -335,15 +396,32 @@ fir::ExtendedValue createStringLiteral(fir::FirOpBuilder &, mlir::Location,
 /// to hint at the origin of the identifier.
 std::string uniqueCGIdent(llvm::StringRef prefix, llvm::StringRef name);
 
-//===----------------------------------------------------------------------===//
+/// Lowers the extents from the sequence type to Values.
+/// Any unknown extents are lowered to undefined values.
+llvm::SmallVector<mlir::Value> createExtents(fir::FirOpBuilder &builder,
+                                             mlir::Location loc,
+                                             fir::SequenceType seqTy);
+
+//===--------------------------------------------------------------------===//
 // Location helpers
-//===----------------------------------------------------------------------===//
+//===--------------------------------------------------------------------===//
 
 /// Generate a string literal containing the file name and return its address
 mlir::Value locationToFilename(fir::FirOpBuilder &, mlir::Location);
-
 /// Generate a constant of the given type with the location line number
 mlir::Value locationToLineNo(fir::FirOpBuilder &, mlir::Location, mlir::Type);
+
+//===--------------------------------------------------------------------===//
+// ExtendedValue helpers
+//===--------------------------------------------------------------------===//
+
+/// Return the extended value for a component of a derived type instance given
+/// the extended value \p obj of the derived type instance and the address of
+/// the component.
+fir::ExtendedValue componentToExtendedValue(fir::FirOpBuilder &builder,
+                                            mlir::Location loc,
+                                            const fir::ExtendedValue &obj,
+                                            mlir::Value component);
 
 } // namespace fir::factory
 
