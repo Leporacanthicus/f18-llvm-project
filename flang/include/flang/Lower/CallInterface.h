@@ -28,6 +28,7 @@
 #define FORTRAN_LOWER_CALLINTERFACE_H
 
 #include "flang/Common/reference.h"
+#include "flang/Evaluate/characteristics.h"
 #include "mlir/IR/BuiltinOps.h"
 #include <memory>
 #include <optional>
@@ -39,19 +40,6 @@ class Symbol;
 namespace mlir {
 class Location;
 }
-
-namespace Fortran::evaluate {
-class ProcedureRef;
-struct ProcedureDesignator;
-class ActualArgument;
-template <typename T>
-class Expr;
-struct SomeType;
-namespace characteristics {
-struct Procedure;
-struct DummyArgument;
-} // namespace characteristics
-} // namespace Fortran::evaluate
 
 namespace Fortran::lower {
 class AbstractConverter;
@@ -238,7 +226,8 @@ protected:
   Fortran::lower::AbstractConverter &converter;
   /// Store characteristic once created, it is required for further information
   /// (e.g. getting the length of character result)
-  std::unique_ptr<Fortran::evaluate::characteristics::Procedure> characteristic;
+  std::optional<Fortran::evaluate::characteristics::Procedure> characteristic =
+      std::nullopt;
 };
 
 //===----------------------------------------------------------------------===//

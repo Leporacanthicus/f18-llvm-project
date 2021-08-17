@@ -203,18 +203,68 @@ subroutine foo4(i, j)
   i = elem2("hello", j)
 end subroutine
 
-!! TODO: character return for elemental functions.
-!
-! elemental character(10) function elem_return_char(j)
-!   integer, intent(in) :: j
-!   elem_return_char = char(j)
-! end function
-! 
-! subroutine foo6(i, c)
-!   implicit none
-!   integer :: i(10)
-!   character(*) :: c(10)
-!   c = elem_return_char(i)
-! end subroutine
+! Test character return for elemental functions.
+
+! CHECK-LABEL: func @_QMchar_elemPelem_return_char(%arg0: !fir.ref<!fir.char<1,?>>, %arg1: index, %arg2: !fir.boxchar<1>) -> !fir.boxchar<1>
+elemental function elem_return_char(c)
+ character(*), intent(in) :: c
+ character(len(c)) :: elem_return_char
+ elem_return_char = "ab" // c
+end function
+
+! CHECK-LABEL: func @_QMchar_elemPfoo6(
+! CHECK-SAME: %[[VAL_49:.*]]: !fir.boxchar<1>) {
+subroutine foo6(c)
+ implicit none
+ character(*) :: c(10)
+
+! CHECK-DAG:   %[[VAL_45:.*]] = constant 10 : index
+! CHECK-DAG:   %[[VAL_46:.*]] = constant 0 : index
+! CHECK-DAG:   %[[VAL_47:.*]] = constant 1 : index
+! CHECK:   %[[VAL_48:.*]]:2 = fir.unboxchar %[[VAL_49]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+! CHECK:   %[[VAL_50:.*]] = fir.convert %[[VAL_48]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
+! CHECK:   %[[VAL_51:.*]] = fir.shape %[[VAL_45]] : (index) -> !fir.shape<1>
+! CHECK:   br ^bb1(%[[VAL_46]], %[[VAL_45]] : index, index)
+! CHECK: ^bb1(%[[VAL_52:.*]]: index, %[[VAL_53:.*]]: index):
+! CHECK:   %[[VAL_54:.*]] = cmpi sgt, %[[VAL_53]], %[[VAL_46]] : index
+! CHECK:   cond_br %[[VAL_54]], ^bb2, ^bb9
+! CHECK: ^bb2:
+! CHECK:   %[[VAL_55:.*]] = addi %[[VAL_52]], %[[VAL_47]] : index
+! CHECK:   %[[VAL_56:.*]] = fir.array_coor %[[VAL_50]](%[[VAL_51]]) %[[VAL_55]] typeparams %[[VAL_48]]#1 : (!fir.ref<!fir.array<10x!fir.char<1,?>>>, !fir.shape<1>, index, index) -> !fir.ref<!fir.char<1,?>>
+! CHECK:   %[[VAL_57:.*]] = fir.emboxchar %[[VAL_56]], %[[VAL_48]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+! CHECK:   %[[VAL_58:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_48]]#1 : index) {uniq_name = ".result"}
+! CHECK:   %[[VAL_59:.*]] = fir.call @_QMchar_elemPelem_return_char(%[[VAL_58]], %[[VAL_48]]#1, %[[VAL_57]]) : (!fir.ref<!fir.char<1,?>>, index, !fir.boxchar<1>) -> !fir.boxchar<1>
+! CHECK:   br ^bb3(%[[VAL_46]], %[[VAL_48]]#1 : index, index)
+! CHECK: ^bb3(%[[VAL_60:.*]]: index, %[[VAL_61:.*]]: index):
+! CHECK:   %[[VAL_62:.*]] = cmpi sgt, %[[VAL_61]], %[[VAL_46]] : index
+! CHECK:   cond_br %[[VAL_62]], ^bb4, ^bb8
+! CHECK: ^bb4:
+! CHECK:   %[[VAL_63:.*]] = cmpi slt, %[[VAL_60]], %[[VAL_48]]#1 : index
+! CHECK:   cond_br %[[VAL_63]], ^bb5, ^bb6
+! CHECK: ^bb5:
+! CHECK:   %[[VAL_64:.*]] = fir.convert %[[VAL_58]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
+! CHECK:   %[[VAL_65:.*]] = fir.coordinate_of %[[VAL_64]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
+! CHECK:   %[[VAL_66:.*]] = fir.load %[[VAL_65]] : !fir.ref<!fir.char<1>>
+! CHECK:   %[[VAL_67:.*]] = fir.convert %[[VAL_56]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
+! CHECK:   %[[VAL_68:.*]] = fir.coordinate_of %[[VAL_67]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
+! CHECK:   fir.store %[[VAL_66]] to %[[VAL_68]] : !fir.ref<!fir.char<1>>
+! CHECK:   br ^bb7
+! CHECK: ^bb6:
+! CHECK:   %[[VAL_69:.*]] = fir.string_lit [32 : i8](1) : !fir.char<1>
+! CHECK:   %[[VAL_70:.*]] = fir.convert %[[VAL_56]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
+! CHECK:   %[[VAL_71:.*]] = fir.coordinate_of %[[VAL_70]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
+! CHECK:   fir.store %[[VAL_69]] to %[[VAL_71]] : !fir.ref<!fir.char<1>>
+! CHECK:   br ^bb7
+! CHECK: ^bb7:
+! CHECK:   %[[VAL_72:.*]] = addi %[[VAL_60]], %[[VAL_47]] : index
+! CHECK:   %[[VAL_73:.*]] = subi %[[VAL_61]], %[[VAL_47]] : index
+! CHECK:   br ^bb3(%[[VAL_72]], %[[VAL_73]] : index, index)
+! CHECK: ^bb8:
+! CHECK:   %[[VAL_74:.*]] = subi %[[VAL_53]], %[[VAL_47]] : index
+! CHECK:   br ^bb1(%[[VAL_55]], %[[VAL_74]] : index, index)
+! CHECK: ^bb9:
+! CHECK:   return
+ c = elem_return_char(c)
+end subroutine
 
 end module

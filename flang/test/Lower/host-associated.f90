@@ -289,3 +289,40 @@ contains
     p => ally
   end subroutine test5_inner
 end subroutine test5
+
+
+! -----------------------------------------------------------------------------
+!     Test elemental internal procedure
+! -----------------------------------------------------------------------------
+
+! CHECK-LABEL: func @_QPtest7(
+! CHECK-SAME: %[[j:.*]]: !fir.ref<i32>,
+! CHECK-SAME: %[[k:.*]]: !fir.box<!fir.array<?xi32>>
+subroutine test7(j, k)
+  implicit none
+  integer :: j
+  integer :: k(:)
+  ! CHECK: %[[tup:.*]] = fir.alloca tuple<!fir.ptr<i32>>
+  ! CHECK: %[[jtup:.*]] = fir.coordinate_of %[[tup]], %c0{{.*}} : (!fir.ref<tuple<!fir.ptr<i32>>>, i32) -> !fir.ref<!fir.ptr<i32>>
+  ! CHECK: %[[jptr:.*]] = fir.convert %[[j]] : (!fir.ref<i32>) -> !fir.ptr<i32>
+  ! CHECK: fir.store %[[jptr]] to %[[jtup]] : !fir.ref<!fir.ptr<i32>>
+
+  ! CHECK: %[[kelem:.*]] = fir.array_coor %[[k]] %{{.*}} : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
+  ! CHECK: fir.call @_QFtest7Ptest7_inner(%[[kelem]], %[[tup]]) : (!fir.ref<i32>, !fir.ref<tuple<!fir.ptr<i32>>>) -> i32
+  k = test7_inner(k)
+contains
+
+! CHECK-LABEL: func @_QFtest7Ptest7_inner(
+! CHECK-SAME: %[[i:.*]]: !fir.ref<i32>,
+! CHECK-SAME: %[[tup:.*]]: !fir.ref<tuple<!fir.ptr<i32>>> {fir.host_assoc}) -> i32 {
+elemental integer function test7_inner(i)
+  implicit none
+  integer, intent(in) :: i
+  ! CHECK: %[[jtup:.*]] = fir.coordinate_of %[[tup]], %c0{{.*}} : (!fir.ref<tuple<!fir.ptr<i32>>>, i32) -> !fir.ref<!fir.ptr<i32>>
+  ! CHECK: %[[jptr:.*]] = fir.load %[[jtup]] : !fir.ref<!fir.ptr<i32>>
+  ! CHECK-DAG: %[[iload:.*]] = fir.load %[[i]] : !fir.ref<i32>
+  ! CHECK-DAG: %[[jload:.*]] = fir.load %[[jptr]] : !fir.ptr<i32>
+  ! CHECK: addi %[[iload]], %[[jload]] : i32
+  test7_inner = i + j
+end function
+end subroutine

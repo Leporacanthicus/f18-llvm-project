@@ -8,7 +8,6 @@
 
 #include "flang/Lower/CallInterface.h"
 #include "StatementContext.h"
-#include "flang/Evaluate/characteristics.h"
 #include "flang/Evaluate/fold.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/FIRBuilder.h"
@@ -347,9 +346,7 @@ static void addSymbolAttribute(mlir::FuncOp func,
 template <typename T>
 void Fortran::lower::CallInterface<T>::declare() {
   if (!side().isMainProgram()) {
-    characteristic =
-        std::make_unique<Fortran::evaluate::characteristics::Procedure>(
-            side().characterize());
+    characteristic.emplace(side().characterize());
     auto isImplicit = characteristic->CanBeCalledViaImplicitInterface();
     determineInterface(isImplicit, *characteristic);
   }
