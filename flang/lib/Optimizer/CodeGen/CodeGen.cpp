@@ -1325,7 +1325,7 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
       // We have a subcomponent. The step value needs to be the number of
       // bytes per element (which is a derived type).
       auto ty0 = base.getType();
-      auto ptrTy = ty0.dyn_cast<mlir::LLVM::LLVMPointerType>();
+      [[maybe_unused]] auto ptrTy = ty0.dyn_cast<mlir::LLVM::LLVMPointerType>();
       assert(ptrTy && "expected pointer type");
       auto memEleTy = fir::dyn_cast_ptrEleTy(xbox.memref().getType());
       assert(memEleTy && "expected fir pointer type");

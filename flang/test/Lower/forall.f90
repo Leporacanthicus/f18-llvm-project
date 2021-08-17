@@ -1093,11 +1093,11 @@ subroutine test_forall_with_ranked_dimension
   ! CHECK: %[[VAL_5:.*]] = fir.array_load %[[VAL_3]](%[[VAL_4]]) : (!fir.ref<!fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>>, !fir.shape<2>) -> !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>
   ! CHECK-DAG: %[[VAL_16:.*]] = constant 10 : i64
   ! CHECK-DAG: %[[NV_1:.*]] = constant 1 : i64
-  ! CHECK: %[[NV_2:.*]] = subi %[[VAL_16]], %[[NV_1]] : i64
-  ! CHECK: %[[NV_3:.*]] = constant 1 : i64
-  ! CHECK: %[[NV_4:.*]] = addi %[[NV_2]], %[[NV_3]] : i64
-  ! CHECK: %[[NV_5:.*]] = constant 1 : i64
-  ! CHECK: %[[NV_6:.*]] = divi_signed %[[NV_4]], %[[NV_5]] : i64
+  ! CHECK-DAG: %[[NV_2:.*]] = subi %[[VAL_16]], %{{.*}} : i64
+  ! CHECK-DAG: %[[NV_3:.*]] = constant 1 : i64
+  ! CHECK-DAG: %[[NV_4:.*]] = addi %[[NV_2]], %{{.*}} : i64
+  ! CHECK-DAG: %[[NV_5:.*]] = constant 1 : i64
+  ! CHECK: %[[NV_6:.*]] = divi_signed %[[NV_4]], %{{.*}} : i64
   ! CHECK: %[[NV_7:.*]] = constant 0 : i64
   ! CHECK: %[[NV_8:.*]] = cmpi sgt, %[[NV_6]], %[[NV_7]] : i64
   ! CHECK: %[[NV_9:.*]] = select %[[NV_8]], %[[NV_6]], %[[NV_7]] : i64
