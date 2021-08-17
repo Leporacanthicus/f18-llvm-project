@@ -10,6 +10,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef FORTRAN_LOWER_ALLOCATABLE_H
+#define FORTRAN_LOWER_ALLOCATABLE_H
+
 #include "flang/Optimizer/Builder/MutableBox.h"
 #include "llvm/ADT/StringRef.h"
 
@@ -73,3 +76,5 @@ void associateMutableBox(
     mlir::ValueRange lbounds, Fortran::lower::StatementContext &);
 
 } // namespace Fortran::lower
+
+#endif // FORTRAN_LOWER_ALLOCATABLE_H

@@ -1,4 +1,4 @@
-//===-- Lower/ReductionRuntime.h -- lower reduction intrinsics --*- C++ -*-===//
+//===-- Reduction.h -- generate calls to reduction runtime API --*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_REDUCTIONRUNTIME_H
-#define FORTRAN_LOWER_REDUCTIONRUNTIME_H
+#ifndef FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H
+#define FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -16,7 +16,7 @@ class ExtendedValue;
 class FirOpBuilder;
 } // namespace fir
 
-namespace Fortran::lower {
+namespace fir::runtime {
 
 /// Generate call to all runtime routine.
 /// This calls the descriptor based runtime call implementation of the all
@@ -143,6 +143,6 @@ void genSumDim(fir::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value resultBox, mlir::Value arrayBox, mlir::Value dim,
                mlir::Value maskBox);
 
-} // namespace Fortran::lower
+} // namespace fir::runtime
 
-#endif // FORTRAN_LOWER_REDUCTIONRUNTIME_H
+#endif // FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H

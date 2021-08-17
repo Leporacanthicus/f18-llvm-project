@@ -17,7 +17,6 @@
 #include "StatementContext.h"
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/CallInterface.h"
-#include "flang/Lower/CharacterRuntime.h"
 #include "flang/Lower/Coarray.h"
 #include "flang/Lower/ConvertExpr.h"
 #include "flang/Lower/ConvertType.h"
@@ -36,6 +35,7 @@
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
+#include "flang/Optimizer/Runtime/Character.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
@@ -1420,8 +1420,8 @@ private:
         fir::factory::CharacterExprHelper charHelper{*builder, loc};
         auto [lhsAddr, lhsLen] = charHelper.createUnboxChar(selector);
         auto [rhsAddr, rhsLen] = charHelper.createUnboxChar(rhs);
-        return Fortran::lower::genCharCompare(*builder, loc, pred, lhsAddr,
-                                              lhsLen, rhsAddr, rhsLen);
+        return fir::runtime::genCharCompare(*builder, loc, pred, lhsAddr,
+                                            lhsLen, rhsAddr, rhsLen);
       };
       auto *newBlock = insertBlock(*caseBlock);
       if (attr.isa<fir::ClosedIntervalAttr>()) {

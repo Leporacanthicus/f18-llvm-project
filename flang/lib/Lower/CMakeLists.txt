@@ -5,30 +5,26 @@ add_flang_library(FortranLower
   Allocatable.cpp
   Bridge.cpp
   CallInterface.cpp
-  CharacterRuntime.cpp
   Coarray.cpp
   ConvertExpr.cpp
   ConvertType.cpp
   ConvertVariable.cpp
-  DerivedRuntime.cpp
   HostAssociations.cpp
   IntrinsicCall.cpp
   IO.cpp
   Mangler.cpp
-  NumericRuntime.cpp
   OpenACC.cpp
   OpenMP.cpp
   PFTBuilder.cpp
-  ReductionRuntime.cpp
   Runtime.cpp
   SymbolMap.cpp
-  TransformationalRuntime.cpp
 
   DEPENDS
   FIRBuilder
   FIRDialect
   FIRSupport
   FIRTransforms
+  FIRRuntime
   ${dialect_libs}
   omp_gen
   acc_gen
@@ -38,6 +34,7 @@ add_flang_library(FortranLower
   FIRDialect
   FIRSupport
   FIRTransforms
+  FIRRuntime
   ${dialect_libs}
   FortranCommon
   FortranParser

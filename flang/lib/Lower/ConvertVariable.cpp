@@ -18,7 +18,6 @@
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/CallInterface.h"
 #include "flang/Lower/ConvertExpr.h"
-#include "flang/Lower/DerivedRuntime.h"
 #include "flang/Lower/Mangler.h"
 #include "flang/Lower/PFTBuilder.h"
 #include "flang/Lower/Support/Utils.h"
@@ -28,6 +27,7 @@
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
+#include "flang/Optimizer/Runtime/Derived.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Semantics/tools.h"
@@ -538,12 +538,12 @@ defaultInitializeAtRuntime(Fortran::lower::AbstractConverter &converter,
     builder.genIfThen(loc, isPresent)
         .genThen([&]() {
           auto box = builder.createBox(loc, exv);
-          Fortran::lower::genDerivedTypeInitialize(builder, loc, box);
+          fir::runtime::genDerivedTypeInitialize(builder, loc, box);
         })
         .end();
   } else {
     auto box = builder.createBox(loc, exv);
-    Fortran::lower::genDerivedTypeInitialize(builder, loc, box);
+    fir::runtime::genDerivedTypeInitialize(builder, loc, box);
   }
 }
 

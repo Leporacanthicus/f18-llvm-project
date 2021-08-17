@@ -13,7 +13,6 @@
 #include "flang/Lower/Allocatable.h"
 #include "../runtime/allocatable.h"
 #include "../runtime/pointer.h"
-#include "RTBuilder.h"
 #include "StatementContext.h"
 #include "flang/Evaluate/tools.h"
 #include "flang/Lower/AbstractConverter.h"
@@ -23,6 +22,7 @@
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
+#include "flang/Optimizer/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Semantics/tools.h"
@@ -119,9 +119,9 @@ static void genRuntimeSetBounds(fir::FirOpBuilder &builder, mlir::Location loc,
                                 mlir::Value upperBound) {
   auto callee =
       box.isPointer()
-          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerSetBounds)>(loc,
-                                                                      builder)
-          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableSetBounds)>(
+          ? fir::runtime::getRuntimeFunc<mkRTKey(PointerSetBounds)>(loc,
+                                                                    builder)
+          : fir::runtime::getRuntimeFunc<mkRTKey(AllocatableSetBounds)>(
                 loc, builder);
   llvm::SmallVector<mlir::Value> args{box.getAddr(), dimIndex, lowerBound,
                                       upperBound};
@@ -139,9 +139,9 @@ static void genRuntimeInitCharacter(fir::FirOpBuilder &builder,
                                     mlir::Value len) {
   auto callee =
       box.isPointer()
-          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerNullifyCharacter)>(
+          ? fir::runtime::getRuntimeFunc<mkRTKey(PointerNullifyCharacter)>(
                 loc, builder)
-          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableInitCharacter)>(
+          : fir::runtime::getRuntimeFunc<mkRTKey(AllocatableInitCharacter)>(
                 loc, builder);
   auto inputTypes = callee.getType().getInputs();
   if (inputTypes.size() != 5)
@@ -167,10 +167,9 @@ static mlir::Value genRuntimeAllocate(fir::FirOpBuilder &builder,
                                       ErrorManager &errorManager) {
   auto callee =
       box.isPointer()
-          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerAllocate)>(loc,
-                                                                     builder)
-          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableAllocate)>(
-                loc, builder);
+          ? fir::runtime::getRuntimeFunc<mkRTKey(PointerAllocate)>(loc, builder)
+          : fir::runtime::getRuntimeFunc<mkRTKey(AllocatableAllocate)>(loc,
+                                                                       builder);
   llvm::SmallVector<mlir::Value> args{
       box.getAddr(), errorManager.hasStat, errorManager.errMsgAddr,
       errorManager.sourceFile, errorManager.sourceLine};
@@ -189,9 +188,9 @@ static mlir::Value genRuntimeDeallocate(fir::FirOpBuilder &builder,
   auto boxAddress = fir::factory::getMutableIRBox(builder, loc, box);
   auto callee =
       box.isPointer()
-          ? Fortran::lower::getRuntimeFunc<mkRTKey(PointerDeallocate)>(loc,
-                                                                       builder)
-          : Fortran::lower::getRuntimeFunc<mkRTKey(AllocatableDeallocate)>(
+          ? fir::runtime::getRuntimeFunc<mkRTKey(PointerDeallocate)>(loc,
+                                                                     builder)
+          : fir::runtime::getRuntimeFunc<mkRTKey(AllocatableDeallocate)>(
                 loc, builder);
   llvm::SmallVector<mlir::Value> args{
       boxAddress, errorManager.hasStat, errorManager.errMsgAddr,

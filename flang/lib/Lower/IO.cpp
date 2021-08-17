@@ -23,6 +23,7 @@
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/Complex.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
+#include "flang/Optimizer/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Runtime/io-api.h"
@@ -31,6 +32,31 @@
 #include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "flang-lower-io"
+
+// List the runtime headers we want to be able to dissect
+#include "../../runtime/io-api.h"
+
+// Define additional runtime type models specific to IO.
+namespace fir::runtime {
+template <>
+constexpr TypeBuilderFunc getModel<Fortran::runtime::io::IoStatementState *>() {
+  return getModel<char *>();
+}
+template <>
+constexpr TypeBuilderFunc
+getModel<const Fortran::runtime::io::NamelistGroup &>() {
+  return [](mlir::MLIRContext *context) -> mlir::Type {
+    return fir::ReferenceType::get(mlir::TupleType::get(context));
+  };
+}
+template <>
+constexpr TypeBuilderFunc getModel<Fortran::runtime::io::Iostat>() {
+  return [](mlir::MLIRContext *context) -> mlir::Type {
+    return mlir::IntegerType::get(context,
+                                  8 * sizeof(Fortran::runtime::io::Iostat));
+  };
+}
+} // namespace fir::runtime
 
 using namespace Fortran::runtime::io;
 
@@ -120,7 +146,7 @@ static constexpr const char *getName() {
 /// Helper function to retrieve the type model signature builder of the IO
 /// function as defined by the key `A`
 template <typename A>
-static constexpr Fortran::lower::FuncTypeBuilderFunc getTypeModel() {
+static constexpr fir::runtime::FuncTypeBuilderFunc getTypeModel() {
   return std::get<A>(Fortran::lower::newIOTable).getTypeModel();
 }
 

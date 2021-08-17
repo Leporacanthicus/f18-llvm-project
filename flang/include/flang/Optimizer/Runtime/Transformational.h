@@ -1,5 +1,5 @@
-//===-- Lower/TransformationalRuntime.h --*- C++ -*-===//
-// lower transformational intrinsics
+//===-- Transformational.h --------------------------------------*- C++ -*-===//
+// Generate transformational intrinsic runtime API calls.
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_TRANSFORMATIONALRUNTIME_H
-#define FORTRAN_LOWER_TRANSFORMATIONALRUNTIME_H
+#ifndef FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H
+#define FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -17,7 +17,7 @@ class ExtendedValue;
 class FirOpBuilder;
 } // namespace fir
 
-namespace Fortran::lower {
+namespace fir::runtime {
 
 void genCshift(fir::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value resultBox, mlir::Value arrayBox,
@@ -50,6 +50,6 @@ void genUnpack(fir::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value resultBox, mlir::Value vectorBox,
                mlir::Value maskBox, mlir::Value fieldBox);
 
-} // namespace Fortran::lower
+} // namespace fir::runtime
 
-#endif // FORTRAN_LOWER_TRANSFORMATIONALRUNTIME_H
+#endif // FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H

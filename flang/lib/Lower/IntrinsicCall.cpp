@@ -14,22 +14,22 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/IntrinsicCall.h"
-#include "RTBuilder.h"
 #include "StatementContext.h"
 #include "SymbolMap.h"
 #include "flang/Common/static-multimap-view.h"
-#include "flang/Lower/CharacterRuntime.h"
 #include "flang/Lower/ConvertType.h"
 #include "flang/Lower/Mangler.h"
-#include "flang/Lower/NumericRuntime.h"
-#include "flang/Lower/ReductionRuntime.h"
 #include "flang/Lower/Runtime.h"
 #include "flang/Lower/Todo.h"
-#include "flang/Lower/TransformationalRuntime.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/Complex.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/MutableBox.h"
+#include "flang/Optimizer/Runtime/Character.h"
+#include "flang/Optimizer/Runtime/Numeric.h"
+#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Runtime/Reduction.h"
+#include "flang/Optimizer/Runtime/Transformational.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -625,11 +625,11 @@ static constexpr IntrinsicHandler handlers[]{
     {"abs", &I::genAbs},
     {"achar", &I::genChar},
     {"adjustl",
-     &I::genAdjustRtCall<Fortran::lower::genAdjustL>,
+     &I::genAdjustRtCall<fir::runtime::genAdjustL>,
      {{{"string", asAddr}}},
      /*isElemental=*/true},
     {"adjustr",
-     &I::genAdjustRtCall<Fortran::lower::genAdjustR>,
+     &I::genAdjustRtCall<fir::runtime::genAdjustR>,
      {{{"string", asAddr}}},
      /*isElemental=*/true},
     {"aimag", &I::genAimag},
@@ -885,12 +885,11 @@ struct RuntimeFunction {
   constexpr operator Key() const { return key; }
   Key key; // intrinsic name
   llvm::StringRef symbol;
-  Fortran::lower::FuncTypeBuilderFunc typeGenerator;
+  fir::runtime::FuncTypeBuilderFunc typeGenerator;
 };
 
 #define RUNTIME_STATIC_DESCRIPTION(name, func)                                 \
-  {#name, #func,                                                               \
-   Fortran::lower::RuntimeTableKey<decltype(func)>::getTypeModel()},
+  {#name, #func, fir::runtime::RuntimeTableKey<decltype(func)>::getTypeModel()},
 static constexpr RuntimeFunction pgmathFast[] = {
 #define PGMATH_FAST
 #define PGMATH_USE_ALL_TYPES(name, func) RUNTIME_STATIC_DESCRIPTION(name, func)
@@ -1774,8 +1773,8 @@ IntrinsicLibrary::genAll(mlir::Type resultType,
                  : fir::getBase(args[1]);
 
   if (rank == 1 || absentDim)
-    return builder.createConvert(
-        loc, resultType, Fortran::lower::genAll(builder, loc, mask, dim));
+    return builder.createConvert(loc, resultType,
+                                 fir::runtime::genAll(builder, loc, mask, dim));
 
   // else use the result descriptor AllDim() intrinsic
 
@@ -1788,7 +1787,7 @@ IntrinsicLibrary::genAll(mlir::Type resultType,
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genAllDescriptor(builder, loc, resultIrBox, mask, dim);
+  fir::runtime::genAllDescriptor(builder, loc, resultIrBox, mask, dim);
   return fir::factory::genMutableBoxRead(builder, loc, resultMutableBox)
       .match(
           [&](const fir::ArrayBoxValue &box) -> fir::ExtendedValue {
@@ -1844,8 +1843,8 @@ IntrinsicLibrary::genAny(mlir::Type resultType,
                  : fir::getBase(args[1]);
 
   if (rank == 1 || absentDim)
-    return builder.createConvert(
-        loc, resultType, Fortran::lower::genAny(builder, loc, mask, dim));
+    return builder.createConvert(loc, resultType,
+                                 fir::runtime::genAny(builder, loc, mask, dim));
 
   // else use the result descriptor AnyDim() intrinsic
 
@@ -1858,7 +1857,7 @@ IntrinsicLibrary::genAny(mlir::Type resultType,
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genAnyDescriptor(builder, loc, resultIrBox, mask, dim);
+  fir::runtime::genAnyDescriptor(builder, loc, resultIrBox, mask, dim);
   return fir::factory::genMutableBoxRead(builder, loc, resultMutableBox)
       .match(
           [&](const fir::ArrayBoxValue &box) -> fir::ExtendedValue {
@@ -1981,7 +1980,7 @@ IntrinsicLibrary::genCount(mlir::Type resultType,
     // So, call specialized Count runtime routine.
     return builder.createConvert(
         loc, resultType,
-        Fortran::lower::genCount(builder, loc, fir::getBase(mask), dim));
+        fir::runtime::genCount(builder, loc, fir::getBase(mask), dim));
   }
 
   // Call general CountDim runtime routine.
@@ -2001,8 +2000,8 @@ IntrinsicLibrary::genCount(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genCountDim(builder, loc, resultIrBox, fir::getBase(mask),
-                              dim, kind);
+  fir::runtime::genCountDim(builder, loc, resultIrBox, fir::getBase(mask), dim,
+                            kind);
 
   // Handle cleanup of allocatable result descriptor and return
   auto res = fir::factory::genMutableBoxRead(builder, loc, resultMutableBox);
@@ -2053,7 +2052,7 @@ IntrinsicLibrary::genCshift(mlir::Type resultType,
     assert(shiftAddr && "nonscalar CSHIFT argument");
     auto shift = builder.create<fir::LoadOp>(loc, *shiftAddr);
 
-    Fortran::lower::genCshiftVector(builder, loc, resultIrBox, array, shift);
+    fir::runtime::genCshiftVector(builder, loc, resultIrBox, array, shift);
   } else {
     // Non-vector case
     // Handle required SHIFT argument as an array
@@ -2064,7 +2063,7 @@ IntrinsicLibrary::genCshift(mlir::Type resultType,
         isAbsent(args[2])
             ? builder.createIntegerConstant(loc, builder.getIndexType(), 1)
             : fir::getBase(args[2]);
-    Fortran::lower::genCshift(builder, loc, resultIrBox, array, shift, dim);
+    fir::runtime::genCshift(builder, loc, resultIrBox, array, shift, dim);
   }
   return readAndAddCleanUp(resultMutableBox, resultType, "CSHIFT");
 }
@@ -2108,7 +2107,7 @@ mlir::Value IntrinsicLibrary::genDim(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genDotProduct(mlir::Type resultType,
                                 llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genDotProd(Fortran::lower::genDotProduct, resultType, builder, loc,
+  return genDotProd(fir::runtime::genDotProduct, resultType, builder, loc,
                     stmtCtx, args);
 }
 
@@ -2130,8 +2129,8 @@ mlir::Value IntrinsicLibrary::genExponent(mlir::Type resultType,
 
   return builder.createConvert(
       loc, resultType,
-      Fortran::lower::genExponent(builder, loc, resultType,
-                                  fir::getBase(args[0])));
+      fir::runtime::genExponent(builder, loc, resultType,
+                                fir::getBase(args[0])));
 }
 
 // FLOOR
@@ -2152,7 +2151,7 @@ mlir::Value IntrinsicLibrary::genFraction(mlir::Type resultType,
 
   return builder.createConvert(
       loc, resultType,
-      Fortran::lower::genFraction(builder, loc, fir::getBase(args[0])));
+      fir::runtime::genFraction(builder, loc, fir::getBase(args[0])));
 }
 
 // IAND
@@ -2281,8 +2280,8 @@ IntrinsicLibrary::genIndex(mlir::Type resultType,
   if (isAbsent(args, 3))
     return builder.createConvert(
         loc, resultType,
-        Fortran::lower::genIndex(builder, loc, kind, stringBase, stringLen,
-                                 substringBase, substringLen, back));
+        fir::runtime::genIndex(builder, loc, kind, stringBase, stringLen,
+                               substringBase, substringLen, back));
 
   // Call the descriptor-based Index implementation
   auto string = builder.createBox(loc, args[0]);
@@ -2308,8 +2307,8 @@ IntrinsicLibrary::genIndex(mlir::Type resultType,
   auto mutBox = fir::factory::createTempMutableBox(builder, loc, resultType);
   auto resBox = fir::factory::getMutableIRBox(builder, loc, mutBox);
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genIndexDescriptor(builder, loc, resBox, string, substring,
-                                     backOpt, kindVal);
+  fir::runtime::genIndexDescriptor(builder, loc, resBox, string, substring,
+                                   backOpt, kindVal);
   // Read back the result from the mutable box.
   return readAndAddCleanUp(mutBox, resultType, "INDEX");
 }
@@ -2453,7 +2452,7 @@ fir::ExtendedValue
 IntrinsicLibrary::genCharacterCompare(mlir::Type type,
                                       llvm::ArrayRef<fir::ExtendedValue> args) {
   assert(args.size() == 2);
-  return Fortran::lower::genCharCompare(
+  return fir::runtime::genCharCompare(
       builder, loc, pred, fir::getBase(args[0]), fir::getLen(args[0]),
       fir::getBase(args[1]), fir::getLen(args[1]));
 }
@@ -2479,7 +2478,7 @@ IntrinsicLibrary::genMatmul(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genMatmul(builder, loc, resultIrBox, matrixA, matrixB);
+  fir::runtime::genMatmul(builder, loc, resultIrBox, matrixA, matrixB);
   // Read result from mutable fir.box and add it to the list of temps to be
   // finalized by the StatementContext.
   return readAndAddCleanUp(resultMutableBox, resultType,
@@ -2605,7 +2604,7 @@ mlir::Value IntrinsicLibrary::genNearest(mlir::Type resultType,
   auto realS = fir::getBase(args[1]);
 
   return builder.createConvert(
-      loc, resultType, Fortran::lower::genNearest(builder, loc, realX, realS));
+      loc, resultType, fir::runtime::genNearest(builder, loc, realX, realS));
 }
 
 // NINT
@@ -2668,7 +2667,7 @@ IntrinsicLibrary::genPack(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genPack(builder, loc, resultIrBox, array, mask, vector);
+  fir::runtime::genPack(builder, loc, resultIrBox, array, mask, vector);
 
   return readAndAddCleanUp(resultMutableBox, resultType,
                            "unexpected result for PACK");
@@ -2687,7 +2686,7 @@ IntrinsicLibrary::genPresent(mlir::Type,
 fir::ExtendedValue
 IntrinsicLibrary::genProduct(mlir::Type resultType,
                              llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genProdOrSum(Fortran::lower::genProduct, Fortran::lower::genProductDim,
+  return genProdOrSum(fir::runtime::genProduct, fir::runtime::genProductDim,
                       resultType, builder, loc, stmtCtx,
                       "unexpected result for Product", args);
 }
@@ -2730,7 +2729,7 @@ IntrinsicLibrary::genRepeat(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genRepeat(builder, loc, resultIrBox, string, ncopies);
+  fir::runtime::genRepeat(builder, loc, resultIrBox, string, ncopies);
   // Read result from mutable fir.box and add it to the list of temps to be
   // finalized by the StatementContext.
   return readAndAddCleanUp(resultMutableBox, resultType, "REPEAT");
@@ -2777,8 +2776,8 @@ IntrinsicLibrary::genReshape(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genReshape(builder, loc, resultIrBox, source, shape, pad,
-                             order);
+  fir::runtime::genReshape(builder, loc, resultIrBox, source, shape, pad,
+                           order);
 
   return readAndAddCleanUp(resultMutableBox, resultType,
                            "unexpected result for RESHAPE");
@@ -2791,7 +2790,7 @@ mlir::Value IntrinsicLibrary::genRRSpacing(mlir::Type resultType,
 
   return builder.createConvert(
       loc, resultType,
-      Fortran::lower::genRRSpacing(builder, loc, fir::getBase(args[0])));
+      fir::runtime::genRRSpacing(builder, loc, fir::getBase(args[0])));
 }
 
 // SCALE
@@ -2803,7 +2802,7 @@ mlir::Value IntrinsicLibrary::genScale(mlir::Type resultType,
   auto intI = fir::getBase(args[1]);
 
   return builder.createConvert(
-      loc, resultType, Fortran::lower::genScale(builder, loc, realX, intI));
+      loc, resultType, fir::runtime::genScale(builder, loc, realX, intI));
 }
 
 // SCAN
@@ -2839,10 +2838,10 @@ IntrinsicLibrary::genScan(mlir::Type resultType,
                     ? builder.createIntegerConstant(loc, builder.getI1Type(), 0)
                     : fir::getBase(args[2]);
 
-    return builder.createConvert(
-        loc, resultType,
-        Fortran::lower::genScan(builder, loc, kind, stringBase, stringLen,
-                                setBase, setLen, back));
+    return builder.createConvert(loc, resultType,
+                                 fir::runtime::genScan(builder, loc, kind,
+                                                       stringBase, stringLen,
+                                                       setBase, setLen, back));
   }
   // else use the runtime descriptor version of scan/verify
 
@@ -2875,8 +2874,8 @@ IntrinsicLibrary::genScan(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genScanDescriptor(builder, loc, resultIrBox, string, set,
-                                    back, kind);
+  fir::runtime::genScanDescriptor(builder, loc, resultIrBox, string, set, back,
+                                  kind);
 
   // Handle cleanup of allocatable result descriptor and return
   return readAndAddCleanUp(resultMutableBox, resultType, "SCAN");
@@ -2889,8 +2888,8 @@ mlir::Value IntrinsicLibrary::genSetExponent(mlir::Type resultType,
 
   return builder.createConvert(
       loc, resultType,
-      Fortran::lower::genSetExponent(builder, loc, fir::getBase(args[0]),
-                                     fir::getBase(args[1])));
+      fir::runtime::genSetExponent(builder, loc, fir::getBase(args[0]),
+                                   fir::getBase(args[1])));
 }
 
 // SIGN
@@ -2957,7 +2956,7 @@ mlir::Value IntrinsicLibrary::genSpacing(mlir::Type resultType,
 
   return builder.createConvert(
       loc, resultType,
-      Fortran::lower::genSpacing(builder, loc, fir::getBase(args[0])));
+      fir::runtime::genSpacing(builder, loc, fir::getBase(args[0])));
 }
 
 // SPREAD
@@ -2985,7 +2984,7 @@ IntrinsicLibrary::genSpread(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genSpread(builder, loc, resultIrBox, source, dim, ncopies);
+  fir::runtime::genSpread(builder, loc, resultIrBox, source, dim, ncopies);
 
   return readAndAddCleanUp(resultMutableBox, resultType,
                            "unexpected result for SPREAD");
@@ -2995,9 +2994,8 @@ IntrinsicLibrary::genSpread(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genSum(mlir::Type resultType,
                          llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genProdOrSum(Fortran::lower::genSum, Fortran::lower::genSumDim,
-                      resultType, builder, loc, stmtCtx,
-                      "unexpected result for Sum", args);
+  return genProdOrSum(fir::runtime::genSum, fir::runtime::genSumDim, resultType,
+                      builder, loc, stmtCtx, "unexpected result for Sum", args);
 }
 
 // SYSTEM_CLOCK
@@ -3071,7 +3069,7 @@ IntrinsicLibrary::genTranspose(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genTranspose(builder, loc, resultIrBox, source);
+  fir::runtime::genTranspose(builder, loc, resultIrBox, source);
   // Read result from mutable fir.box and add it to the list of temps to be
   // finalized by the StatementContext.
   return readAndAddCleanUp(resultMutableBox, resultType,
@@ -3090,7 +3088,7 @@ IntrinsicLibrary::genTrim(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
   // Call runtime. The runtime is allocating the result.
-  Fortran::lower::genTrim(builder, loc, resultIrBox, string);
+  fir::runtime::genTrim(builder, loc, resultIrBox, string);
   // Read result from mutable fir.box and add it to the list of temps to be
   // finalized by the StatementContext.
   return readAndAddCleanUp(resultMutableBox, resultType, "TRIM");
@@ -3178,7 +3176,7 @@ IntrinsicLibrary::genUnpack(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genUnpack(builder, loc, resultIrBox, vector, mask, field);
+  fir::runtime::genUnpack(builder, loc, resultIrBox, vector, mask, field);
 
   return readAndAddCleanUp(resultMutableBox, resultType,
                            "unexpected result for UNPACK");
@@ -3219,8 +3217,8 @@ IntrinsicLibrary::genVerify(mlir::Type resultType,
 
     return builder.createConvert(
         loc, resultType,
-        Fortran::lower::genVerify(builder, loc, kind, stringBase, stringLen,
-                                  setBase, setLen, back));
+        fir::runtime::genVerify(builder, loc, kind, stringBase, stringLen,
+                                setBase, setLen, back));
   }
   // else use the runtime descriptor version of scan/verify
 
@@ -3253,8 +3251,8 @@ IntrinsicLibrary::genVerify(mlir::Type resultType,
   auto resultIrBox =
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
-  Fortran::lower::genVerifyDescriptor(builder, loc, resultIrBox, string, set,
-                                      back, kind);
+  fir::runtime::genVerifyDescriptor(builder, loc, resultIrBox, string, set,
+                                    back, kind);
 
   // Handle cleanup of allocatable result descriptor and return
   return readAndAddCleanUp(resultMutableBox, resultType, "VERIFY");
@@ -3264,7 +3262,7 @@ IntrinsicLibrary::genVerify(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genMaxloc(mlir::Type resultType,
                             llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genExtremumloc(Fortran::lower::genMaxloc, Fortran::lower::genMaxlocDim,
+  return genExtremumloc(fir::runtime::genMaxloc, fir::runtime::genMaxlocDim,
                         resultType, builder, loc, stmtCtx,
                         "unexpected result for Maxloc", args);
 }
@@ -3273,8 +3271,8 @@ IntrinsicLibrary::genMaxloc(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genMaxval(mlir::Type resultType,
                             llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genExtremumVal(Fortran::lower::genMaxval, Fortran::lower::genMaxvalDim,
-                        Fortran::lower::genMaxvalChar, resultType, builder, loc,
+  return genExtremumVal(fir::runtime::genMaxval, fir::runtime::genMaxvalDim,
+                        fir::runtime::genMaxvalChar, resultType, builder, loc,
                         stmtCtx, "unexpected result for Maxval", args);
 }
 
@@ -3282,7 +3280,7 @@ IntrinsicLibrary::genMaxval(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genMinloc(mlir::Type resultType,
                             llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genExtremumloc(Fortran::lower::genMinloc, Fortran::lower::genMinlocDim,
+  return genExtremumloc(fir::runtime::genMinloc, fir::runtime::genMinlocDim,
                         resultType, builder, loc, stmtCtx,
                         "unexpected result for Minloc", args);
 }
@@ -3291,8 +3289,8 @@ IntrinsicLibrary::genMinloc(mlir::Type resultType,
 fir::ExtendedValue
 IntrinsicLibrary::genMinval(mlir::Type resultType,
                             llvm::ArrayRef<fir::ExtendedValue> args) {
-  return genExtremumVal(Fortran::lower::genMinval, Fortran::lower::genMinvalDim,
-                        Fortran::lower::genMinvalChar, resultType, builder, loc,
+  return genExtremumVal(fir::runtime::genMinval, fir::runtime::genMinvalDim,
+                        fir::runtime::genMinvalChar, resultType, builder, loc,
                         stmtCtx, "unexpected result for Minval", args);
 }
 

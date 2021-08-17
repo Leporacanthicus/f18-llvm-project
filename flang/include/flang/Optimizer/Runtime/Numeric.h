@@ -1,4 +1,4 @@
-//===-- Lower/NumericRuntime.h -- lower numeric intrinsics --*- C++ -*-===//
+//===-- Numeric.h -- generate numeric intrinsics runtime calls --*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_NUMERICRUNTIME_H
-#define FORTRAN_LOWER_NUMERICRUNTIME_H
+#ifndef FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H
+#define FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -16,7 +16,7 @@ class ExtendedValue;
 class FirOpBuilder;
 } // namespace fir
 
-namespace Fortran::lower {
+namespace fir::runtime {
 
 /// Generate call to Exponent intrinsic runtime routine.
 mlir::Value genExponent(fir::FirOpBuilder &builder, mlir::Location loc,
@@ -46,5 +46,5 @@ mlir::Value genSetExponent(fir::FirOpBuilder &builder, mlir::Location loc,
 mlir::Value genSpacing(fir::FirOpBuilder &builder, mlir::Location loc,
                        mlir::Value x);
 
-} // namespace Fortran::lower
-#endif
+} // namespace fir::runtime
+#endif // FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H

@@ -14,7 +14,6 @@
 #include "BuiltinModules.h"
 #include "ConvertVariable.h"
 #include "IterationSpace.h"
-#include "RTBuilder.h"
 #include "StatementContext.h"
 #include "flang/Common/default-kinds.h"
 #include "flang/Common/unwrap.h"
@@ -24,7 +23,6 @@
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/CallInterface.h"
-#include "flang/Lower/CharacterRuntime.h"
 #include "flang/Lower/Coarray.h"
 #include "flang/Lower/ConvertType.h"
 #include "flang/Lower/IntrinsicCall.h"
@@ -37,6 +35,8 @@
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
+#include "flang/Optimizer/Runtime/Character.h"
+#include "flang/Optimizer/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Transforms/Factory.h"
 #include "flang/Semantics/expression.h"
@@ -408,7 +408,7 @@ public:
   /// Precondition: This assumes that the two values have `fir.boxchar` type.
   mlir::Value createCharCompare(mlir::CmpIPredicate pred, const ExtValue &left,
                                 const ExtValue &right) {
-    return Fortran::lower::genCharCompare(builder, getLoc(), pred, left, right);
+    return fir::runtime::genCharCompare(builder, getLoc(), pred, left, right);
   }
 
   template <typename A>
@@ -5261,7 +5261,7 @@ public:
       mlir::Value byteSz = builder.create<mlir::MulIOp>(loc, arrSz, eleSz);
       auto buff = builder.createConvert(loc, fir::HeapType::get(resTy), mem);
       auto buffi = computeCoordinate(buff, off);
-      auto args = Fortran::lower::createArguments(
+      auto args = fir::runtime::createArguments(
           builder, loc, memcpyType(), buffi, v.getAddr(), byteSz,
           /*volatile=*/builder.createBool(loc, false));
       createCallMemcpy(args);
@@ -5300,7 +5300,7 @@ public:
           auto buff =
               builder.createConvert(loc, fir::HeapType::get(resTy), mem);
           auto buffi = computeCoordinate(buff, off);
-          auto args = Fortran::lower::createArguments(
+          auto args = fir::runtime::createArguments(
               builder, loc, memcpyType(), buffi, v.getAddr(), eleSz,
               /*volatile=*/builder.createBool(loc, false));
           createCallMemcpy(args);
@@ -5555,7 +5555,7 @@ public:
     return [=](IterSpace iters) -> ExtValue {
       auto lhs = lf(iters);
       auto rhs = rf(iters);
-      return Fortran::lower::genCharCompare(builder, loc, pred, lhs, rhs);
+      return fir::runtime::genCharCompare(builder, loc, pred, lhs, rhs);
     };
   }
   template <int KIND>

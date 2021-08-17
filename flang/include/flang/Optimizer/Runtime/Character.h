@@ -1,4 +1,4 @@
-//===-- Lower/CharacterRuntime.h -- lower CHARACTER operations --*- C++ -*-===//
+//===-- Character.h -- generate calls to character runtime API --*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_CHARACTERRUNTIME_H
-#define FORTRAN_LOWER_CHARACTERRUNTIME_H
+#ifndef FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H
+#define FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -16,8 +16,7 @@ class ExtendedValue;
 class FirOpBuilder;
 } // namespace fir
 
-namespace Fortran {
-namespace lower {
+namespace fir::runtime {
 
 /// Generate a call to the ADJUSTL runtime.
 /// This calls the simple runtime entry point that then calls into the more
@@ -130,7 +129,6 @@ mlir::Value genVerify(fir::FirOpBuilder &builder, mlir::Location loc, int kind,
                       mlir::Value setBase, mlir::Value setLen,
                       mlir::Value back);
 
-} // namespace lower
-} // namespace Fortran
+} // namespace fir::runtime
 
-#endif // FORTRAN_LOWER_CHARACTERRUNTIME_H
+#endif // FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H

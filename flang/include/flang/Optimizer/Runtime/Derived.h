@@ -1,4 +1,4 @@
-//===-- Lower/DerivedRuntime.h - lower derived type runtime API -*- C++ -*-===//
+//===-- Derived.h - generate derived type runtime API calls -*- C++ -----*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_LOWER_DERIVEDRUNTIME_H
-#define FORTRAN_LOWER_DERIVEDRUNTIME_H
+#ifndef FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
+#define FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
 
 namespace mlir {
 class Value;
@@ -18,7 +18,7 @@ namespace fir {
 class FirOpBuilder;
 }
 
-namespace Fortran::lower {
+namespace fir::runtime {
 
 /// Generate call to derived type initialization runtime routine to
 /// default initialize \p box.
@@ -35,5 +35,5 @@ void genDerivedTypeDestroy(fir::FirOpBuilder &builder, mlir::Location loc,
 void genDerivedTypeAssign(fir::FirOpBuilder &builder, mlir::Location loc,
                           mlir::Value destinationBox, mlir::Value sourceBox);
 
-} // namespace Fortran::lower
-#endif
+} // namespace fir::runtime
+#endif // FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
