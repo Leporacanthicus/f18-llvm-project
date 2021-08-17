@@ -315,7 +315,7 @@ public:
   fir::MutableBoxValue
   genExprMutableBox(mlir::Location loc,
                     const Fortran::lower::SomeExpr &expr) override final {
-    return createSomeMutableBox(loc, *this, expr, localSymbols);
+    return createMutableBox(loc, *this, expr, localSymbols);
   }
   fir::ExtendedValue genExprBox(const Fortran::lower::SomeExpr &expr,
                                 Fortran::lower::StatementContext &context,
@@ -1703,9 +1703,8 @@ private:
     if (isWholeAllocatable(assign.lhs)) {
       // Assignment to allocatables may require the lhs to be
       // deallocated/reallocated. See Fortran 2018 10.2.1.3 p3
-      auto lhs = genExprMutableBox(toLocation(), assign.lhs);
       Fortran::lower::createAllocatableArrayAssignment(
-          *this, lhs, assign.rhs, explicitIterSpace, implicitIterSpace,
+          *this, assign.lhs, assign.rhs, explicitIterSpace, implicitIterSpace,
           localSymbols, stmtCtx);
       return;
     }

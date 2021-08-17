@@ -60,9 +60,9 @@ createSomeExtendedAddress(mlir::Location loc, AbstractConverter &converter,
 /// Create the address of the box.
 /// \p expr must be the designator of an allocatable/pointer entity.
 fir::MutableBoxValue
-createSomeMutableBox(mlir::Location loc, AbstractConverter &converter,
-                     const evaluate::Expr<evaluate::SomeType> &expr,
-                     SymMap &symMap);
+createMutableBox(mlir::Location loc, AbstractConverter &converter,
+                 const evaluate::Expr<evaluate::SomeType> &expr,
+                 SymMap &symMap);
 
 /// Lower an array assignment expression.
 ///
@@ -138,7 +138,8 @@ void createAnyMaskedArrayAssignment(
 /// it is not allocated yet or reallocation it if it does not conform
 /// with the right hand side.
 void createAllocatableArrayAssignment(
-    AbstractConverter &converter, const fir::MutableBoxValue &lhs,
+    AbstractConverter &converter,
+    const evaluate::Expr<evaluate::SomeType> &lhs,
     const evaluate::Expr<evaluate::SomeType> &rhs,
     ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
     SymMap &symMap, StatementContext &stmtCtx);
