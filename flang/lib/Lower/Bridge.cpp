@@ -1819,6 +1819,7 @@ private:
     auto loc = toLocation();
     std::visit(
         Fortran::common::visitors{
+            // [1] Plain old assignment.
             [&](const Fortran::evaluate::Assignment::Intrinsic &) {
               const auto *sym = Fortran::evaluate::GetLastSymbol(assign.lhs);
 
@@ -1905,15 +1906,19 @@ private:
               }
               llvm_unreachable("unknown category");
             },
+
+            // [2] User defined assignment. If the context is a scalar
+            // expression then call the procedure.
             [&](const Fortran::evaluate::ProcedureRef &procRef) {
-              // User defined assignment: call the procedure.
               if (explicitIterationSpace())
                 TODO(loc, "user defined assignment within FORALL");
               Fortran::semantics::SomeExpr expr{procRef};
               createFIRExpr(toLocation(), &expr, stmtCtx);
             },
+
+            // [3] Pointer assignment with possibly empty bounds-spec. R1035: a
+            // bounds-spec is a lower bound value.
             [&](const Fortran::evaluate::Assignment::BoundsSpec &lbExprs) {
-              // Pointer assignment with possibly empty bounds-spec
               auto lhsType = assign.lhs.GetType();
               auto rhsType = assign.rhs.GetType();
               // Polymorphic lhs/rhs may need more care. See F2018 10.2.2.3.
@@ -1931,9 +1936,11 @@ private:
               Fortran::lower::associateMutableBox(*this, loc, lhs, assign.rhs,
                                                   lbounds, stmtCtx);
             },
+
+            // [4] Pointer assignment with bounds-remapping. R1036: a
+            // bounds-remapping is a pair, lower bound and upper bound.
             [&](const Fortran::evaluate::Assignment::BoundsRemapping
                     &boundExprs) {
-              // Pointer assignment with bounds-remapping
               if (explicitIterationSpace())
                 TODO(loc, "pointer assignment within FORALL");
               auto lhs = genExprMutableBox(loc, assign.lhs);
@@ -1961,10 +1968,16 @@ private:
                              ? Fortran::lower::createSomeArrayBox(
                                    *this, assign.rhs, localSymbols, stmtCtx)
                              : genExprAddr(assign.rhs, stmtCtx);
+<<<<<<< Updated upstream
               fir::factory::associateMutableBoxWithRemap(*builder, loc, lhs,
                                                          rhs, lbounds, ubounds);
             },
         },
+=======
+              Fortran::lower::associateMutableBoxWithRemap(
+                  *builder, loc, lhs, rhs, lbounds, ubounds);
+            }},
+>>>>>>> Stashed changes
         assign.u);
   }
 

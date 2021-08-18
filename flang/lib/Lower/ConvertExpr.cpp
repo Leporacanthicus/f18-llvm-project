@@ -4635,8 +4635,6 @@ public:
         }
       }
       auto one = builder.createIntegerConstant(loc, idxTy, 1);
-      llvm::errs() << "DBG: " << isScalar << ' ' << implicitArguments << ' '
-                   << x.GetFirstSymbol() << '\n';
       auto pc = [=](IterSpace iters) {
         IterationSpace newIters = iters;
         if (isScalar) {
