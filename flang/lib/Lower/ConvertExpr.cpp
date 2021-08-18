@@ -2763,11 +2763,8 @@ public:
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &exp) {
     auto resTy = explicitSpace ? destination->getResult(0).getType()
                                : converter.genType(exp);
-    bool explicitScalar = explicitSpace && exp.Rank() == 0;
     return std::visit(
-        [&](const auto &e) {
-          return lowerArrayExpression(genarr(e), resTy, explicitScalar);
-        },
+        [&](const auto &e) { return lowerArrayExpression(genarr(e), resTy); },
         exp.u);
   }
   ExtValue lowerArrayExpression(const ExtValue &exv) {
@@ -2794,15 +2791,15 @@ public:
   /// Otherwise, \p resultTy is ignored and the expression is evaluated
   /// in the destination. \p f is a continuation built from an
   /// evaluate::Expr or an ExtendedValue.
-  ExtValue lowerArrayExpression(CC f, mlir::Type resultTy,
-                                bool explicitScalar = false) {
+  ExtValue lowerArrayExpression(CC f, mlir::Type resultTy) {
     auto loc = getLoc();
     auto [iterSpace, insPt] = genIterSpace(resultTy);
-    auto rhsIterSpace = iterSpace;
+#if 0
     if (explicitScalar)
       rhsIterSpace.removeImplicit();
+#endif
     auto innerArg = iterSpace.innerArgument();
-    auto exv = f(rhsIterSpace);
+    auto exv = f(iterSpace);
     mlir::Value upd;
     if (ccDest.hasValue()) {
       auto element = fir::getBase(exv);
@@ -4433,7 +4430,8 @@ public:
 
   RaiseRT
   raiseToArray(const Fortran::evaluate::DataRef &x,
-               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet) {
+               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet,
+               bool isScalar) {
     return std::visit(
         Fortran::common::visitors{
             [&](const Fortran::semantics::SymbolRef &s) -> RaiseRT {
@@ -4447,13 +4445,16 @@ public:
               TODO(getLoc(), "coarray reference");
               return {llvm::None, mlir::Type{}, false, false};
             },
-            [&](const auto &y) -> RaiseRT { return raiseToArray(y, ctrlSet); }},
+            [&](const auto &y) -> RaiseRT {
+              return raiseToArray(y, ctrlSet, isScalar);
+            }},
         x.u);
   }
   RaiseRT
   raiseToArray(const Fortran::evaluate::Component &x,
-               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet) {
-    auto [fopt, ty, inrank, ranked] = raiseToArray(x.base(), ctrlSet);
+               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet,
+               bool isScalar) {
+    auto [fopt, ty, inrank, ranked] = raiseToArray(x.base(), ctrlSet, isScalar);
     if (fopt.hasValue()) {
       if (!ranked && x.Rank() > 0) {
         auto [fopt2, ty2] = raiseRankedComponent(fopt, x, ty);
@@ -4470,7 +4471,8 @@ public:
   }
   RaiseRT
   raiseToArray(const Fortran::evaluate::ArrayRef &x,
-               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet) {
+               llvm::ArrayRef<const Fortran::semantics::Symbol *> ctrlSet,
+               bool isScalar) {
     const auto &base = x.base();
     auto accessUsesControlVariable = [&]() {
       for (const auto &subs : x.subscript())
@@ -4500,16 +4502,16 @@ public:
           }
           // Otherwise, it's a component.
           auto [fopt, ty, inrank, ranked] =
-              raiseToArray(base.GetComponent(), ctrlSet);
+              raiseToArray(base.GetComponent(), ctrlSet, isScalar);
           if (fopt.hasValue())
-            return RaiseRT{fopt, ty, inrank, ranked};
+            return RaiseRT{fopt, ty, inrank, x.Rank() > 0};
           if (x.Rank() > 0 || accessUsesControlVariable()) {
             auto [fopt2, ty2] = raiseBase(base.GetComponent());
             return RaiseRT{fopt2, ty2, inrank, x.Rank() > 0};
           }
           return RaiseRT{fopt, ty, inrank, ranked};
         }(),
-        x);
+        x, isScalar);
   }
   static mlir::Type unwrapBoxEleTy(mlir::Type ty) {
     if (auto boxTy = ty.dyn_cast<fir::BoxType>()) {
@@ -4554,7 +4556,7 @@ public:
     return {};
   }
   RaiseRT raiseSubscript(const RaiseRT &tup,
-                         const Fortran::evaluate::ArrayRef &x) {
+                         const Fortran::evaluate::ArrayRef &x, bool isScalar) {
     auto fopt = std::get<llvm::Optional<CC>>(tup);
     if (fopt.hasValue()) {
       auto arrTy = std::get<mlir::Type>(tup);
@@ -4633,8 +4635,14 @@ public:
         }
       }
       auto one = builder.createIntegerConstant(loc, idxTy, 1);
+      llvm::errs() << "DBG: " << isScalar << ' ' << implicitArguments << ' '
+                   << x.GetFirstSymbol() << '\n';
       auto pc = [=](IterSpace iters) {
         IterationSpace newIters = iters;
+        if (isScalar) {
+          newIters.removeImplicit();
+          assert(!implicitArguments);
+        }
         const auto firstImplicitIndex = iters.beginImplicitIndex();
         auto implicitIndex = iters.endImplicitIndex();
         assert(firstImplicitIndex <= implicitIndex);
@@ -4722,7 +4730,7 @@ public:
   /// variables, i.e. `array(func(i))`, are not.
   template <typename A>
   CC raiseToArray(const A &x) {
-    auto tup = raiseToArray(x, collectControlSymbols());
+    auto tup = raiseToArray(x, collectControlSymbols(), x.Rank() == 0);
     auto fopt = std::get<llvm::Optional<CC>>(tup);
     assert(fopt.hasValue() && "continuation must be returned");
     return fopt.getValue();
