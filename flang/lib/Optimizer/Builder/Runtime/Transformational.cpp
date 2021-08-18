@@ -50,6 +50,42 @@ void fir::runtime::genCshiftVector(fir::FirOpBuilder &builder,
   builder.create<fir::CallOp>(loc, cshiftFunc, args);
 }
 
+/// Generate call to Eoshift intrinsic
+void fir::runtime::genEoshift(fir::FirOpBuilder &builder, mlir::Location loc,
+                              mlir::Value resultBox, mlir::Value arrayBox,
+                              mlir::Value shiftBox, mlir::Value boundBox,
+                              mlir::Value dimBox) {
+  auto eoshiftFunc =
+      fir::runtime::getRuntimeFunc<mkRTKey(Eoshift)>(loc, builder);
+  auto fTy = eoshiftFunc.getType();
+  auto sourceFile = fir::factory::locationToFilename(builder, loc);
+  auto sourceLine =
+      fir::factory::locationToLineNo(builder, loc, fTy.getInput(6));
+  auto args = fir::runtime::createArguments(builder, loc, fTy, resultBox,
+                                            arrayBox, shiftBox, boundBox,
+                                            dimBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, eoshiftFunc, args);
+}
+
+/// Generate call to the vector version of the Eoshift intrinsic
+void fir::runtime::genEoshiftVector(fir::FirOpBuilder &builder,
+                                    mlir::Location loc, mlir::Value resultBox,
+                                    mlir::Value arrayBox, mlir::Value shiftBox,
+                                    mlir::Value boundBox) {
+  auto eoshiftFunc =
+      fir::runtime::getRuntimeFunc<mkRTKey(EoshiftVector)>(loc, builder);
+  auto fTy = eoshiftFunc.getType();
+
+  auto sourceFile = fir::factory::locationToFilename(builder, loc);
+  auto sourceLine =
+      fir::factory::locationToLineNo(builder, loc, fTy.getInput(5));
+
+  auto args =
+      fir::runtime::createArguments(builder, loc, fTy, resultBox, arrayBox,
+                                    shiftBox, boundBox, sourceFile, sourceLine);
+  builder.create<fir::CallOp>(loc, eoshiftFunc, args);
+}
+
 /// Generate call to Matmul intrinsic runtime routine.
 void fir::runtime::genMatmul(fir::FirOpBuilder &builder, mlir::Location loc,
                              mlir::Value resultBox, mlir::Value matrixABox,

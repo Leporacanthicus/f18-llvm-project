@@ -27,6 +27,14 @@ void genCshiftVector(fir::FirOpBuilder &builder, mlir::Location loc,
                      mlir::Value resultBox, mlir::Value arrayBox,
                      mlir::Value shiftBox);
 
+void genEoshift(fir::FirOpBuilder &builder, mlir::Location loc,
+                mlir::Value resultBox, mlir::Value arrayBox,
+                mlir::Value shiftBox, mlir::Value boundBox, mlir::Value dimBox);
+
+void genEoshiftVector(fir::FirOpBuilder &builder, mlir::Location loc,
+                      mlir::Value resultBox, mlir::Value arrayBox,
+                      mlir::Value shiftBox, mlir::Value boundBox);
+
 void genMatmul(fir::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value matrixABox, mlir::Value matrixBBox,
                mlir::Value resultBox);

@@ -457,6 +457,7 @@ struct IntrinsicLibrary {
   fir::ExtendedValue genDotProduct(mlir::Type,
                                    llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genDprod(mlir::Type, llvm::ArrayRef<mlir::Value>);
+  fir::ExtendedValue genEoshift(mlir::Type, llvm::ArrayRef<fir::ExtendedValue>);
   mlir::Value genExponent(mlir::Type, llvm::ArrayRef<mlir::Value>);
   template <Extremum, ExtremumBehavior>
   mlir::Value genExtremum(mlir::Type, llvm::ArrayRef<mlir::Value>);
@@ -681,6 +682,13 @@ static constexpr IntrinsicHandler handlers[]{
      {{{"vector_a", asAddr}, {"vector_b", asAddr}}},
      /*isElemental=*/false},
     {"dprod", &I::genDprod},
+    {"eoshift",
+     &I::genEoshift,
+     {{{"array", asAddr},
+       {"shift", asAddr},
+       {"boundary", asValue},
+       {"dim", asValue}}},
+     /*isElemental=*/false},
     {"exponent", &I::genExponent},
     {"floor", &I::genFloor},
     {"fraction", &I::genFraction},
@@ -2121,6 +2129,92 @@ mlir::Value IntrinsicLibrary::genDprod(mlir::Type resultType,
   auto a = builder.createConvert(loc, resultType, args[0]);
   auto b = builder.createConvert(loc, resultType, args[1]);
   return builder.create<mlir::MulFOp>(loc, a, b);
+}
+
+// EOSHIFT
+fir::ExtendedValue
+IntrinsicLibrary::genEoshift(mlir::Type resultType,
+                             llvm::ArrayRef<fir::ExtendedValue> args) {
+  assert(args.size() == 4);
+
+  // Handle required ARRAY argument
+  fir::BoxValue arrayBox = builder.createBox(loc, args[0]);
+  auto array = fir::getBase(arrayBox);
+  auto arrayRank = arrayBox.rank();
+
+  // Create mutable fir.box to be passed to the runtime for the result.
+  auto resultArrayType = builder.getVarLenSeqTy(resultType, arrayRank);
+  auto resultMutableBox =
+      fir::factory::createTempMutableBox(builder, loc, resultArrayType);
+  auto resultIrBox =
+      fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
+
+  // Handle optional BOUNDARY argument
+  mlir::Type arrayEleTy = arrayBox.getEleTy();
+  mlir::Value boundary = nullptr;
+
+  if (isAbsent(args[2])) {
+    if (arrayEleTy.isa<mlir::IntegerType>() ||
+        arrayEleTy.isa<mlir::FloatType>() ||
+        arrayEleTy.isa<fir::LogicalType>()) {
+      // fill in with appropriate number of 0 or .false.
+      auto zero = builder.createIntegerConstant(loc, builder.getIndexType(), 0);
+      auto temp = builder.createTemporary(loc, arrayEleTy);
+      auto cast = builder.createConvert(loc, arrayEleTy, zero);
+      builder.create<fir::StoreOp>(loc, cast, temp);
+      boundary = builder.createBox(loc, temp);
+    } else if (arrayEleTy.isa<fir::CharacterType>()) {
+      // fill in with appropriate number of blanks
+      fir::factory::CharacterExprHelper helper{builder, loc};
+      fir::CharacterType charTy = helper.getCharacterType(arrayEleTy);
+      fir::CharBoxValue temp =
+          helper.createCharacterTemp(arrayEleTy, charTy.getLen());
+      auto zero = builder.createIntegerConstant(loc, builder.getIndexType(), 0);
+      auto len = builder.createIntegerConstant(
+          loc, builder.getCharacterLengthType(), charTy.getLen());
+
+      helper.createPadding(temp, zero, len);
+
+      boundary = builder.createBox(loc, temp);
+    } else
+      fir::emitFatalError(loc, "bad type for EOSHIFT");
+  } else {
+    if (arrayEleTy.isa<mlir::IntegerType>() ||
+        arrayEleTy.isa<mlir::FloatType>() ||
+        arrayEleTy.isa<fir::LogicalType>()) {
+      auto temp = builder.createTemporary(loc, arrayEleTy);
+      auto cast = builder.createConvert(loc, arrayEleTy, fir::getBase(args[2]));
+      builder.create<fir::StoreOp>(loc, cast, temp);
+      boundary = builder.createBox(loc, temp);
+    } else if (arrayEleTy.isa<fir::CharacterType>())
+      boundary = builder.createBox(loc, args[2]);
+    else
+      fir::emitFatalError(loc, "bad type for EOSHIFT");
+  }
+
+  if (arrayRank == 1) {
+    // Vector case
+    // Handle required SHIFT argument as a scalar
+    auto shiftAddr = args[1].getUnboxed();
+    assert(shiftAddr && "nonscalar EOSHIFT SHIFT argument");
+    auto shift = builder.create<fir::LoadOp>(loc, *shiftAddr);
+    fir::runtime::genEoshiftVector(builder, loc, resultIrBox, array, shift,
+                                   boundary);
+  } else {
+    // Non-vector case
+    // Handle required SHIFT argument as an array
+    auto shift = builder.createBox(loc, args[1]);
+
+    // Handle optional DIM argument
+    auto dim =
+        isAbsent(args[3])
+            ? builder.createIntegerConstant(loc, builder.getIndexType(), 1)
+            : fir::getBase(args[3]);
+    fir::runtime::genEoshift(builder, loc, resultIrBox, array, shift, boundary,
+                             dim);
+  }
+  return readAndAddCleanUp(resultMutableBox, resultType,
+                           "unexpected result for EOSHIFT");
 }
 
 // EXPONENT
