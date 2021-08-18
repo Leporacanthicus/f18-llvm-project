@@ -1968,16 +1968,10 @@ private:
                              ? Fortran::lower::createSomeArrayBox(
                                    *this, assign.rhs, localSymbols, stmtCtx)
                              : genExprAddr(assign.rhs, stmtCtx);
-<<<<<<< Updated upstream
               fir::factory::associateMutableBoxWithRemap(*builder, loc, lhs,
                                                          rhs, lbounds, ubounds);
             },
         },
-=======
-              Fortran::lower::associateMutableBoxWithRemap(
-                  *builder, loc, lhs, rhs, lbounds, ubounds);
-            }},
->>>>>>> Stashed changes
         assign.u);
   }
 
