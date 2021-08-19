@@ -7,6 +7,8 @@ target_link_libraries(bbc PRIVATE
   FIRAnalysis
   FIRSupport
   FIRTransforms
+  FIRBuilder
+  FIRRuntime
   ${dialect_libs}
   MLIRAffineToStandard
   MLIRSCFToStandard
