@@ -39,6 +39,9 @@ class FirOpBuilder : public mlir::OpBuilder {
 public:
   explicit FirOpBuilder(mlir::Operation *op, const fir::KindMapping &kindMap)
       : OpBuilder{op}, kindMap{kindMap} {}
+  explicit FirOpBuilder(mlir::OpBuilder &builder,
+                        const fir::KindMapping &kindMap)
+      : OpBuilder{builder}, kindMap{kindMap} {}
 
   /// Get the current Region of the insertion point.
   mlir::Region &getRegion() { return *getBlock()->getParent(); }
@@ -422,6 +425,12 @@ fir::ExtendedValue componentToExtendedValue(fir::FirOpBuilder &builder,
                                             mlir::Location loc,
                                             mlir::Value component);
 
+/// Assign \p rhs to \p lhs. Both \p rhs and \p lhs must be scalar derived
+/// types. The assignment follows Fortran intrinsic assignment semantic for
+/// derived types (10.2.1.3 point 13).
+void genRecordAssignment(fir::FirOpBuilder &builder, mlir::Location loc,
+                         const fir::ExtendedValue &lhs,
+                         const fir::ExtendedValue &rhs);
 } // namespace fir::factory
 
 #endif // FORTRAN_OPTIMIZER_BUILDER_FIRBUILDER_H

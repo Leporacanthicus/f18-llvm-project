@@ -8,7 +8,10 @@
 
 #include "PassDetail.h"
 #include "flang/Lower/Todo.h" // delete!
+#include "flang/Optimizer/Builder/BoxValue.h"
+#include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
+#include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Transforms/Factory.h"
 #include "flang/Optimizer/Transforms/Passes.h"
 #include "mlir/Dialect/SCF/SCF.h"
@@ -519,7 +522,21 @@ public:
           fir::factory::genCharacterCopy(input, recoverCharLen(input), coor,
                                          recoverCharLen(coor), rewriter, loc);
         } else if (inEleTy.isa<fir::RecordType>()) {
-          TODO(loc, "copy derived type");
+          fir::FirOpBuilder builder(
+              rewriter,
+              fir::getKindMapping(update->getParentOfType<mlir::ModuleOp>()));
+          if (!update.typeparams().empty()) {
+            auto boxTy = fir::BoxType::get(inEleTy);
+            mlir::Value emptyShape, emptySlice;
+            auto lhs = rewriter.create<fir::EmboxOp>(
+                loc, boxTy, coor, emptyShape, emptySlice, update.typeparams());
+            auto rhs = rewriter.create<fir::EmboxOp>(
+                loc, boxTy, input, emptyShape, emptySlice, update.typeparams());
+            fir::factory::genRecordAssignment(builder, loc, fir::BoxValue(lhs),
+                                              fir::BoxValue(rhs));
+          } else {
+            fir::factory::genRecordAssignment(builder, loc, coor, input);
+          }
         } else {
           llvm::report_fatal_error("not a legal reference type");
         }

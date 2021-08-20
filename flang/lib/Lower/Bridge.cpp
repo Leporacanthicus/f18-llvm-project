@@ -1729,69 +1729,6 @@ private:
            !Fortran::evaluate::HasVectorSubscript(expr);
   }
 
-  // Recursively assign members of a record type.
-  void genRecordAssignment(const fir::ExtendedValue &lhs,
-                           const fir::ExtendedValue &rhs,
-                           Fortran::lower::StatementContext &stmtCtx) {
-    auto loc = genLocation();
-    auto baseTy = fir::dyn_cast_ptrOrBoxEleTy(fir::getBase(lhs).getType());
-    assert(baseTy && "must be a memory type");
-    auto lhsTy = baseTy.dyn_cast<fir::RecordType>();
-    assert(lhsTy && "must be a record type");
-    auto fieldTy = fir::FieldType::get(lhsTy.getContext());
-    for (auto [fldName, fldType] : lhsTy.getTypeList()) {
-      mlir::Value field = builder->create<fir::FieldIndexOp>(
-          loc, fieldTy, fldName, lhsTy, fir::getTypeParams(lhs));
-      auto fldRefTy = builder->getRefType(fldType);
-      auto fromCoor = builder->create<fir::CoordinateOp>(
-          loc, fldRefTy, fir::getBase(rhs), field);
-      auto from =
-          fir::factory::componentToExtendedValue(*builder, loc, fromCoor);
-      auto toCoor = builder->create<fir::CoordinateOp>(
-          loc, fldRefTy, fir::getBase(lhs), field);
-      auto to = fir::factory::componentToExtendedValue(*builder, loc, toCoor);
-      to.match(
-          [&](const fir::UnboxedValue &toPtr) {
-            // FIXME: this is incorrect after F95 to simply load/store derived
-            // type since they may have allocatable components that require
-            // deep-copy or may have defined assignment procedures.
-            auto loadVal =
-                builder->create<fir::LoadOp>(loc, fir::getBase(from));
-            builder->create<fir::StoreOp>(loc, loadVal, toPtr);
-          },
-          [&](const fir::CharBoxValue &) {
-            fir::factory::CharacterExprHelper{*builder, loc}.createAssign(to,
-                                                                          from);
-          },
-          [&](const fir::ArrayBoxValue &) {
-            Fortran::lower::createSomeArrayAssignment(*this, to, from,
-                                                      localSymbols, stmtCtx);
-          },
-          [&](const fir::CharArrayBoxValue &) {
-            Fortran::lower::createSomeArrayAssignment(*this, to, from,
-                                                      localSymbols, stmtCtx);
-          },
-          [&](const fir::BoxValue &toBox) {
-            fir::emitFatalError(loc, "derived type components must not be "
-                                     "represented by fir::BoxValue");
-          },
-          [&](const fir::MutableBoxValue &toBox) {
-            if (toBox.isPointer()) {
-              // Copy association status by copying the fir.box.
-              auto loadVal =
-                  builder->create<fir::LoadOp>(loc, fir::getBase(from));
-              builder->create<fir::StoreOp>(loc, loadVal, fir::getBase(to));
-              return;
-            }
-            // For allocatable components, a deep copy is needed.
-            TODO(loc, "allocatable components in derived type assignment");
-          },
-          [&](const fir::ProcBoxValue &toBox) {
-            TODO(loc, "procedure pointer component in derived type assignment");
-          });
-    }
-  }
-
   [[maybe_unused]] static bool
   isFuncResultDesignator(const Fortran::lower::SomeExpr &expr) {
     const auto *sym = Fortran::evaluate::GetFirstSymbol(expr);
@@ -1892,7 +1829,7 @@ private:
               if (isDerivedCategory(lhsType->category())) {
                 // Fortran 2018 10.2.1.3 p13 and p14
                 // Recursively gen an assignment on each element pair.
-                genRecordAssignment(lhs, rhs, stmtCtx);
+                fir::factory::genRecordAssignment(*builder, loc, lhs, rhs);
                 return;
               }
               llvm_unreachable("unknown category");

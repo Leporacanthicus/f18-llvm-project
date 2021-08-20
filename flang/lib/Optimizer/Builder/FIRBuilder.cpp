@@ -14,6 +14,7 @@
 #include "flang/Optimizer/Builder/MutableBox.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
+#include "flang/Optimizer/Runtime/Assign.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
@@ -739,4 +740,57 @@ fir::ExtendedValue fir::factory::componentToExtendedValue(
   if (!extents.empty())
     return fir::ArrayBoxValue{component, extents};
   return component;
+}
+
+/// Can the assignment of this record type be implement with a simple memory
+/// copy ?
+static bool recordTypeCanBeMemCopied(fir::RecordType recordType) {
+  if (fir::hasDynamicSize(recordType))
+    return false;
+  for (auto [_, fieldType] : recordType.getTypeList()) {
+    // Derived type component may have user assignment (so far, we cannot tell
+    // in FIR, so assume it is always the case, TODO: get the actual info).
+    if (fir::unwrapSequenceType(fieldType).isa<fir::RecordType>())
+      return false;
+    // Allocatable components need deep copy.
+    if (auto boxType = fieldType.dyn_cast<fir::BoxType>())
+      if (boxType.getEleTy().isa<fir::HeapType>())
+        return false;
+  }
+  // Constant size components without user defined assignment and pointers can
+  // be memcopied.
+  return true;
+}
+
+void fir::factory::genRecordAssignment(fir::FirOpBuilder &builder,
+                                       mlir::Location loc,
+                                       const fir::ExtendedValue &lhs,
+                                       const fir::ExtendedValue &rhs) {
+  assert(lhs.rank() == 0 && rhs.rank() == 0 && "assume scalar assignment");
+  auto baseTy = fir::dyn_cast_ptrOrBoxEleTy(fir::getBase(lhs).getType());
+  assert(baseTy && "must be a memory type");
+  // Box operands may be polymorphic, it is not entirely clear from 10.2.1.3
+  // if the assignment is performed on the dynamic of declared type. Use the
+  // runtime assuming it is performed on the dynamic type.
+  bool hasBoxOperands = fir::getBase(lhs).getType().isa<fir::BoxType>() ||
+                        fir::getBase(rhs).getType().isa<fir::BoxType>();
+  auto recTy = baseTy.dyn_cast<fir::RecordType>();
+  assert(recTy && "must be a record type");
+  if (hasBoxOperands || !recordTypeCanBeMemCopied(recTy)) {
+    auto to = fir::getBase(builder.createBox(loc, lhs));
+    auto from = fir::getBase(builder.createBox(loc, rhs));
+    // The runtime entry point may modify the LHS descriptor if it is
+    // an allocatable. Allocatable assignment is handle elsewhere in lowering,
+    // so just create a fir.ref<fir.box<>> from the fir.box to comply with the
+    // runtime interface, but assume the fir.box is unchanged.
+    // TODO: does this holds true with polymorphic entities ?
+    auto toMutableBox = builder.createTemporary(loc, to.getType());
+    builder.create<fir::StoreOp>(loc, to, toMutableBox);
+    fir::runtime::genAssign(builder, loc, toMutableBox, from);
+    return;
+  }
+  // Otherwise, the derived type has compile time constant size and for which
+  // the component by component assignment can be replaced by a memory copy.
+  auto load = builder.create<fir::LoadOp>(loc, fir::getBase(rhs));
+  builder.create<fir::StoreOp>(loc, load, fir::getBase(lhs));
 }
