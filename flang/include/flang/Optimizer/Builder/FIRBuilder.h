@@ -420,7 +420,6 @@ mlir::Value locationToLineNo(fir::FirOpBuilder &, mlir::Location, mlir::Type);
 /// the component.
 fir::ExtendedValue componentToExtendedValue(fir::FirOpBuilder &builder,
                                             mlir::Location loc,
-                                            const fir::ExtendedValue &obj,
                                             mlir::Value component);
 
 } // namespace fir::factory

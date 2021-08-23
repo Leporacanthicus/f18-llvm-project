@@ -674,8 +674,7 @@ fir::factory::createExtents(fir::FirOpBuilder &builder, mlir::Location loc,
 }
 
 fir::ExtendedValue fir::factory::componentToExtendedValue(
-    fir::FirOpBuilder &builder, mlir::Location loc,
-    const fir::ExtendedValue &obj, mlir::Value component) {
+    fir::FirOpBuilder &builder, mlir::Location loc, mlir::Value component) {
   auto fieldTy = component.getType();
   if (auto ty = fir::dyn_cast_ptrEleTy(fieldTy))
     fieldTy = ty;

@@ -350,8 +350,8 @@ fir::factory::createTempMutableBox(fir::FirOpBuilder &builder,
   auto boxType = fir::BoxType::get(fir::HeapType::get(type));
   auto boxAddr = builder.createTemporary(loc, boxType, name);
   auto box =
-      fir::MutableBoxValue(boxAddr, /*nonDeferredParams*/ mlir::ValueRange(),
-                           /*mutableProperties*/ {});
+      fir::MutableBoxValue(boxAddr, /*nonDeferredParams=*/mlir::ValueRange(),
+                           /*mutableProperties=*/{});
   MutablePropertyWriter{builder, loc, box}.setUnallocatedStatus();
   return box;
 }
@@ -521,11 +521,10 @@ void fir::factory::associateMutableBoxWithRemap(
     fir::FirOpBuilder &builder, mlir::Location loc,
     const fir::MutableBoxValue &box, const fir::ExtendedValue &source,
     mlir::ValueRange lbounds, mlir::ValueRange ubounds) {
-
   // Compute new extents
   llvm::SmallVector<mlir::Value> extents;
+  auto idxTy = builder.getIndexType();
   if (!lbounds.empty()) {
-    auto idxTy = builder.getIndexType();
     auto one = builder.createIntegerConstant(loc, idxTy, 1);
     for (auto [lb, ub] : llvm::zip(lbounds, ubounds)) {
       auto lbi = builder.createConvert(loc, idxTy, lb);
@@ -535,7 +534,10 @@ void fir::factory::associateMutableBoxWithRemap(
     }
   } else {
     // lbounds are default. Upper bounds and extents are the same.
-    extents.append(ubounds.begin(), ubounds.end());
+    for (auto ub : ubounds) {
+      auto cast = builder.createConvert(loc, idxTy, ub);
+      extents.emplace_back(cast);
+    }
   }
   const auto newRank = extents.size();
   auto cast = [&](mlir::Value addr) -> mlir::Value {

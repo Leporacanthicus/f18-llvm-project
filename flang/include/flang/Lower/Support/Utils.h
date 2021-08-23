@@ -16,6 +16,7 @@
 #include "flang/Common/indirection.h"
 #include "flang/Optimizer/Support/Utils.h"
 #include "flang/Parser/char-block.h"
+#include "flang/Semantics/tools.h"
 #include "llvm/ADT/StringRef.h"
 
 //===----------------------------------------------------------------------===//
@@ -35,6 +36,13 @@ const A &removeIndirection(const A &a) {
 template <typename A>
 const A &removeIndirection(const Fortran::common::Indirection<A> &a) {
   return a.value();
+}
+
+/// Clone subexpression and wrap it as a generic `Fortran::evaluate::Expr`.
+template <typename A>
+static Fortran::evaluate::Expr<Fortran::evaluate::SomeType>
+toEvExpr(const A &x) {
+  return Fortran::evaluate::AsGenericExpr(Fortran::common::Clone(x));
 }
 
 #endif // FORTRAN_LOWER_SUPPORT_UTILS_H

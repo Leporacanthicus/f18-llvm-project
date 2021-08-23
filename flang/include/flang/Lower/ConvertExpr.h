@@ -134,12 +134,29 @@ void createAnyMaskedArrayAssignment(
     ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
     SymMap &symMap, StatementContext &stmtCtx);
 
+/// In the context of a FORALL, a pointer assignment is allowed. The pointer
+/// assignment can be elementwise on an array of pointers. The bounds
+/// expressions as well as the component path may contain references to the
+/// concurrent control variables. The explicit iteration space must be defined.
+void createAnyArrayPointerAssignment(
+    AbstractConverter &converter, const evaluate::Expr<evaluate::SomeType> &lhs,
+    const evaluate::Expr<evaluate::SomeType> &rhs,
+    const evaluate::Assignment::BoundsSpec &bounds,
+    ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
+    SymMap &symMap);
+/// Support the bounds remapping flavor of pointer assignment.
+void createAnyArrayPointerAssignment(
+    AbstractConverter &converter, const evaluate::Expr<evaluate::SomeType> &lhs,
+    const evaluate::Expr<evaluate::SomeType> &rhs,
+    const evaluate::Assignment::BoundsRemapping &bounds,
+    ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
+    SymMap &symMap);
+
 /// Lower an assignment to an allocatable array, allocating the array if
 /// it is not allocated yet or reallocation it if it does not conform
 /// with the right hand side.
 void createAllocatableArrayAssignment(
-    AbstractConverter &converter,
-    const evaluate::Expr<evaluate::SomeType> &lhs,
+    AbstractConverter &converter, const evaluate::Expr<evaluate::SomeType> &lhs,
     const evaluate::Expr<evaluate::SomeType> &rhs,
     ExplicitIterSpace &explicitIterSpace, ImplicitIterSpace &implicitIterSpace,
     SymMap &symMap, StatementContext &stmtCtx);

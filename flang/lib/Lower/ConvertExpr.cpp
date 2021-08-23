@@ -111,21 +111,36 @@ static llvm::cl::opt<unsigned> clInitialBufferSize(
 ///  In line 5, `a2` may be DataAddr or BoxAddr assuming f2 is transformational.
 ///  `a1` on the lhs is again CopyInCopyOut.
 enum class ConstituentSemantics {
-  // Scalars : let `v` be the location in memory of a variable with value `x`
+  // Scalar data reference semantics.
+  //
+  // For these let `v` be the location in memory of a variable with value `x`
   DataValue, // refers to the value `x`
   DataAddr,  // refers to the address `v`
   BoxValue,  // refers to a box value containing `v`
   BoxAddr,   // refers to the address of a box value containing `v`
 
-  // Arrays : let `a` be the location in memory of a sequence of value `[xs]`
-  RefTransparent, // refers to the value `[xs]`
-  ByValueArg, // refers to an ephemeral address `t` containing a value `x` which
-              // is the i-th value in `[xs]` (15.5.2.3.p7 note 2)
-  CopyInCopyOut, // refers to the merge of `[xs]` with another value `[ys]`,
-                 // which is written into `a`.
-  ProjectedCopyInCopyOut, // similar to CopyInCopyOut but `a` may be a transient
-                          // projection (rather than a whole array).
-  RefOpaque // refers to the address `a+i`, the i-th element of `a`
+  // Array data reference semantics.
+  //
+  // For these let `a` be the location in memory of a sequence of value `[xs]`.
+  // Let `x_i` be the `i`-th value in the sequence `[xs]`.
+
+  // Referentially transparent. Refers to the array's value, `[xs]`.
+  RefTransparent,
+  // Refers to an ephemeral address `tmp` containing value `x_i` (15.5.2.3.p7
+  // note 2). (Passing a copy by reference to simulate pass-by-value.)
+  ByValueArg,
+  // Refers to the merge of array value `[xs]` with another array value `[ys]`.
+  // This merged array value will be written into memory location `a`.
+  CopyInCopyOut,
+  // Similar to CopyInCopyOut but `a` may be a transient projection (rather than
+  // a whole array).
+  ProjectedCopyInCopyOut,
+  // Referentially opaque. Refers to the address of `x_i`.
+  RefOpaque,
+  // Refers to the box `x_i` or a box containing `x_i` and its properties.
+  BoxValueElement,
+  // Refers to the address of the box `x_i`. `[xs]` must be a sequence of boxes.
+  BoxVarElement
 };
 
 /// Convert parser's INTEGER relational operators to MLIR.  TODO: using
@@ -174,12 +189,6 @@ translateFloatRelational(Fortran::common::RelationalOperator rop) {
     return mlir::CmpFPredicate::OGE;
   }
   llvm_unreachable("unhandled REAL relational operator");
-}
-
-/// Clone subexpression and wrap it as a generic `Fortran::evaluate::Expr`.
-template <typename A>
-Fortran::evaluate::Expr<Fortran::evaluate::SomeType> toEvExpr(const A &x) {
-  return Fortran::evaluate::AsGenericExpr(Fortran::common::Clone(x));
 }
 
 /// Lower `opt` (from front-end shape analysis) to MLIR. If `opt` is `nullopt`
@@ -247,7 +256,7 @@ static fir::ExtendedValue arraySectionElementToExtendedValue(
   // For F95, using componentToExtendedValue will work, but when PDTs are
   // lowered. It will be required to go down the slice to propagate the length
   // parameters.
-  return fir::factory::componentToExtendedValue(builder, loc, array, element);
+  return fir::factory::componentToExtendedValue(builder, loc, element);
 }
 
 namespace {
@@ -618,7 +627,7 @@ public:
       auto coorTy = builder.getRefType(recTy.getType(name));
       auto coor = builder.create<fir::CoordinateOp>(loc, coorTy,
                                                     fir::getBase(res), field);
-      auto to = fir::factory::componentToExtendedValue(builder, loc, res, coor);
+      auto to = fir::factory::componentToExtendedValue(builder, loc, coor);
       to.match(
           [&](const fir::UnboxedValue &toPtr) {
             // FIXME: if toPtr is a derived type, it is incorrect after F95 to
@@ -1319,7 +1328,7 @@ public:
     }
     ty = builder.getRefType(ty);
     return fir::factory::componentToExtendedValue(
-        builder, loc, obj,
+        builder, loc,
         builder.create<fir::CoordinateOp>(loc, ty, fir::getBase(obj),
                                           coorArgs));
   }
@@ -2296,6 +2305,8 @@ private:
 
 namespace {
 class ArrayExprLowering {
+  using ExtValue = fir::ExtendedValue;
+
   /// An array is accessed with a vector of subscript values. In an aray
   /// expression with a user-defined explicit iteration space, the vector may be
   /// composed of both subscripts using the explicit iteration space and
@@ -2335,6 +2346,7 @@ class ArrayExprLowering {
         : inArg(from.inArg), outRes(from.outRes), element(from.element),
           indices(idxs.begin(), idxs.end()) {}
 
+    bool empty() const { return indices.empty(); }
     mlir::Value innerArgument() const { return inArg; }
     mlir::Value outerResult() const { return outRes; }
     llvm::SmallVector<mlir::Value> iterVec() const {
@@ -2378,15 +2390,18 @@ class ArrayExprLowering {
 
     /// Set the `element` value. This is the SSA value that corresponds to an
     /// element of the resultant array value.
-    void setElement(mlir::Value ele) {
-      assert(!element && "result element already set");
+    void setElement(ExtValue &&ele) {
+      assert(!fir::getBase(element) && "result element already set");
       element = ele;
     }
 
+    /// Get the value that will be merged into the resultant array. This is the
+    /// computed value that will be stored to the lhs of the assignment.
     mlir::Value getElement() const {
-      assert(element);
-      return element;
+      assert(fir::getBase(element) && "element must be set");
+      return fir::getBase(element);
     }
+    ExtValue elementExv() const { return element; }
 
     /// Index of the first implicit access in indices. Returns the index
     /// immediately after the last pre explicit index or 0. Returns 0 if there
@@ -2416,22 +2431,23 @@ class ArrayExprLowering {
     /// from a scalar to an array. In that case, the implicit subscripts must be
     /// removed.
     void removeImplicit() {
-      llvm::SmallVector<AccessValue> newIndices;
       const auto size = indices.size();
-      for (std::remove_const_t<decltype(size)> i = 0, j = 0; j < size; ++j)
+      if (size == 0)
+        return;
+      llvm::SmallVector<AccessValue> newIndices;
+      for (std::remove_const_t<decltype(size)> j = 0; j < size; ++j)
         if (indices[j].access() != AccessKind::Implicit)
-          newIndices[i++] = indices[j];
+          newIndices.push_back(indices[j]);
       indices.swap(newIndices);
     }
 
   private:
     mlir::Value inArg;
     mlir::Value outRes;
-    mlir::Value element;
+    ExtValue element;
     llvm::SmallVector<AccessValue> indices;
   };
 
-  using ExtValue = fir::ExtendedValue;
   /// Active iteration space.
   using IterSpace = const IterationSpace &;
   /// Current continuation. Function that will generate IR for a single
@@ -2443,6 +2459,9 @@ class ArrayExprLowering {
   /// Loop bounds continuation. Function that will generate IR to compute loop
   /// bounds in a future context.
   using LBC = std::function<llvm::SmallVector<mlir::Value>()>;
+  using PBC = std::function<std::pair<llvm::SmallVector<mlir::Value>,
+                                      llvm::SmallVector<mlir::Value>>()>;
+  using PPC = std::function<mlir::Value(IterSpace)>;
   using ArrayBaseTy =
       std::variant<std::monostate, const Fortran::evaluate::ArrayRef *,
                    const Fortran::evaluate::DataRef *>;
@@ -2621,6 +2640,72 @@ public:
         destination.slice(), destination.typeparams());
   }
 
+  /// In an explicit iteration space, it is possible to rebind POINTER variables
+  /// to new TARGETs. We apply the same copy-in/copy-out semantics, masking,
+  /// etc. as data assignment.
+  template <typename A>
+  inline void lowerArrayPointerAssignment(
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+      const A &bounds) {
+    auto loc = getLoc();
+    auto lhsTy = lhs.GetType();
+    auto rhsTy = rhs.GetType();
+    assert(lhsTy && rhsTy && "front-end type failed in pointer assignment");
+    // Polymorphic lhs/rhs may need more care. See F2018 10.2.2.3.
+    if (lhsTy->IsPolymorphic() || rhsTy->IsPolymorphic())
+      TODO(loc, "pointer assignment involving polymorphic entity");
+    if constexpr (std::is_same_v<Fortran::evaluate::Assignment::BoundsSpec,
+                                 A>) {
+      computePointerBounds = [=]() {
+        llvm::SmallVector<mlir::Value> lbounds;
+        auto idxTy = builder.getIndexType();
+        for (const auto &lb : bounds)
+          lbounds.push_back(
+              builder.createConvert(loc, idxTy, fir::getBase(asScalar(lb))));
+        return std::make_pair(lbounds, llvm::SmallVector<mlir::Value>{});
+      };
+    } else if constexpr (std::is_same_v<
+                             Fortran::evaluate::Assignment::BoundsRemapping,
+                             A>) {
+      computePointerBounds = [=]() {
+        llvm::SmallVector<mlir::Value> lbounds;
+        llvm::SmallVector<mlir::Value> ubounds;
+        auto idxTy = builder.getIndexType();
+        for (const auto &[lb, ub] : bounds) {
+          lbounds.push_back(
+              builder.createConvert(loc, idxTy, fir::getBase(asScalar(lb))));
+          ubounds.push_back(
+              builder.createConvert(loc, idxTy, fir::getBase(asScalar(ub))));
+        }
+        return std::make_pair(lbounds, ubounds);
+      };
+    } else {
+      fir::emitFatalError(loc, "not a supported pointer bounds type");
+    }
+    ccDest = genarr(lhs);
+    determineShapeOfDest(lhs);
+    semant = ConstituentSemantics::BoxValueElement;
+    auto exv = lowerArrayExpression(rhs);
+    builder.create<fir::ArrayMergeStoreOp>(
+        loc, destination, fir::getBase(exv), destination.memref(),
+        destination.slice(), destination.typeparams());
+  }
+
+  template <typename A>
+  static void lowerArrayPointerAssignment(
+      Fortran::lower::AbstractConverter &converter,
+      Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+      const A &bounds, Fortran::lower::ExplicitIterSpace &explicitSpace,
+      Fortran::lower::ImplicitIterSpace &implicitSpace) {
+    ArrayExprLowering ael(converter, stmtCtx, symMap,
+                          ConstituentSemantics::BoxVarElement, &explicitSpace,
+                          &implicitSpace);
+    ael.lowerArrayPointerAssignment(lhs, rhs, bounds);
+  }
+
   /// Entry point for when an array expression appears on the lhs of an
   /// assignment. In the default case, the rhs is fully evaluated prior to any
   /// of the results being written back to the lhs. (CopyInCopyOut semantics.)
@@ -2748,7 +2833,7 @@ public:
   /// CHARACTER and derived type elements are treated as memory references. The
   /// numeric types are treated as values.
   static bool isAdjustedArrayElementType(mlir::Type t) {
-    return fir::isa_char(t) || t.isa<fir::RecordType>();
+    return fir::isa_char(t) || fir::isa_derived(t);
   }
   static bool elementTypeWasAdjusted(mlir::Type t) {
     if (auto ty = t.dyn_cast<fir::ReferenceType>())
@@ -2757,6 +2842,12 @@ public:
   }
   static mlir::Type adjustedArrayElementType(mlir::Type t) {
     return isAdjustedArrayElementType(t) ? fir::ReferenceType::get(t) : t;
+  }
+  static mlir::Type adjustedArraySubtype(mlir::Type ty,
+                                         mlir::ValueRange indices) {
+    auto pathTy = fir::applyPathToType(ty, indices);
+    assert(pathTy && "indices failed to apply to type");
+    return adjustedArrayElementType(pathTy);
   }
 
   ExtValue lowerArrayExpression(
@@ -2794,16 +2885,11 @@ public:
   ExtValue lowerArrayExpression(CC f, mlir::Type resultTy) {
     auto loc = getLoc();
     auto [iterSpace, insPt] = genIterSpace(resultTy);
-#if 0
-    if (explicitScalar)
-      rhsIterSpace.removeImplicit();
-#endif
     auto innerArg = iterSpace.innerArgument();
     auto exv = f(iterSpace);
     mlir::Value upd;
     if (ccDest.hasValue()) {
-      auto element = fir::getBase(exv);
-      iterSpace.setElement(element);
+      iterSpace.setElement(std::move(exv));
       upd = fir::getBase(ccDest.getValue()(iterSpace));
     } else {
       auto resTy = adjustedArrayElementType(innerArg.getType());
@@ -3261,15 +3347,17 @@ public:
           auto bdIter = bounds.begin();
           for (auto ss : ref.subscript()) {
             mlir::Value bound = *bdIter++;
-            std::visit(Fortran::common::visitors{
-                           [&](const Fortran::evaluate::Triplet &triple) {
-                             result.push_back(bound);
-                           },
-                           [&](const auto &intExpr) {
-                             if (intExpr.value().Rank() > 0)
-                               result.push_back(bound);
-                           }},
-                       ss.u);
+            std::visit(
+                Fortran::common::visitors{
+                    [&](const Fortran::evaluate::Triplet &triple) {
+                      result.push_back(bound);
+                    },
+                    [&](const Fortran::evaluate::IndirectSubscriptIntegerExpr
+                            &intExpr) {
+                      if (intExpr.value().Rank() > 0)
+                        result.push_back(bound);
+                    }},
+                ss.u);
           }
           return {result};
         }
@@ -4404,7 +4492,7 @@ public:
       auto recTy = inTy.cast<fir::RecordType>();
       auto fldTy = recTy.getType(name);
       auto pc = [=](IterSpace iters) {
-        IterationSpace newIters = iters;
+        IterationSpace newIters = std::move(iters);
         auto fld = builder.create<fir::FieldIndexOp>(
             loc, fieldTy, name, recTy, /*typeparams=*/mlir::ValueRange{});
         if (onRight)
@@ -4564,8 +4652,8 @@ public:
       auto ranked = std::get<3>(tup);
       auto lambda = fopt.getValue();
       auto loc = getLoc();
-      auto idxTy = builder.getIndexType();
       auto &subs = x.subscript();
+      auto idxTy = builder.getIndexType();
       llvm::SmallVector<llvm::Optional<CC>> vectorCoor;
       const auto implicitArguments = !prevRanked && ranked;
       if (implicitArguments && isProjectedCopyInCopyOut()) {
@@ -4635,72 +4723,110 @@ public:
         }
       }
       auto one = builder.createIntegerConstant(loc, idxTy, 1);
-      auto pc = [=](IterSpace iters) {
-        IterationSpace newIters = iters;
-        if (isScalar) {
-          newIters.removeImplicit();
-          assert(!implicitArguments);
-        }
-        const auto firstImplicitIndex = iters.beginImplicitIndex();
-        auto implicitIndex = iters.endImplicitIndex();
-        assert(firstImplicitIndex <= implicitIndex);
-        implicitIndex = implicitIndex ? implicitIndex - 1 : 0;
-        unsigned vi = vectorCoor.size() - 1;
-        for (auto &ss : llvm::reverse(subs)) {
-          std::visit(
-              Fortran::common::visitors{
-                  [&](const Fortran::evaluate::Triplet &t) {
-                    if (implicitArguments) {
-                      auto tripSt = fir::getBase(asScalar(t.stride()));
-                      auto castSt = builder.createConvert(loc, idxTy, tripSt);
-                      mlir::Value off = builder.create<mlir::MulIOp>(
-                          loc, castSt, iters.iterValue(implicitIndex));
-                      if (auto optLo = t.lower()) {
-                        auto tripLo = fir::getBase(asScalar(*optLo));
-                        auto base = genArrayBase(x.base());
-                        auto lb = getLBound(
-                            base, implicitIndex - firstImplicitIndex, one);
-                        auto clo = builder.createConvert(loc, idxTy, tripLo);
-                        auto add = builder.create<mlir::AddIOp>(loc, off, clo);
-                        off = builder.create<mlir::SubIOp>(loc, add, lb);
-                      }
-                      newIters.setIndexValue(implicitIndex, off);
-                      implicitIndex = implicitIndex ? implicitIndex - 1 : 0;
-                    } else {
-                      // triple found in unexpected part of the path
-                      fir::emitFatalError(loc, "unexpected triple");
-                    }
-                  },
-                  [&](const Fortran::evaluate::IndirectSubscriptIntegerExpr
-                          &ie) {
-                    const auto &e = ie.value();
-                    if (e.Rank() == 0) {
-                      // subscript is a vanilla scalar expression and may refer
-                      // to the explicit control variables.
-                      auto sc = fir::getBase(asScalar(e));
-                      auto v = builder.createConvert(loc, idxTy, sc);
-                      if (implicitArguments)
-                        newIters.insertIndexValue(
-                            implicitIndex > 0 ? implicitIndex : 0, v);
-                      else if (ranked)
-                        newIters.appendIndexValue(v);
+      PC pc;
+      if (isBoxValueEle() && implicitArguments) {
+        // The subscripts (if any) were already converted to a rebox elsewhere.
+        pc = [=](IterSpace iters) { return iters; };
+        mlir::Value undef = builder.create<fir::UndefOp>(loc, idxTy);
+        auto rank = subs.size();
+        // Convert the tail subscripts to a slice operation.
+        computePointerSlice = [=](IterSpace iters) -> mlir::Value {
+          llvm::SmallVector<mlir::Value> trips;
+          auto arrExt = iters.elementExv();
+          for (const auto &ss : llvm::enumerate(subs))
+            std::visit(
+                Fortran::common::visitors{
+                    [&](const Fortran::evaluate::Triplet &t) {
+                      if (auto optLo = t.lower())
+                        trips.push_back(fir::getBase(asScalar(*optLo)));
                       else
-                        newIters.prependIndexValue(v);
-                    } else if (implicitArguments) {
-                      // subscript is a vector
-                      auto lambda = vectorCoor[vi--].getValue()(iters);
-                      auto vs = fir::getBase(lambda);
-                      auto vecIdx = builder.createConvert(loc, idxTy, vs);
-                      newIters.setIndexValue(implicitIndex--, vecIdx);
-                    } else {
-                      // vector found in unexpected part of the path
-                      fir::emitFatalError(loc, "unexpected vactor");
-                    }
-                  }},
-              ss.u);
-        }
-        return newIters;
-      };
+                        trips.push_back(getLBound(arrExt, ss.index(), one));
+                      if (auto optUp = t.upper())
+                        trips.push_back(fir::getBase(asScalar(*optUp)));
+                      else
+                        trips.push_back(getUBound(arrExt, ss.index(), one));
+                      trips.push_back(fir::getBase(asScalar(t.stride())));
+                    },
+                    [&](const Fortran::evaluate::IndirectSubscriptIntegerExpr
+                            &expr) {
+                      trips.push_back(fir::getBase(asScalar(expr.value())));
+                      trips.push_back(undef);
+                      trips.push_back(undef);
+                    }},
+                ss.value().u);
+          auto sliceTy = fir::SliceType::get(builder.getContext(), rank);
+          return builder.create<fir::SliceOp>(loc, sliceTy, trips,
+                                              /*path=*/mlir::ValueRange{});
+        };
+      } else {
+        pc = [=](IterSpace iters) {
+          IterationSpace newIters = iters;
+          if (isScalar) {
+            newIters.removeImplicit();
+            assert(!implicitArguments);
+          }
+          const auto firstImplicitIndex = iters.beginImplicitIndex();
+          auto implicitIndex = iters.endImplicitIndex();
+          assert(firstImplicitIndex <= implicitIndex);
+          implicitIndex = implicitIndex ? implicitIndex - 1 : 0;
+          unsigned vi = vectorCoor.size() - 1;
+          for (auto &ss : llvm::reverse(subs)) {
+            std::visit(
+                Fortran::common::visitors{
+                    [&](const Fortran::evaluate::Triplet &t) {
+                      if (implicitArguments) {
+                        auto tripSt = fir::getBase(asScalar(t.stride()));
+                        auto castSt = builder.createConvert(loc, idxTy, tripSt);
+                        mlir::Value off = builder.create<mlir::MulIOp>(
+                            loc, castSt, iters.iterValue(implicitIndex));
+                        if (auto optLo = t.lower()) {
+                          auto tripLo = fir::getBase(asScalar(*optLo));
+                          auto base = genArrayBase(x.base());
+                          auto lb = getLBound(
+                              base, implicitIndex - firstImplicitIndex, one);
+                          auto clo = builder.createConvert(loc, idxTy, tripLo);
+                          auto add =
+                              builder.create<mlir::AddIOp>(loc, off, clo);
+                          off = builder.create<mlir::SubIOp>(loc, add, lb);
+                        }
+                        newIters.setIndexValue(implicitIndex, off);
+                        implicitIndex = implicitIndex ? implicitIndex - 1 : 0;
+                      } else {
+                        // triple found in unexpected part of the path
+                        fir::emitFatalError(loc, "unexpected triple");
+                      }
+                    },
+                    [&](const Fortran::evaluate::IndirectSubscriptIntegerExpr
+                            &ie) {
+                      const auto &e = ie.value();
+                      if (e.Rank() == 0) {
+                        // subscript is a vanilla scalar expression and may
+                        // refer to the explicit control variables.
+                        auto sc = fir::getBase(asScalar(e));
+                        auto v = builder.createConvert(loc, idxTy, sc);
+                        if (implicitArguments)
+                          newIters.insertIndexValue(
+                              implicitIndex > 0 ? implicitIndex : 0, v);
+                        else if (ranked)
+                          newIters.appendIndexValue(v);
+                        else
+                          newIters.prependIndexValue(v);
+                      } else if (implicitArguments) {
+                        // subscript is a vector
+                        auto mu = vectorCoor[vi--].getValue()(iters);
+                        auto vs = fir::getBase(mu);
+                        auto vecIdx = builder.createConvert(loc, idxTy, vs);
+                        newIters.setIndexValue(implicitIndex--, vecIdx);
+                      } else {
+                        // vector found in unexpected part of the path
+                        fir::emitFatalError(loc, "unexpected vactor");
+                      }
+                    }},
+                ss.u);
+          }
+          return newIters;
+        };
+      }
       auto ty = fir::unwrapSequenceType(unwrapBoxEleTy(arrTy));
       return RaiseRT{[=](IterSpace iters) { return lambda(pc(iters)); }, ty,
                      prevRanked, ranked};
@@ -4786,19 +4912,12 @@ public:
     return genarr(Fortran::semantics::SymbolRef{sym});
   }
 
-  static mlir::Type adjustedArraySubtype(mlir::Type ty,
-                                         mlir::ValueRange indices) {
-    auto pathTy = fir::applyPathToType(ty, indices);
-    assert(pathTy && "indices failed to apply to type");
-    return adjustedArrayElementType(pathTy);
-  }
-
   /// Build an ExtendedValue from a fir.array<?x...?xT> without actually
   /// setting the actual extents and lengths. This is only to allow their
-  /// propagation as ExtendedValue without triggering verifier failure when
+  /// propagation as ExtendedValue without triggering verifier failures when
   /// propagating character/arrays as unboxed values. Only the base of the
-  /// resulting ExtendedValue should be used, it is undefined to use its the
-  /// length or extents,
+  /// resulting ExtendedValue should be used, it is undefined to use the
+  /// length or extents of the extended value returned,
   ExtValue abstractArrayExtValue(mlir::Value val) {
     auto ty = val.getType();
     if (auto ety = fir::dyn_cast_ptrEleTy(ty))
@@ -4903,14 +5022,60 @@ public:
       destination = arrLoad;
       return [=](IterSpace iters) -> ExtValue {
         auto innerArg = iters.innerArgument();
-        auto resTy = adjustedArrayElementType(innerArg.getType());
-        assert(resTy == innerArg.getType());
+        auto resTy = innerArg.getType();
         auto eleTy = fir::applyPathToType(resTy, iters.iterVec());
         auto element = tryUpdateConversions(eleTy, iters.getElement());
         auto arrUpdate = builder.create<fir::ArrayUpdateOp>(
             loc, resTy, innerArg, element, iters.iterVec(),
             destination.typeparams());
         return abstractArrayExtValue(arrUpdate);
+      };
+    }
+    if (isBoxVarEle()) {
+      destination = arrLoad;
+      return [=](IterSpace iters) -> ExtValue {
+        // TODO: refactor this to share code with
+        // fir::factory::associateMutableBox, which does nearly the same thing.
+        auto [lbounds, ubounds] = (*computePointerBounds)();
+        auto innerArg = iters.innerArgument();
+        auto boxRes = iters.getElement();
+        auto eleTy = fir::applyPathToType(innerArg.getType(), iters.iterVec());
+        if (!lbounds.empty() && !ubounds.empty()) {
+          auto shapeType =
+              fir::ShapeShiftType::get(builder.getContext(), lbounds.size());
+          llvm::SmallVector<mlir::Value> shapeArgs;
+          auto idxTy = builder.getIndexType();
+          auto one = builder.createIntegerConstant(loc, idxTy, 1);
+          for (auto [lb, ub] : llvm::zip(lbounds, ubounds)) {
+            shapeArgs.push_back(lb);
+            auto ext = builder.create<mlir::AddIOp>(
+                loc, builder.create<mlir::SubIOp>(loc, ub, lb), one);
+            shapeArgs.push_back(ext);
+          }
+          auto shape =
+              builder.create<fir::ShapeShiftOp>(loc, shapeType, shapeArgs);
+          auto slice = computePointerSlice ? (*computePointerSlice)(iters)
+                                           : mlir::Value{};
+          boxRes =
+              builder.create<fir::ReboxOp>(loc, eleTy, boxRes, shape, slice);
+        } else if (!lbounds.empty()) {
+          auto shiftType =
+              fir::ShiftType::get(builder.getContext(), lbounds.size());
+          auto shift = builder.create<fir::ShiftOp>(loc, shiftType, lbounds);
+          auto slice = computePointerSlice ? (*computePointerSlice)(iters)
+                                           : mlir::Value{};
+          boxRes =
+              builder.create<fir::ReboxOp>(loc, eleTy, boxRes, shift, slice);
+        } else if (computePointerSlice) {
+          auto slice = (*computePointerSlice)(iters);
+          boxRes = builder.create<fir::ReboxOp>(loc, eleTy, boxRes,
+                                                /*shift=*/mlir::Value{}, slice);
+        }
+        auto element = tryUpdateConversions(eleTy, boxRes);
+        auto arrUpdate = builder.create<fir::ArrayUpdateOp>(
+            loc, innerArg.getType(), innerArg, element, iters.iterVec(),
+            destination.typeparams());
+        return arrUpdate.getResult();
       };
     }
     arrayOperandLoads.emplace_back(arrLoad);
@@ -4938,6 +5103,27 @@ public:
             llvm::ArrayRef<mlir::NamedAttribute>{getAdaptToByRefAttr()});
         builder.create<fir::StoreOp>(loc, base, temp);
         return arraySectionElementToExtendedValue(builder, loc, extMemref, temp,
+                                                  slice);
+      };
+    }
+    if (isBoxValueEle()) {
+      return [=](IterSpace iters) -> ExtValue {
+        auto eleTy = adjustedArraySubtype(arrTy, iters.iterVec());
+        if (eleTy.isa<fir::BoxType>() || eleTy.isa<fir::SequenceType>())
+          eleTy = fir::ReferenceType::get(eleTy);
+        mlir::Value box;
+        if (iters.empty()) {
+          box = mlir::cast<fir::ArrayLoadOp>(arrLd.getDefiningOp()).memref();
+        } else {
+          box = builder.create<fir::ArrayFetchOp>(
+              loc, eleTy, arrLd, iters.iterVec(), arrLdTypeParams);
+        }
+        if (auto eleTy = fir::dyn_cast_ptrEleTy(box.getType()))
+          if (!eleTy.isa<fir::BoxType>()) {
+            // `box` is not boxed. Embox it now.
+            box = builder.createBox(loc, box);
+          }
+        return arraySectionElementToExtendedValue(builder, loc, extMemref, box,
                                                   slice);
       };
     }
@@ -5640,6 +5826,14 @@ private:
   /// Array appears in a context where it must be boxed.
   bool isBoxValue() { return semant == ConstituentSemantics::BoxValue; }
 
+  /// Data referemce is to a box or value to be boxed.
+  bool isBoxValueEle() {
+    return semant == ConstituentSemantics::BoxValueElement;
+  }
+
+  /// Data referemce is to a variable (pointer/allocatable) of box type.
+  bool isBoxVarEle() { return semant == ConstituentSemantics::BoxVarElement; }
+
   /// Array appears in a context where differences in the memory reference can
   /// be observable in the computational results. For example, an array
   /// element is passed to an impure procedure.
@@ -5672,10 +5866,11 @@ private:
   /// assignment with rank > 0 and thus an implied shape on a component in the
   /// path.
   llvm::Optional<LBC> explicitImpliedLoopBounds;
+  llvm::Optional<PBC> computePointerBounds;
+  llvm::Optional<PPC> computePointerSlice;
   Fortran::lower::ImplicitIterSpace *masks = nullptr;
   ConstituentSemantics semant = ConstituentSemantics::RefTransparent;
   bool inSlice = false;
-  // Does the lhs, if any, must take lbounds from rhs if lhs is reallocated ?
 };
 } // namespace
 
@@ -5795,4 +5990,30 @@ fir::MutableBoxValue Fortran::lower::createMutableBox(
   Fortran::lower::StatementContext dummyStmtCtx;
   return ScalarExprLowering{loc, converter, symMap, dummyStmtCtx}
       .genMutableBoxValue(expr);
+}
+
+void Fortran::lower::createAnyArrayPointerAssignment(
+    Fortran::lower::AbstractConverter &converter,
+    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
+    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+    const Fortran::evaluate::Assignment::BoundsSpec &bounds,
+    Fortran::lower::ExplicitIterSpace &explicitSpace,
+    Fortran::lower::ImplicitIterSpace &implicitSpace,
+    Fortran::lower::SymMap &symMap) {
+  ArrayExprLowering::lowerArrayPointerAssignment(
+      converter, symMap, explicitSpace.stmtContext(), lhs, rhs, bounds,
+      explicitSpace, implicitSpace);
+}
+
+void Fortran::lower::createAnyArrayPointerAssignment(
+    Fortran::lower::AbstractConverter &converter,
+    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs,
+    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &rhs,
+    const Fortran::evaluate::Assignment::BoundsRemapping &bounds,
+    Fortran::lower::ExplicitIterSpace &explicitSpace,
+    Fortran::lower::ImplicitIterSpace &implicitSpace,
+    Fortran::lower::SymMap &symMap) {
+  ArrayExprLowering::lowerArrayPointerAssignment(
+      converter, symMap, explicitSpace.stmtContext(), lhs, rhs, bounds,
+      explicitSpace, implicitSpace);
 }

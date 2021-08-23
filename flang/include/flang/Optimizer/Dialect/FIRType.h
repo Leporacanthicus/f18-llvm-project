@@ -140,9 +140,6 @@ inline bool isa_char_string(mlir::Type t) {
   return false;
 }
 
-/// Is `t` a derived (record) type?
-inline bool isa_derived(mlir::Type t) { return t.isa<fir::RecordType>(); }
-
 /// Is `t` a box type for which it is not possible to deduce the box size?
 /// It is not possible to deduce the size of a box that describes an entity
 /// of unknown rank or type.

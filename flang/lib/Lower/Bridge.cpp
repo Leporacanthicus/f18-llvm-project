@@ -41,7 +41,6 @@
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Transforms/Passes.h"
 #include "flang/Parser/parse-tree.h"
-#include "flang/Semantics/tools.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/PatternMatch.h"
@@ -100,13 +99,6 @@ struct IncrementLoopInfo {
 
 using IncrementLoopNestInfo = llvm::SmallVector<IncrementLoopInfo>;
 } // namespace
-
-/// Clone subexpression and wrap it as a generic `Fortran::evaluate::Expr`.
-template <typename A>
-static Fortran::evaluate::Expr<Fortran::evaluate::SomeType>
-toEvExpr(const A &x) {
-  return Fortran::evaluate::AsGenericExpr(Fortran::common::Clone(x));
-}
 
 //===----------------------------------------------------------------------===//
 // FirConverter
@@ -1754,11 +1746,10 @@ private:
       auto fromCoor = builder->create<fir::CoordinateOp>(
           loc, fldRefTy, fir::getBase(rhs), field);
       auto from =
-          fir::factory::componentToExtendedValue(*builder, loc, rhs, fromCoor);
+          fir::factory::componentToExtendedValue(*builder, loc, fromCoor);
       auto toCoor = builder->create<fir::CoordinateOp>(
           loc, fldRefTy, fir::getBase(lhs), field);
-      auto to =
-          fir::factory::componentToExtendedValue(*builder, loc, lhs, toCoor);
+      auto to = fir::factory::componentToExtendedValue(*builder, loc, toCoor);
       to.match(
           [&](const fir::UnboxedValue &toPtr) {
             // FIXME: this is incorrect after F95 to simply load/store derived
@@ -1925,8 +1916,13 @@ private:
               if ((lhsType && lhsType->IsPolymorphic()) ||
                   (rhsType && rhsType->IsPolymorphic()))
                 TODO(loc, "pointer assignment involving polymorphic entity");
-              if (explicitIterationSpace())
-                TODO(loc, "pointer assignment within FORALL");
+
+              if (explicitIterationSpace()) {
+                Fortran::lower::createAnyArrayPointerAssignment(
+                    *this, assign.lhs, assign.rhs, lbExprs, explicitIterSpace,
+                    implicitIterSpace, localSymbols);
+                return;
+              }
 
               auto lhs = genExprMutableBox(loc, assign.lhs);
               llvm::SmallVector<mlir::Value> lbounds;
@@ -1941,20 +1937,26 @@ private:
             // bounds-remapping is a pair, lower bound and upper bound.
             [&](const Fortran::evaluate::Assignment::BoundsRemapping
                     &boundExprs) {
-              if (explicitIterationSpace())
-                TODO(loc, "pointer assignment within FORALL");
-              auto lhs = genExprMutableBox(loc, assign.lhs);
-              if (Fortran::evaluate::UnwrapExpr<Fortran::evaluate::NullPointer>(
-                      assign.rhs)) {
-                fir::factory::disassociateMutableBox(*builder, loc, lhs);
-                return;
-              }
               auto lhsType = assign.lhs.GetType();
               auto rhsType = assign.rhs.GetType();
               // Polymorphic lhs/rhs may need more care. See F2018 10.2.2.3.
               if ((lhsType && lhsType->IsPolymorphic()) ||
                   (rhsType && rhsType->IsPolymorphic()))
                 TODO(loc, "pointer assignment involving polymorphic entity");
+
+              if (explicitIterationSpace()) {
+                Fortran::lower::createAnyArrayPointerAssignment(
+                    *this, assign.lhs, assign.rhs, boundExprs,
+                    explicitIterSpace, implicitIterSpace, localSymbols);
+                return;
+              }
+
+              auto lhs = genExprMutableBox(loc, assign.lhs);
+              if (Fortran::evaluate::UnwrapExpr<Fortran::evaluate::NullPointer>(
+                      assign.rhs)) {
+                fir::factory::disassociateMutableBox(*builder, loc, lhs);
+                return;
+              }
               llvm::SmallVector<mlir::Value> lbounds;
               llvm::SmallVector<mlir::Value> ubounds;
               for (const auto &[lbExpr, ubExpr] : boundExprs) {
