@@ -5833,7 +5833,7 @@ private:
     return semant == ConstituentSemantics::BoxValueElement;
   }
 
-  /// Data referemce is to a variable (pointer/allocatable) of box type.
+  /// Data reference is to a variable (pointer/allocatable) of box type.
   bool isBoxVarEle() { return semant == ConstituentSemantics::BoxVarElement; }
 
   /// Array appears in a context where differences in the memory reference can
