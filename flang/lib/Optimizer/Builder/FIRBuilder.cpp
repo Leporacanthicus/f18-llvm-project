@@ -673,6 +673,20 @@ fir::factory::createExtents(fir::FirOpBuilder &builder, mlir::Location loc,
   return extents;
 }
 
+// FIXME: This needs some work. To correctly determine the extended value of a
+// component, one needs the base object, its type, and its type parameters. (An
+// alternative would be to provide an already computed address of the final
+// component rather than the base object's address, the point being the result
+// will require the address of the final component to create the extended
+// value.) One further needs the full path of components being applied. One
+// needs to apply type-based expressions to type parameters along this said
+// path. (See applyPathToType for a type-only derivation.) Finally, one needs to
+// compose the extended value of the terminal component, including all of its
+// parameters: array lower bounds expressions, extents, type parameters, etc.
+// Any of these properties may be deferred until runtime in Fortran. This
+// operation may therefore generate a sizeable block of IR, including calls to
+// type-based helper functions, so caching the result of this operation in the
+// client would be advised as well.
 fir::ExtendedValue fir::factory::componentToExtendedValue(
     fir::FirOpBuilder &builder, mlir::Location loc, mlir::Value component) {
   auto fieldTy = component.getType();

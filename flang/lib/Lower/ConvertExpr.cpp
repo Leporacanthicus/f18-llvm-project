@@ -5121,6 +5121,8 @@ public:
         if (auto eleTy = fir::dyn_cast_ptrEleTy(box.getType()))
           if (!eleTy.isa<fir::BoxType>()) {
             // `box` is not boxed. Embox it now.
+            // FIXME: createBox isn't correct here. We want to create a boxed
+            // POINTER instead.
             box = builder.createBox(loc, box);
           }
         return arraySectionElementToExtendedValue(builder, loc, extMemref, box,
@@ -5826,7 +5828,7 @@ private:
   /// Array appears in a context where it must be boxed.
   bool isBoxValue() { return semant == ConstituentSemantics::BoxValue; }
 
-  /// Data referemce is to a box or value to be boxed.
+  /// Data reference is to a box or value to be boxed.
   bool isBoxValueEle() {
     return semant == ConstituentSemantics::BoxValueElement;
   }
