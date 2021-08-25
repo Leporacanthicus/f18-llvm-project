@@ -1172,9 +1172,21 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
       return rewriter.create<mlir::LLVM::AddressOfOp>(loc, ty,
                                                       global.sym_name());
     }
-    // Builtin derived types have no type descriptors. Return nullptr, that is
-    // what the runtime expects for these types.
-    return rewriter.create<mlir::LLVM::NullOp>(loc, this->voidPtrTy());
+    // The global does not exist in the current translation unit, but may be
+    // defined elsewhere (e.g., type defined in a module).
+    // For now, create a extern_weak symbols (will become nullptr if unresolved)
+    // to support generating code without the front-end generated symbols.
+    // These could be made available_externally to require the symbols to be
+    // defined elsewhere and to cause link-time failure otherwise.
+    auto i8Ty = rewriter.getIntegerType(8);
+    mlir::OpBuilder modBuilder(module.getBodyRegion());
+    // TODO: The symbol should be lowered to constant in lowering, they are read
+    // only.
+    modBuilder.create<mlir::LLVM::GlobalOp>(loc, i8Ty, /*isConstant=*/false,
+                                            mlir::LLVM::Linkage::ExternWeak,
+                                            name, mlir::Attribute{});
+    auto ty = mlir::LLVM::LLVMPointerType::get(i8Ty);
+    return rewriter.create<mlir::LLVM::AddressOfOp>(loc, ty, name);
   }
 
   template <typename BOX>
