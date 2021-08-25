@@ -77,7 +77,7 @@ mlir::Value genCpuTime(fir::FirOpBuilder &, mlir::Location);
 void genDateAndTime(fir::FirOpBuilder &, mlir::Location,
                     llvm::Optional<fir::CharBoxValue> date,
                     llvm::Optional<fir::CharBoxValue> time,
-                    llvm::Optional<fir::CharBoxValue> zone);
+                    llvm::Optional<fir::CharBoxValue> zone, mlir::Value values);
 
 void genRandomInit(fir::FirOpBuilder &, mlir::Location, mlir::Value repeatable,
                    mlir::Value imageDistinct);

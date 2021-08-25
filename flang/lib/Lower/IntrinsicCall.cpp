@@ -672,7 +672,7 @@ static constexpr IntrinsicHandler handlers[]{
      {{{"date", asAddr},
        {"time", asAddr},
        {"zone", asAddr},
-       {"values", asAddr}}},
+       {"values", asBox}}},
      /*isElemental=*/false},
     {"dble", &I::genConversion},
     {"dim", &I::genDim},
@@ -2075,13 +2075,14 @@ void IntrinsicLibrary::genDateAndTime(llvm::ArrayRef<fir::ExtendedValue> args) {
   for (auto i = 0; i < 3; ++i)
     if (auto *charBox = args[i].getCharBox())
       charArgs[i] = *charBox;
-  // TODO: build descriptor for VALUES (also update runtime)
-  if (fir::getBase(args[3]))
-    mlir::emitError(loc, "TODO: lowering of DATE_AND_TIME VALUES argument not "
-                         "yet implemented\n");
+
+  auto values = fir::getBase(args[3]);
+  if (!values)
+    values = builder.create<fir::AbsentOp>(
+        loc, fir::BoxType::get(builder.getNoneType()));
 
   Fortran::lower::genDateAndTime(builder, loc, charArgs[0], charArgs[1],
-                                 charArgs[2]);
+                                 charArgs[2], values);
 }
 
 // DIM

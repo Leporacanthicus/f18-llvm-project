@@ -8,7 +8,6 @@
 
 #include "flang/Lower/Runtime.h"
 #include "../../runtime/misc-intrinsic.h"
-#include "../runtime/clock.h"
 #include "../runtime/pointer.h"
 #include "../runtime/random.h"
 #include "../runtime/stop.h"
@@ -211,9 +210,11 @@ void Fortran::lower::genDateAndTime(fir::FirOpBuilder &builder,
                                     mlir::Location loc,
                                     llvm::Optional<fir::CharBoxValue> date,
                                     llvm::Optional<fir::CharBoxValue> time,
-                                    llvm::Optional<fir::CharBoxValue> zone) {
+                                    llvm::Optional<fir::CharBoxValue> zone,
+                                    mlir::Value values) {
   auto callee =
       fir::runtime::getRuntimeFunc<mkRTKey(DateAndTime)>(loc, builder);
+  auto funcTy = callee.getType();
   mlir::Type idxTy = builder.getIndexType();
   mlir::Value zero;
   auto splitArg = [&](llvm::Optional<fir::CharBoxValue> arg,
@@ -238,12 +239,14 @@ void Fortran::lower::genDateAndTime(fir::FirOpBuilder &builder,
   mlir::Value zoneLen;
   splitArg(zone, zoneBuffer, zoneLen);
 
-  llvm::SmallVector<mlir::Value> args{dateBuffer, timeBuffer, zoneBuffer,
-                                      dateLen,    timeLen,    zoneLen};
-  llvm::SmallVector<mlir::Value> operands;
-  for (auto [fst, snd] : llvm::zip(args, callee.getType().getInputs()))
-    operands.emplace_back(builder.createConvert(loc, snd, fst));
-  builder.create<fir::CallOp>(loc, callee, operands);
+  auto sourceFile = fir::factory::locationToFilename(builder, loc);
+  auto sourceLine =
+      fir::factory::locationToLineNo(builder, loc, funcTy.getInput(7));
+
+  auto args = fir::runtime::createArguments(
+      builder, loc, funcTy, dateBuffer, dateLen, timeBuffer, timeLen,
+      zoneBuffer, zoneLen, sourceFile, sourceLine, values);
+  builder.create<fir::CallOp>(loc, callee, args);
 }
 
 void Fortran::lower::genRandomInit(fir::FirOpBuilder &builder,
