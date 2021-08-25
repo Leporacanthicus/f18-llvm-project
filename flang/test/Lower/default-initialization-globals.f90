@@ -145,15 +145,13 @@ subroutine eqv()
   type(tseq), save :: somet
   integer :: i(2)
   equivalence (somet, i)
-! CHECK-LABEL: fir.global internal @_QFeqvEi : tuple<!fir.type<_QMtinitTtseq{i:i32,j:i32}>> {
+! CHECK-LABEL: fir.global internal @_QFeqvEi : !fir.array<2xi32> {
   ! CHECK-DAG: %[[VAL_50:.*]] = constant 2 : i32
   ! CHECK-DAG: %[[VAL_51:.*]] = constant 3 : i32
-  ! CHECK: %[[VAL_52:.*]] = fir.undefined tuple<!fir.type<_QMtinitTtseq{i:i32,j:i32}>>
-  ! CHECK: %[[VAL_53:.*]] = fir.undefined !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_54:.*]] = fir.insert_value %[[VAL_53]], %[[VAL_50]], ["i", !fir.type<_QMtinitTtseq{i:i32,j:i32}>] : (!fir.type<_QMtinitTtseq{i:i32,j:i32}>, i32) -> !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_55:.*]] = fir.insert_value %[[VAL_54]], %[[VAL_51]], ["j", !fir.type<_QMtinitTtseq{i:i32,j:i32}>] : (!fir.type<_QMtinitTtseq{i:i32,j:i32}>, i32) -> !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_56:.*]] = fir.insert_value %[[VAL_52]], %[[VAL_55]], [0 : index] : (tuple<!fir.type<_QMtinitTtseq{i:i32,j:i32}>>, !fir.type<_QMtinitTtseq{i:i32,j:i32}>) -> tuple<!fir.type<_QMtinitTtseq{i:i32,j:i32}>>
-  ! CHECK: fir.has_value %[[VAL_56]] : tuple<!fir.type<_QMtinitTtseq{i:i32,j:i32}>>
+  ! CHECK: %[[VAL_52:.*]] = fir.undefined !fir.array<2xi32>
+  ! CHECK: %[[VAL_53:.*]] = fir.insert_value %[[VAL_52]], %[[VAL_50]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
+  ! CHECK: %[[VAL_54:.*]] = fir.insert_value %[[VAL_53]], %[[VAL_51]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
+  ! CHECK: fir.has_value %[[VAL_54]] : !fir.array<2xi32>
 end subroutine
 
 subroutine eqv_explicit_init()
@@ -161,32 +159,24 @@ subroutine eqv_explicit_init()
   type(tseq), save :: somet
   integer :: i(2) = [4, 5]
   equivalence (somet, i)
-! CHECK-LABEL: fir.global internal @_QFeqv_explicit_initEi : tuple<!fir.array<2xi32>> {
+! CHECK-LABEL: fir.global internal @_QFeqv_explicit_initEi : !fir.array<2xi32> {
   ! CHECK-DAG: %[[VAL_57:.*]] = constant 4 : i32
   ! CHECK-DAG: %[[VAL_58:.*]] = constant 5 : i32
-  ! CHECK: %[[VAL_59:.*]] = fir.undefined tuple<!fir.array<2xi32>>
-  ! CHECK: %[[VAL_60:.*]] = fir.undefined !fir.array<2xi32>
-  ! CHECK: %[[VAL_61:.*]] = fir.insert_value %[[VAL_60]], %[[VAL_57]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_62:.*]] = fir.insert_value %[[VAL_61]], %[[VAL_58]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_63:.*]] = fir.insert_value %[[VAL_59]], %[[VAL_62]], [0 : index] : (tuple<!fir.array<2xi32>>, !fir.array<2xi32>) -> tuple<!fir.array<2xi32>>
-  ! CHECK: fir.has_value %[[VAL_63]] : tuple<!fir.array<2xi32>>
+  ! CHECK: %[[VAL_59:.*]] = fir.undefined !fir.array<2xi32>
+  ! CHECK: %[[VAL_60:.*]] = fir.insert_value %[[VAL_59]], %[[VAL_57]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
+  ! CHECK: %[[VAL_61:.*]] = fir.insert_value %[[VAL_60]], %[[VAL_58]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
+  ! CHECK: fir.has_value %[[VAL_61]] : !fir.array<2xi32>
 end subroutine
 
 subroutine eqv_same_default_init()
   use tinit
   type(tseq), save :: somet1(2), somet2
   equivalence (somet1(1), somet2)
-! CHECK-LABEL: fir.global internal @_QFeqv_same_default_initEsomet1 : tuple<!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>> {
-  ! CHECK-DAG: %[[VAL_64:.*]] = constant 2 : i32
-  ! CHECK-DAG: %[[VAL_65:.*]] = constant 3 : i32
-  ! CHECK: %[[VAL_66:.*]] = fir.undefined tuple<!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>>
-  ! CHECK: %[[VAL_67:.*]] = fir.undefined !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_68:.*]] = fir.insert_value %[[VAL_67]], %[[VAL_64]], ["i", !fir.type<_QMtinitTtseq{i:i32,j:i32}>] : (!fir.type<_QMtinitTtseq{i:i32,j:i32}>, i32) -> !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_69:.*]] = fir.insert_value %[[VAL_68]], %[[VAL_65]], ["j", !fir.type<_QMtinitTtseq{i:i32,j:i32}>] : (!fir.type<_QMtinitTtseq{i:i32,j:i32}>, i32) -> !fir.type<_QMtinitTtseq{i:i32,j:i32}>
-  ! CHECK: %[[VAL_70:.*]] = fir.undefined !fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>
-  ! CHECK: %[[VAL_71:.*]] = fir.insert_on_range %[[VAL_70]], %[[VAL_69]], [0 : index, 1 : index] : (!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>, !fir.type<_QMtinitTtseq{i:i32,j:i32}>) -> !fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>
-  ! CHECK: %[[VAL_72:.*]] = fir.insert_value %[[VAL_66]], %[[VAL_71]], [0 : index] : (tuple<!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>>, !fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>) -> tuple<!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>>
-  ! CHECK: fir.has_value %[[VAL_72]] : tuple<!fir.array<2x!fir.type<_QMtinitTtseq{i:i32,j:i32}>>>
+! CHECK-LABEL: fir.global internal @_QFeqv_same_default_initEsomet1 : !fir.array<2xi64> {
+  ! CHECK: %[[VAL_62:.*]] = constant 12884901890 : i64
+  ! CHECK: %[[VAL_63:.*]] = fir.undefined !fir.array<2xi64>
+  ! CHECK: %[[VAL_64:.*]] = fir.insert_on_range %[[VAL_63]], %[[VAL_62]], [0 : index, 1 : index] : (!fir.array<2xi64>, i64) -> !fir.array<2xi64>
+  ! CHECK: fir.has_value %[[VAL_64]] : !fir.array<2xi64>
 end subroutine
 
 subroutine eqv_full_overlaps_with_explicit_init()
@@ -202,37 +192,44 @@ subroutine eqv_full_overlaps_with_explicit_init()
   equivalence (i, link(1))
   equivalence (somet, link(2))
   equivalence (j, link(3))
-! CHECK-LABEL: fir.global internal @_QFeqv_full_overlaps_with_explicit_initEi : tuple<!fir.array<2xi32>, !fir.array<2xi32>> {
+! CHECK-LABEL: fir.global internal @_QFeqv_full_overlaps_with_explicit_initEi : !fir.array<4xi32> {
   ! CHECK-DAG: %[[VAL_73:.*]] = constant 5 : i32
   ! CHECK-DAG: %[[VAL_74:.*]] = constant 6 : i32
   ! CHECK-DAG: %[[VAL_75:.*]] = constant 7 : i32
   ! CHECK-DAG: %[[VAL_76:.*]] = constant 8 : i32
-  ! CHECK: %[[VAL_77:.*]] = fir.undefined tuple<!fir.array<2xi32>, !fir.array<2xi32>>
-  ! CHECK: %[[VAL_78:.*]] = fir.undefined !fir.array<2xi32>
-  ! CHECK: %[[VAL_79:.*]] = fir.insert_value %[[VAL_78]], %[[VAL_73]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_80:.*]] = fir.insert_value %[[VAL_79]], %[[VAL_74]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_81:.*]] = fir.insert_value %[[VAL_77]], %[[VAL_80]], [0 : index] : (tuple<!fir.array<2xi32>, !fir.array<2xi32>>, !fir.array<2xi32>) -> tuple<!fir.array<2xi32>, !fir.array<2xi32>>
-  ! CHECK: %[[VAL_82:.*]] = fir.insert_value %[[VAL_78]], %[[VAL_75]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_83:.*]] = fir.insert_value %[[VAL_82]], %[[VAL_76]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
-  ! CHECK: %[[VAL_84:.*]] = fir.insert_value %[[VAL_81]], %[[VAL_83]], [1 : index] : (tuple<!fir.array<2xi32>, !fir.array<2xi32>>, !fir.array<2xi32>) -> tuple<!fir.array<2xi32>, !fir.array<2xi32>>
-  ! CHECK: fir.has_value %[[VAL_84]] : tuple<!fir.array<2xi32>, !fir.array<2xi32>>
+  ! CHECK-DAG: %[[VAL_77:.*]] = fir.undefined !fir.array<4xi32>
+  ! CHECK-DAG: %[[VAL_78:.*]] = fir.insert_value %[[VAL_77]], %[[VAL_73]], [0 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+  ! CHECK-DAG: %[[VAL_79:.*]] = fir.insert_value %[[VAL_78]], %[[VAL_74]], [1 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+  ! CHECK-DAG: %[[VAL_80:.*]] = fir.insert_value %[[VAL_79]], %[[VAL_75]], [2 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+  ! CHECK-DAG: %[[VAL_81:.*]] = fir.insert_value %[[VAL_80]], %[[VAL_76]], [3 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+  ! CHECK-DAG: fir.has_value %[[VAL_81]] : !fir.array<4xi32>
 end subroutine
 
-! TODO: possible extension.
-! subroutine eqv_partial_overlaps_with_explicit_init()
-!   use tinit
-!   type(tseq), save :: somet
-!   integer, save :: link(4)
-!   integer :: i(2) = [5, 6]
-!   integer :: j = 7
-!   ! `somet` is only partially covered by explicit init, somet%j default
-!   ! init value should be used in the equiv storage init to match nvfortran,
-!   ! ifort, and nagfor behavior. Currently hits hard TODO. Note that gfortran
-!   ! refuses this code.
-!   !   i(1)=5 | i(2)=6  |    -    |  -
-!   !     -    | somet%i | somet%j |
-!   !     -    |    -    |    -    | j=7
-!   equivalence (i, link(1))
-!   equivalence (somet, link(2))
-!   equivalence (j, link(4))
-! end subroutine
+subroutine eqv_partial_overlaps_with_explicit_init()
+  use tinit
+  type(tseq), save :: somet
+  integer, save :: link(4)
+  integer :: i(2) = [5, 6]
+  integer :: j = 7
+  ! `somet` is only partially covered by explicit init, somet%j default
+  ! init value should be used in the equiv storage init to match nvfortran,
+  ! ifort, and nagfor behavior (gfortran refuses this code). 19.5.3.4 point
+  ! 10 specifies that explicit initialization overrides default initialization.
+  !   i(1)=5 | i(2)=6  |    -    |  -
+  !     -    | somet%i | somet%j |
+  !     -    |    -    |    -    | j=7
+  equivalence (i, link(1))
+  equivalence (somet, link(2))
+  equivalence (j, link(4))
+! CHECK-LABEL: fir.global internal @_QFeqv_partial_overlaps_with_explicit_initEi : !fir.array<4xi32>
+   ! CHECK-DAG: %[[VAL_82:.*]] = constant 5 : i32
+   ! CHECK-DAG: %[[VAL_83:.*]] = constant 6 : i32
+   ! CHECK-DAG: %[[VAL_84:.*]] = constant 3 : i32
+   ! CHECK-DAG: %[[VAL_85:.*]] = constant 7 : i32
+   ! CHECK: %[[VAL_86:.*]] = fir.undefined !fir.array<4xi32>
+   ! CHECK: %[[VAL_87:.*]] = fir.insert_value %[[VAL_86]], %[[VAL_82]], [0 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+   ! CHECK: %[[VAL_88:.*]] = fir.insert_value %[[VAL_87]], %[[VAL_83]], [1 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+   ! CHECK: %[[VAL_89:.*]] = fir.insert_value %[[VAL_88]], %[[VAL_84]], [2 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+   ! CHECK: %[[VAL_90:.*]] = fir.insert_value %[[VAL_89]], %[[VAL_85]], [3 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
+   ! CHECK: fir.has_value %[[VAL_90]] : !fir.array<4xi32>
+end subroutine

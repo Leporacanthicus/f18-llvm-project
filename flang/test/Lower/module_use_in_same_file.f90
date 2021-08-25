@@ -43,24 +43,24 @@ module modEq2
 contains
   ! CHECK-LABEL: func @_QMmodeq2Pfoo()
   real function foo()
-    ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex3) : !fir.ref<tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>>
-    ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey2) : !fir.ref<tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>>
+    ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex1) : !fir.ref<!fir.array<76xi8>>
+    ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey1) : !fir.ref<!fir.array<10xi32>>
     foo = x2(1) + y1
   end function
 end module
 ! CHECK-LABEL: func @_QPmodeq2use()
 real function modEq2use()
   use modEq2
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex3) : !fir.ref<tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>>
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey2) : !fir.ref<tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex1) : !fir.ref<!fir.array<76xi8>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey1) : !fir.ref<!fir.array<10xi32>>
   modEq2use = x2(1) + y1
 end function
 ! Test rename of used equivalence members
 ! CHECK-LABEL: func @_QPmodeq2use_rename()
 real function modEq2use_rename()
   use modEq2, only: renamedx => x2, renamedy => y1
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex3) : !fir.ref<tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>>
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey2) : !fir.ref<tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex1) : !fir.ref<!fir.array<76xi8>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey1) : !fir.ref<!fir.array<10xi32>>
   modEq2use = renamedx(1) + renamedy
 end function
 
@@ -114,9 +114,9 @@ real function test_no_equiv_conflicts()
   real :: y2l(10)
   save :: x1l, x2l, x3l, y1l, y2l
   equivalence (x1l(1), x2l(5), x3l(10)), (y1l, y2l(5))
-  ! CHECK-DAG: fir.address_of(@_QFtest_no_equiv_conflictsEx3l) : !fir.ref<tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>>
-  ! CHECK-DAG: fir.address_of(@_QFtest_no_equiv_conflictsEy2l) : !fir.ref<tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>>
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex3) : !fir.ref<tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>>
-  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey2) : !fir.ref<tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>>
+  ! CHECK-DAG: fir.address_of(@_QFtest_no_equiv_conflictsEx1l) : !fir.ref<!fir.array<76xi8>>
+  ! CHECK-DAG: fir.address_of(@_QFtest_no_equiv_conflictsEy1l) : !fir.ref<!fir.array<10xi32>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ex1) : !fir.ref<!fir.array<76xi8>>
+  ! CHECK-DAG: fir.address_of(@_QMmodeq2Ey1) : !fir.ref<!fir.array<10xi32>>
   test_no_equiv_conflicts = x2(1) + y1 + x2l(1) + y1l
 end function

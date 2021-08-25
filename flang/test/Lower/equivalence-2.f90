@@ -24,8 +24,7 @@ subroutine test_eq_sets
   DIMENSION Ag(2), Bg(2)
   SAVE Ag, Bg
   EQUIVALENCE (Ag(1), Bg(2))
-  ! CHECK-DAG: %[[agbgStore:.*]] = fir.address_of(@_QFtest_eq_setsEbg) : !fir.ref<tuple<!fir.array<4xi8>, !fir.array<8xi8>>>
-  ! CHECK-DAG: %[[agbg:.*]] = fir.convert %[[agbgStore]] : (!fir.ref<tuple<!fir.array<4xi8>, !fir.array<8xi8>>>) -> !fir.ref<!fir.array<12xi8>>
+  ! CHECK-DAG: %[[agbg:.*]] = fir.address_of(@_QFtest_eq_setsEag) : !fir.ref<!fir.array<12xi8>>
   ! CHECK-DAG: %[[agAddr:.*]] = fir.coordinate_of %[[agbg]], %c4{{.*}} : (!fir.ref<!fir.array<12xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[ag:.*]] = fir.convert %[[agAddr]] : (!fir.ref<i8>) -> !fir.ref<!fir.array<2xf32>>
   ! CHECK-DAG: %[[bgAddr:.*]] = fir.coordinate_of %[[agbg]], %c0{{.*}} : (!fir.ref<!fir.array<12xi8>>, index) -> !fir.ref<i8>
@@ -34,8 +33,7 @@ subroutine test_eq_sets
   DIMENSION Ig(2), Xg(2)
   SAVE Ig, Xg
   EQUIVALENCE (Ig(1), Xg(1))
-  ! CHECK-DAG: %[[igxgStore:.*]] = fir.address_of(@_QFtest_eq_setsEig) : !fir.ref<tuple<!fir.array<8xi8>>>
-  ! CHECK-DAG: %[[igxg:.*]] = fir.convert %[[igxgStore]] : (!fir.ref<tuple<!fir.array<8xi8>>>) -> !fir.ref<!fir.array<8xi8>>
+  ! CHECK-DAG: %[[igxg:.*]] = fir.address_of(@_QFtest_eq_setsEig) : !fir.ref<!fir.array<8xi8>>
   ! CHECK-DAG: %[[igOffset:.*]] = constant 0 : index
   ! CHECK-DAG: %[[igAddr:.*]] = fir.coordinate_of %[[igxg]], %c0{{.*}} : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[ig:.*]] = fir.convert %[[igAddr]] : (!fir.ref<i8>) -> !fir.ref<!fir.array<2xi32>>
@@ -55,8 +53,7 @@ subroutine eq_and_entry_foo
   DIMENSION :: x(2)
   EQUIVALENCE (x(2), i) 
   call foo1(x, i)
-  ! CHECK: %[[xiStore:.*]] = fir.address_of(@_QFeq_and_entry_fooEx) : !fir.ref<tuple<!fir.array<4xi8>, !fir.array<4xi8>>>
-  ! CHECK-DAG: %[[xi:.*]] = fir.convert %[[xiStore]] : (!fir.ref<tuple<!fir.array<4xi8>, !fir.array<4xi8>>>) -> !fir.ref<!fir.array<8xi8>>
+  ! CHECK: %[[xi:.*]] = fir.address_of(@_QFeq_and_entry_fooEi) : !fir.ref<!fir.array<8xi8>>
 
   ! CHECK-DAG: %[[iOffset:.*]] = constant 4 : index
   ! CHECK-DAG: %[[iAddr:.*]] = fir.coordinate_of %[[xi]], %[[iOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
@@ -73,8 +70,7 @@ subroutine eq_and_entry_foo
 end
 
 ! CHECK-LABEL: @_QPeq_and_entry_bar()
-  ! CHECK: %[[xiStore:.*]] = fir.address_of(@_QFeq_and_entry_fooEx) : !fir.ref<tuple<!fir.array<4xi8>, !fir.array<4xi8>>>
-  ! CHECK-DAG: %[[xi:.*]] = fir.convert %[[xiStore]] : (!fir.ref<tuple<!fir.array<4xi8>, !fir.array<4xi8>>>) -> !fir.ref<!fir.array<8xi8>>
+  ! CHECK: %[[xi:.*]] = fir.address_of(@_QFeq_and_entry_fooEi) : !fir.ref<!fir.array<8xi8>>
 
   ! CHECK-DAG: %[[iOffset:.*]] = constant 4 : index
   ! CHECK-DAG: %[[iAddr:.*]] = fir.coordinate_of %[[xi]], %[[iOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>

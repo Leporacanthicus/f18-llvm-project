@@ -24,10 +24,10 @@
 #include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/Derived.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
-#include "flang/Optimizer/Builder/Runtime/Derived.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Semantics/tools.h"
@@ -588,147 +588,19 @@ getAggregateStore(Fortran::lower::AggregateStoreMap &storeMap,
 /// Build the name for the storage of a global equivalence.
 static std::string mangleGlobalAggregateStore(
     const Fortran::lower::pft::Variable::AggregateStore &st) {
-  assert(st.isGlobal() && "cannot name local aggregate");
-  return Fortran::lower::mangle::mangleName(*st.vars[0]);
-}
-
-// In equivalences, 19.5.3.4 point 10 gives rules regarding explicit and default
-// initialization interaction. The interpretation of this point is not
-// ubiquitous among compilers, but the majority (nag, ifort, nvfortran) accept
-// full or partial overlap of explicit init over default init. In case of
-// partial overlap, these compiler still apply the default init for the
-// components for which the storage is not explicitly initialized.
-//
-// In the example below, the equivalence storage must be initialized to [3 , 2].
-// 3 comes from the explicit init of k, and 2 from part of the deafult init of
-// a.
-//
-//  type t
-//    i = 1
-//    j = 2
-//  end type
-//  type(t), save :: a
-//  integer, save :: k = 3
-//  equivalence (a, k)
-//
-
-/// Helper to analyze overlaps between default and explicit initialization in
-/// equivalences. \p offset is the current equivalence offset, memIter is the
-/// current symbol iterator over the equivalence members. It must point to a
-/// member that has default initialization. \p endIter must be the end of the
-/// equivalence members iterators. This will tell if the equivalence member \p
-/// memIter is fully, partially, or not overlapped by members with explicit
-/// initialization.
-enum class OverlapWithExplicitInit { None, Partial, Full };
-template <typename SymIter>
-static OverlapWithExplicitInit analyzeDefaultInitOverlap(std::size_t offset,
-                                                         SymIter memIter,
-                                                         SymIter endIter) {
-  const auto *mem = *memIter;
-  auto isFullyEquivalencedByExplicitInit = false;
-  auto overlapsWithExplicitInit = false;
-  if (mem->offset() < offset)
-    // Explicit initialization was already performed for part of the storage
-    // that also have default initialization.
-    overlapsWithExplicitInit = true;
-  auto memEnd = mem->offset() + mem->size();
-  if (memEnd > offset) {
-    // The default initialization overlaps storage that has no initialization
-    // yet. It may have to be taken into account if no further explicit
-    // initialization overrides it.
-    auto fullExplicitInitUntil = offset;
-    for (auto peek = memIter; peek < endIter; ++peek) {
-      const auto *nextSym = *peek;
-      if (nextSym->offset() > memEnd)
-        // Reached the end of the storage that may be default initialized.
-        break;
-      if (const auto *nextDet = nextSym->template detailsIf<
-                                Fortran::semantics::ObjectEntityDetails>())
-        if (nextDet->init()) {
-          // Test there is no gap between the previous explicit init and this
-          // one.
-          overlapsWithExplicitInit = true;
-          if (nextSym->offset() == fullExplicitInitUntil)
-            fullExplicitInitUntil = nextSym->offset() + nextSym->size();
-        }
-    }
-    isFullyEquivalencedByExplicitInit = fullExplicitInitUntil >= memEnd;
-  } else {
-    isFullyEquivalencedByExplicitInit = overlapsWithExplicitInit;
-  }
-  if (!overlapsWithExplicitInit)
-    return OverlapWithExplicitInit::None;
-  if (isFullyEquivalencedByExplicitInit)
-    return OverlapWithExplicitInit::Full;
-  return OverlapWithExplicitInit::Partial;
+  return Fortran::lower::mangle::mangleName(st.getNamingSymbol());
 }
 
 /// Build the type for the storage of an equivalence.
-static mlir::TupleType
+static mlir::Type
 getAggregateType(Fortran::lower::AbstractConverter &converter,
                  const Fortran::lower::pft::Variable::AggregateStore &st) {
-  auto &builder = converter.getFirOpBuilder();
-  auto i8Ty = builder.getIntegerType(8);
-  llvm::SmallVector<mlir::Type> members;
-  std::size_t counter = std::get<0>(st.interval);
-
-  for (auto iter = st.vars.begin(); iter != st.vars.end(); ++iter) {
-    const auto *mem = *iter;
-    if (const auto *memDet =
-            mem->detailsIf<Fortran::semantics::ObjectEntityDetails>()) {
-      if (mem->offset() > counter) {
-        fir::SequenceType::Shape len = {
-            static_cast<fir::SequenceType::Extent>(mem->offset() - counter)};
-        auto byteTy = builder.getIntegerType(8);
-        auto memTy = fir::SequenceType::get(len, byteTy);
-        members.push_back(memTy);
-        counter = mem->offset();
-      }
-      if (memDet->init()) {
-        auto memTy = converter.genType(*mem);
-        members.push_back(memTy);
-        counter = mem->offset() + mem->size();
-      } else if (hasDefaultInitialization(*mem)) {
-        auto overlap = analyzeDefaultInitOverlap(counter, iter, st.vars.end());
-        if (overlap == OverlapWithExplicitInit::None) {
-          if (mem->offset() == counter) {
-            // No overlap with explicit init on the storage and default init
-            // not yet performed for this storage. Apply default initialization.
-            auto memTy = converter.genType(*mem);
-            members.push_back(memTy);
-            counter = mem->offset() + mem->size();
-          } else {
-            // It is possible the storage was already default initialized by an
-            // entity of the same type. The standard mandates in 19.5.3.4 point
-            // 10 that only one type must provide default initialization for a
-            // storage. Simply ensure the already default initialized storage
-            // has the same size.
-            assert(counter == mem->offset() + mem->size() &&
-                   "bad default init overlap");
-          }
-        } else if (overlap == OverlapWithExplicitInit::Partial) {
-          // Must interleave pieces of default initialization with explicit init
-          // to achieve ifort, nvfortran and nag semantics.
-          TODO(converter.genLocation(mem->name()),
-               "overlapping default and explicit initialization in equivalence "
-               "storage");
-        } else {
-          // The storage if fully covered with explicit initialization, simply
-          // ignore the default initialization and let explicit initialization
-          // happen.
-          assert(overlap == OverlapWithExplicitInit::Full);
-        }
-      }
-    }
-  }
-  if (counter < std::get<0>(st.interval) + std::get<1>(st.interval)) {
-    fir::SequenceType::Shape len = {static_cast<fir::SequenceType::Extent>(
-        std::get<0>(st.interval) + std::get<1>(st.interval) - counter)};
-    auto memTy = fir::SequenceType::get(len, i8Ty);
-    members.push_back(memTy);
-  }
-  return mlir::TupleType::get(builder.getContext(), members);
+  if (const auto *initSym = st.getInitialValueSymbol())
+    return converter.genType(*initSym);
+  auto byteTy = converter.getFirOpBuilder().getIntegerType(8);
+  return fir::SequenceType::get(std::get<1>(st.interval), byteTy);
 }
+
 /// Define a GlobalOp for the storage of a global equivalence described
 /// by \p aggregate. The global is named \p aggName and is created with
 /// the provided \p linkage.
@@ -745,70 +617,21 @@ static fir::GlobalOp defineGlobalAggregateStore(
   assert(aggregate.isGlobal() && "not a global interval");
   auto &builder = converter.getFirOpBuilder();
   auto loc = converter.getCurrentLocation();
-  auto idxTy = builder.getIndexType();
-  mlir::TupleType aggTy = getAggregateType(converter, aggregate);
-  auto initFunc = [&](fir::FirOpBuilder &builder) {
-    mlir::Value cb = builder.create<fir::UndefOp>(loc, aggTy);
-    unsigned tupIdx = 0;
-    std::size_t offset = std::get<0>(aggregate.interval);
-    LLVM_DEBUG(llvm::dbgs() << "equivalence {\n");
-    for (auto iter = aggregate.vars.begin(); iter != aggregate.vars.end();
-         ++iter) {
-      const auto *mem = *iter;
-      if (const auto *memDet =
-              mem->detailsIf<Fortran::semantics::ObjectEntityDetails>()) {
-        if (mem->offset() > offset) {
-          ++tupIdx;
-          offset = mem->offset();
-        }
-        bool applyDefaultInit = false;
-        if (hasDefaultInitialization(*mem)) {
-          auto overlap =
-              analyzeDefaultInitOverlap(offset, iter, aggregate.vars.end());
-          if (overlap == OverlapWithExplicitInit::None) {
-            if (mem->offset() == offset)
-              // No explicit init. Not yet default initialized.
-              applyDefaultInit = true;
-            else
-              // Already default initialized.
-              assert(offset == mem->offset() + mem->size() &&
-                     "bad default init overlap");
-          } else if (overlap == OverlapWithExplicitInit::Partial) {
-            TODO(converter.genLocation(mem->name()),
-                 "overlapping default and explicit initialization in "
-                 "equivalence storage");
-          } else {
-            // Explicit inits completely override default init.
-            assert(overlap == OverlapWithExplicitInit::Full);
-          }
-        }
-        if (memDet->init() || applyDefaultInit) {
-          LLVM_DEBUG(llvm::dbgs()
-                     << "offset: " << mem->offset() << " is " << *mem << '\n');
+  auto aggTy = getAggregateType(converter, aggregate);
+  if (const auto *initSym = aggregate.getInitialValueSymbol())
+    if (const auto *objectDetails =
+            initSym->detailsIf<Fortran::semantics::ObjectEntityDetails>())
+      if (objectDetails->init()) {
+        auto initFunc = [&](fir::FirOpBuilder &builder) {
           Fortran::lower::StatementContext stmtCtx;
-          mlir::Value initVal;
-          if (memDet->init())
-            // Explicit initialization.
-            initVal = fir::getBase(genInitializerExprValue(
-                converter, loc, memDet->init().value(), stmtCtx));
-          else
-            initVal = genDefaultInitializerValue(
-                converter, loc, *mem, converter.genType(*mem), stmtCtx);
-          auto offVal = builder.createIntegerConstant(loc, idxTy, tupIdx);
-          auto castVal =
-              builder.createConvert(loc, aggTy.getType(tupIdx), initVal);
-          cb = builder.create<fir::InsertValueOp>(loc, aggTy, cb, castVal,
-                                                  offVal);
-          ++tupIdx;
-          offset = mem->offset() + mem->size();
-        }
+          auto initVal = fir::getBase(genInitializerExprValue(
+              converter, loc, objectDetails->init().value(), stmtCtx));
+          builder.create<fir::HasValueOp>(loc, initVal);
+        };
+        return builder.createGlobal(loc, aggTy, aggName,
+                                    /*isConstant=*/false, initFunc, linkage);
       }
-    }
-    LLVM_DEBUG(llvm::dbgs() << "}\n");
-    builder.create<fir::HasValueOp>(loc, cb);
-  };
-  return builder.createGlobal(loc, aggTy, aggName,
-                              /*isConstant=*/false, initFunc, linkage);
+  return builder.createGlobal(loc, aggTy, aggName, linkage);
 }
 
 /// Declare a GlobalOp for the storage of a global equivalence described
@@ -893,8 +716,8 @@ static void instantiateAlias(Fortran::lower::AbstractConverter &converter,
   auto store = getAggregateStore(storeMap, var);
   auto i8Ty = builder.getIntegerType(8);
   auto i8Ptr = builder.getRefType(i8Ty);
-  auto offset =
-      builder.createIntegerConstant(loc, idxTy, sym.offset() - aliasOffset);
+  auto offset = builder.createIntegerConstant(
+      loc, idxTy, sym.GetUltimate().offset() - aliasOffset);
   auto ptr = builder.create<fir::CoordinateOp>(loc, i8Ptr, store,
                                                mlir::ValueRange{offset});
   auto preAlloc = builder.createConvert(
@@ -983,15 +806,18 @@ getCommonMembersWithInitAliases(const Fortran::semantics::Symbol &common) {
   // common members * common members
   for (const auto &set : common.owner().equivalenceSets())
     for (const auto &obj : set) {
-      if (const auto &details =
-              obj.symbol.detailsIf<Fortran::semantics::ObjectEntityDetails>()) {
-        const auto *com = FindCommonBlockContaining(obj.symbol);
-        if (!details->init() || com != &common)
-          continue;
-        // This is an alias with an init that belongs to the list
-        if (std::find(members.begin(), members.end(), obj.symbol) ==
-            members.end())
-          members.emplace_back(obj.symbol);
+      if (!obj.symbol.test(Fortran::semantics::Symbol::Flag::CompilerCreated)) {
+        if (const auto &details =
+                obj.symbol
+                    .detailsIf<Fortran::semantics::ObjectEntityDetails>()) {
+          const auto *com = FindCommonBlockContaining(obj.symbol);
+          if (!details->init() || com != &common)
+            continue;
+          // This is an alias with an init that belongs to the list
+          if (std::find(members.begin(), members.end(), obj.symbol) ==
+              members.end())
+            members.emplace_back(obj.symbol);
+        }
       }
     }
   return members;

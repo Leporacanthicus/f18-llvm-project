@@ -392,31 +392,49 @@ struct Variable {
     std::size_t aliasOffset{};
   };
 
+  /// <offset, size> pair
   using Interval = std::tuple<std::size_t, std::size_t>;
 
   /// An interval of storage is a contiguous block of memory to be allocated or
   /// mapped onto another variable. Aliasing variables will be pointers into
   /// interval stores and may overlap each other.
   struct AggregateStore {
-    AggregateStore(Interval &&interval, const Fortran::semantics::Scope &scope,
-                   bool isDeclaration = false)
-        : interval{std::move(interval)}, scope{&scope}, isDecl{isDeclaration} {}
-    AggregateStore(
-        Interval &&interval, const Fortran::semantics::Scope &scope,
-        const llvm::SmallVector<const semantics::Symbol *> &unorderedVars,
-        bool isDeclaration = false);
+    AggregateStore(Interval &&interval,
+                   const Fortran::semantics::Symbol &namingSym,
+                   bool isDeclaration = false, bool isGlobal = false)
+        : interval{std::move(interval)}, namingSymbol{&namingSym},
+          isDecl{isDeclaration}, isGlobalAggregate{isGlobal} {}
+    AggregateStore(const semantics::Symbol &initialValueSym,
+                   const semantics::Symbol &namingSym,
+                   bool isDeclaration = false, bool isGlobal = false)
+        : interval{initialValueSym.offset(), initialValueSym.size()},
+          namingSymbol{&namingSym}, initialValueSymbol{&initialValueSym},
+          isDecl{isDeclaration}, isGlobalAggregate{isGlobal} {};
 
-    bool isGlobal() const { return vars.size() > 0; }
+    bool isGlobal() const { return isGlobalAggregate; }
     bool isDeclaration() const { return isDecl; }
     /// Get offset of the aggregate inside its scope.
     std::size_t getOffset() const { return std::get<0>(interval); }
-
+    /// Returns symbols holding the aggregate initial value if any.
+    const semantics::Symbol *getInitialValueSymbol() const {
+      return initialValueSymbol;
+    }
+    /// Returns the symbol that gives its name to the aggregate.
+    const semantics::Symbol &getNamingSymbol() const { return *namingSymbol; }
+    /// Scope to which the aggregates belongs to.
+    const semantics::Scope &getOwningScope() const {
+      return getNamingSymbol().owner();
+    }
+    /// <offset, size> of the aggregate in its scope.
     Interval interval{};
-    /// scope in which the interval is.
-    const Fortran::semantics::Scope *scope;
-    llvm::SmallVector<const semantics::Symbol *> vars{};
+    /// Symbol that gives its name to the aggregate. Always set by constructor.
+    const semantics::Symbol *namingSymbol;
+    /// Compiler generated symbol with the aggregate initial value if any.
+    const semantics::Symbol *initialValueSymbol = nullptr;
     /// Is this a declaration of a storage defined in another scope ?
     bool isDecl;
+    /// Is this a global aggregate ?
+    bool isGlobalAggregate;
   };
 
   explicit Variable(const Fortran::semantics::Symbol &sym, bool global = false,
@@ -464,7 +482,7 @@ struct Variable {
     return std::visit(
         common::visitors{
             [](const Nominal &x) { return &x.symbol->GetUltimate().owner(); },
-            [](const AggregateStore &agg) { return agg.scope; }},
+            [](const AggregateStore &agg) { return &agg.getOwningScope(); }},
         var);
   }
 

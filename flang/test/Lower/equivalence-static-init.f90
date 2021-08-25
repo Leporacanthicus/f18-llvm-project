@@ -10,13 +10,10 @@ subroutine test_eqv_init
   equivalence (i, link(3))
 end subroutine
 
-! CHECK-LABEL: fir.global internal @_QFtest_eqv_initEj : tuple<i32, !fir.array<4xi8>, i32> {
-  ! CHECK: %[[VAL_0:.*]] = fir.undefined tuple<i32, !fir.array<4xi8>, i32>
-  ! CHECK: %[[VAL_1:.*]] = constant 7 : i32
-  ! CHECK: %[[VAL_2:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_3:.*]] = fir.insert_value %[[VAL_0]], %[[VAL_1]], [0 : index] : (tuple<i32, !fir.array<4xi8>, i32>, i32) -> tuple<i32, !fir.array<4xi8>, i32>
-  ! CHECK: %[[VAL_4:.*]] = constant 5 : i32
-  ! CHECK: %[[VAL_5:.*]] = constant 2 : index
-  ! CHECK: %[[VAL_6:.*]] = fir.insert_value %[[VAL_3]], %[[VAL_4]], [2 : index] : (tuple<i32, !fir.array<4xi8>, i32>, i32) -> tuple<i32, !fir.array<4xi8>, i32>
-  ! CHECK: fir.has_value %[[VAL_6]] : tuple<i32, !fir.array<4xi8>, i32>
-! CHECK }
+! CHECK-LABEL: fir.global internal @_QFtest_eqv_initEi : !fir.array<3xi32> {
+    ! CHECK: %[[VAL_1:.*]] = fir.undefined !fir.array<3xi32>
+    ! CHECK: %[[VAL_2:.*]] = fir.insert_value %0, %c7{{.*}}, [0 : index] : (!fir.array<3xi32>, i32) -> !fir.array<3xi32>
+    ! CHECK: %[[VAL_3:.*]] = fir.insert_value %1, %c0{{.*}}, [1 : index] : (!fir.array<3xi32>, i32) -> !fir.array<3xi32>
+    ! CHECK: %[[VAL_4:.*]] = fir.insert_value %2, %c5{{.*}}, [2 : index] : (!fir.array<3xi32>, i32) -> !fir.array<3xi32>
+    ! CHECK: fir.has_value %[[VAL_4]] : !fir.array<3xi32>
+! CHECK: }

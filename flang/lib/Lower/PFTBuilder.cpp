@@ -1250,64 +1250,34 @@ struct SymbolDependenceDepth {
       return;
 
     analyzedScopes.insert(&scope);
-    Fortran::lower::IntervalSet intervals;
-    llvm::DenseMap<std::size_t, llvm::SmallVector<const semantics::Symbol *>>
-        aliasSets;
-    llvm::DenseMap<std::size_t, const semantics::Symbol *> setIsGlobal;
-
-    // 1. Construct the intervals. Determine each entity's interval, merging
-    // overlapping intervals into aggregates.
-    for (const auto &pair : scope) {
-      const auto &sym = pair.second.get();
-      if (skipSymbol(sym))
-        continue;
-      LLVM_DEBUG(llvm::dbgs() << "symbol: " << sym << '\n');
-      intervals.merge(sym.offset(), offsetWidth(sym));
-    }
-
-    // 2. Compute alias sets. Adds each entity to a set for the interval it
-    // appears to be mapped into.
-    for (const auto &pair : scope) {
-      const auto &sym = pair.second.get();
-      if (skipSymbol(sym))
-        continue;
-      auto iter = intervals.find(sym.offset());
-      if (iter != intervals.end()) {
-        LLVM_DEBUG(llvm::dbgs()
-                   << "symbol: " << toStringRef(sym.name()) << " on ["
-                   << iter->first << ".." << iter->second << "]\n");
-        aliasSets[iter->first].push_back(&sym);
-        if (lower::symbolIsGlobal(sym))
-          setIsGlobal.insert({iter->first, &sym});
-      }
-    }
-
-    // 3. For each alias set with more than 1 member, add an Interval to the
-    // stores. The Interval will be lowered into a single memory allocation,
-    // with the co-located, overlapping variables mapped into that memory range.
-    for (const auto &pair : aliasSets) {
-      if (pair.second.size() > 1) {
-        // Set contains more than 1 aliasing variable.
-        // 1. Mark the symbols as aliasing for lowering.
-        for (auto *sym : pair.second)
-          aliasSyms.insert(sym);
-        auto gvarIter = setIsGlobal.find(pair.first);
-        auto iter = intervals.find(pair.first);
-        auto ibgn = iter->first;
-        auto ilen = iter->second - ibgn + 1;
-        // 2. Add an Interval to the list of stores allocated for this unit.
-        lower::pft::Variable::Interval interval(ibgn, ilen);
-        if (gvarIter != setIsGlobal.end()) {
-          LLVM_DEBUG(llvm::dbgs()
-                     << "interval [" << ibgn << ".." << ibgn + ilen
-                     << ") added as global " << *gvarIter->second << '\n');
-          stores.emplace_back(std::move(interval), scope, pair.second,
-                              isDeclaration);
+    auto aggregates = Fortran::semantics::GetStorageAssociations(scope);
+    for (auto aggregate : aggregates) {
+      const Fortran::semantics::Symbol *aggregateSym = nullptr;
+      bool isGlobal = false;
+      const auto &first = *aggregate.front();
+      auto start = first.offset();
+      auto end = first.offset() + first.size();
+      const Fortran::semantics::Symbol *namingSym = nullptr;
+      for (auto symRef : aggregate) {
+        const auto &sym = *symRef;
+        aliasSyms.insert(&sym);
+        if (sym.test(Fortran::semantics::Symbol::Flag::CompilerCreated)) {
+          aggregateSym = &sym;
         } else {
-          LLVM_DEBUG(llvm::dbgs() << "interval [" << ibgn << ".." << ibgn + ilen
-                                  << ") added\n");
-          stores.emplace_back(std::move(interval), scope, isDeclaration);
+          isGlobal |= lower::symbolIsGlobal(sym);
+          start = std::min(sym.offset(), start);
+          end = std::max(sym.offset() + sym.size(), end);
+          if (!namingSym || (sym.name() < namingSym->name()))
+            namingSym = &sym;
         }
+      }
+      assert(namingSym && "must contain at least one user symbol");
+      if (!aggregateSym) {
+        stores.emplace_back(
+            Fortran::lower::pft::Variable::Interval{start, end - start},
+            *namingSym, isDeclaration, isGlobal);
+      } else {
+        stores.emplace_back(*aggregateSym, *namingSym, isDeclaration, isGlobal);
       }
     }
   }
@@ -1424,7 +1394,7 @@ struct SymbolDependenceDepth {
       LLVM_DEBUG(llvm::dbgs() << "scope: " << scope << '\n');
       auto off = ultimate.offset();
       for (auto &v : stores) {
-        if (v.scope == &scope) {
+        if (&v.getOwningScope() == &scope) {
           auto bot = std::get<0>(v.interval);
           if (off >= bot && off < bot + std::get<1>(v.interval))
             return &v;
@@ -1434,7 +1404,7 @@ struct SymbolDependenceDepth {
       LLVM_DEBUG(
           llvm::dbgs() << "looking for " << off << "\n{\n";
           for (auto v : stores) {
-            llvm::dbgs() << " in scope: " << v.scope << "\n";
+            llvm::dbgs() << " in scope: " << &v.getOwningScope() << "\n";
             llvm::dbgs() << "  i = [" << std::get<0>(v.interval) << ".."
                 << std::get<0>(v.interval) + std::get<1>(v.interval)
                 << "]\n";
@@ -1647,14 +1617,11 @@ void Fortran::lower::pft::Variable::dump() const {
   } else if (auto *s = std::get_if<AggregateStore>(&var)) {
     llvm::errs() << "interval[" << std::get<0>(s->interval) << ", "
                  << std::get<1>(s->interval) << "]:";
+    llvm::errs() << " name: " << toStringRef(s->getNamingSymbol().name());
     if (s->isGlobal())
       llvm::errs() << ", global";
-    if (s->vars.size()) {
-      llvm::errs() << ", vars: {";
-      llvm::interleaveComma(s->vars, llvm::errs(),
-                            [](auto *y) { llvm::errs() << *y; });
-      llvm::errs() << '}';
-    }
+    if (s->initialValueSymbol)
+      llvm::errs() << ", initial value: {" << *s->initialValueSymbol << "}";
   } else {
     llvm_unreachable("not a Variable");
   }
@@ -1690,19 +1657,4 @@ Fortran::lower::pft::buildFuncResultDependencyList(
          "result sym should be last");
   variableList[0].pop_back();
   return variableList[0];
-}
-
-Fortran::lower::pft::Variable::AggregateStore::AggregateStore(
-    Interval &&interval, const Fortran::semantics::Scope &scope,
-    const llvm::SmallVector<const semantics::Symbol *> &unorderedVars,
-    bool isDeclaration)
-    : interval{std::move(interval)}, scope{&scope}, vars{unorderedVars},
-      isDecl{isDeclaration} {
-  // Sort the variables according to their offsets (they are coming here in
-  // source order because that is how the front-end is sorting symbol in
-  // scopes).
-  auto compare = [](const semantics::Symbol *a, const semantics::Symbol *b) {
-    return a->offset() < b->offset();
-  };
-  std::sort(vars.begin(), vars.end(), compare);
 }

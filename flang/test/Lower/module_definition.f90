@@ -21,14 +21,13 @@ module modEq1
   real :: y2(10)
   equivalence (x1(1), x2(5), x3(10)), (y1, y2(5))
 end module
-! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ex3 : tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>  {
-  ! CHECK: %[[undef:.*]] = fir.undefined tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>
-  ! CHECK: fir.has_value %[[undef]] : tuple<!fir.array<20xi8>, !fir.array<16xi8>, !fir.array<40xi8>>
-! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ey2 : tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>> {
-  ! CHECK: %[[undef:.*]] = fir.undefined tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>
-  ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
-  ! CHECK: %[[init:.*]] = fir.insert_value %[[undef]], %[[cst]], [1 : index] : (tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>, f32) -> tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>
-  ! CHECK: fir.has_value %[[init]] : tuple<!fir.array<16xi8>, f32, !fir.array<20xi8>>
+! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ex1 : !fir.array<76xi8>
+! CHECK-LABEL: fir.global linkonce @_QMmodeq1Ey1 : !fir.array<10xi32> {
+  ! CHECK: %[[undef:.*]] = fir.undefined !fir.array<10xi32>
+  ! CHECK: %[[v1:.*]] = fir.insert_on_range %0, %c0{{.*}}, [0 : index, 3 : index] : (!fir.array<10xi32>, i32) -> !fir.array<10xi32>
+  ! CHECK: %[[v2:.*]] = fir.insert_value %1, %c1109917696{{.*}}, [4 : index] : (!fir.array<10xi32>, i32) -> !fir.array<10xi32>
+  ! CHECK: %[[v3:.*]] = fir.insert_on_range %2, %c0{{.*}}, [5 : index, 9 : index] : (!fir.array<10xi32>, i32) -> !fir.array<10xi32>
+  ! CHECK: fir.has_value %[[v3]] : !fir.array<10xi32>
 
 ! Module defines variable in common block without initializer
 module modCommonNoInit1
