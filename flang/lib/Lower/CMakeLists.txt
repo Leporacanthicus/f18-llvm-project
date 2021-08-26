@@ -24,7 +24,6 @@ add_flang_library(FortranLower
   FIRDialect
   FIRSupport
   FIRTransforms
-  FIRRuntime
   ${dialect_libs}
   omp_gen
   acc_gen
@@ -34,7 +33,6 @@ add_flang_library(FortranLower
   FIRDialect
   FIRSupport
   FIRTransforms
-  FIRRuntime
   ${dialect_libs}
   FortranCommon
   FortranParser
