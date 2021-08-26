@@ -22,7 +22,7 @@
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
-#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Semantics/tools.h"

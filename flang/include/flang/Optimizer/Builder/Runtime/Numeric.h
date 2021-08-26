@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H
-#define FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_NUMERIC_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_NUMERIC_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -47,4 +47,4 @@ mlir::Value genSpacing(fir::FirOpBuilder &builder, mlir::Location loc,
                        mlir::Value x);
 
 } // namespace fir::runtime
-#endif // FORTRAN_OPTIMIZER_RUNTIME_NUMERIC_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_NUMERIC_H

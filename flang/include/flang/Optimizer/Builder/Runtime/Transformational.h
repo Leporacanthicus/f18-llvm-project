@@ -7,8 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H
-#define FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_TRANSFORMATIONAL_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_TRANSFORMATIONAL_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -52,4 +52,4 @@ void genUnpack(fir::FirOpBuilder &builder, mlir::Location loc,
 
 } // namespace fir::runtime
 
-#endif // FORTRAN_OPTIMIZER_RUNTIME_TRANSFORMATIONAL_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_TRANSFORMATIONAL_H

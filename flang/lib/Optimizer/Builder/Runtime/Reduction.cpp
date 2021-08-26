@@ -6,13 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "flang/Optimizer/Runtime/Reduction.h"
+#include "flang/Optimizer/Builder/Runtime/Reduction.h"
 #include "../../../runtime/reduction.h"
 #include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
-#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
 using namespace Fortran::runtime;

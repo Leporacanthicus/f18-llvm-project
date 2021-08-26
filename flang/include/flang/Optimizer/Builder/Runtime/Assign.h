@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_ASSIGN_H
-#define FORTRAN_OPTIMIZER_RUNTIME_ASSIGN_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_ASSIGN_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_ASSIGN_H
 
 namespace mlir {
 class Value;
@@ -29,4 +29,4 @@ void genAssign(fir::FirOpBuilder &builder, mlir::Location loc,
                mlir::Value destBox, mlir::Value sourceBox);
 
 } // namespace fir::runtime
-#endif // FORTRAN_OPTIMIZER_RUNTIME_ASSIGN_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_ASSIGN_H

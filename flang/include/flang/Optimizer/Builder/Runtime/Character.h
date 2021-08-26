@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H
-#define FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_CHARACTER_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_CHARACTER_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -131,4 +131,4 @@ mlir::Value genVerify(fir::FirOpBuilder &builder, mlir::Location loc, int kind,
 
 } // namespace fir::runtime
 
-#endif // FORTRAN_OPTIMIZER_RUNTIME_CHARACTER_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_CHARACTER_H

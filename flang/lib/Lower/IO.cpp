@@ -23,7 +23,7 @@
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/Complex.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
-#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Runtime/io-api.h"

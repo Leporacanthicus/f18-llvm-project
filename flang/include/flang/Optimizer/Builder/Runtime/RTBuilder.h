@@ -14,8 +14,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_RTBUILDER_H
-#define FORTRAN_OPTIMIZER_RUNTIME_RTBUILDER_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_RTBUILDER_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_RTBUILDER_H
 
 #include "flang/Common/Fortran.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
@@ -390,4 +390,4 @@ createArguments(fir::FirOpBuilder &builder, mlir::Location loc,
 
 } // namespace fir::runtime
 
-#endif // FORTRAN_OPTIMIZER_RUNTIME_RTBUILDER_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_RTBUILDER_H

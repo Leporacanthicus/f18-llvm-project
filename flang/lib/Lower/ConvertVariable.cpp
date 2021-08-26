@@ -27,7 +27,7 @@
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
-#include "flang/Optimizer/Runtime/Derived.h"
+#include "flang/Optimizer/Builder/Runtime/Derived.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Semantics/tools.h"

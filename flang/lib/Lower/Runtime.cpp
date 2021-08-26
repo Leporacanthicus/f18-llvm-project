@@ -16,7 +16,7 @@
 #include "flang/Lower/Bridge.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
-#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Semantics/tools.h"
 #include "llvm/Support/Debug.h"

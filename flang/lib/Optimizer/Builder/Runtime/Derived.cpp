@@ -6,10 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "flang/Optimizer/Runtime/Derived.h"
+#include "flang/Optimizer/Builder/Runtime/Derived.h"
 #include "../../../runtime/derived-api.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
-#include "flang/Optimizer/Runtime/RTBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 
 using namespace Fortran::runtime;
 

@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
-#define FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_DERIVED_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_DERIVED_H
 
 namespace mlir {
 class Value;
@@ -36,4 +36,4 @@ void genDerivedTypeAssign(fir::FirOpBuilder &builder, mlir::Location loc,
                           mlir::Value destinationBox, mlir::Value sourceBox);
 
 } // namespace fir::runtime
-#endif // FORTRAN_OPTIMIZER_RUNTIME_DERIVED_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_DERIVED_H

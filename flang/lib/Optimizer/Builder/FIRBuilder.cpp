@@ -14,7 +14,7 @@
 #include "flang/Optimizer/Builder/MutableBox.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
-#include "flang/Optimizer/Runtime/Assign.h"
+#include "flang/Optimizer/Builder/Runtime/Assign.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"

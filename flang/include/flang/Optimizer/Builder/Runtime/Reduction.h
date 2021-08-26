@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H
-#define FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H
+#ifndef FORTRAN_OPTIMIZER_BUILDER_RUNTIME_REDUCTION_H
+#define FORTRAN_OPTIMIZER_BUILDER_RUNTIME_REDUCTION_H
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
@@ -145,4 +145,4 @@ void genSumDim(fir::FirOpBuilder &builder, mlir::Location loc,
 
 } // namespace fir::runtime
 
-#endif // FORTRAN_OPTIMIZER_RUNTIME_REDUCTION_H
+#endif // FORTRAN_OPTIMIZER_BUILDER_RUNTIME_REDUCTION_H
