@@ -32,11 +32,11 @@
 #include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/Complex.h"
+#include "flang/Optimizer/Builder/Runtime/Character.h"
+#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROpsSupport.h"
-#include "flang/Optimizer/Builder/Runtime/Character.h"
-#include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Transforms/Factory.h"
 #include "flang/Semantics/expression.h"
@@ -4327,24 +4327,14 @@ public:
                     newIters.setIndexValue(dim, val);
                     return newIters;
                   };
-                  auto useInexactRange = [&]() {
-                    // Get the range of the array in this dimension, [1:n:1].
-                    trips.push_back(one);
-                    trips.push_back(getExtent(arrExt, sub.index()));
-                    trips.push_back(one);
-                  };
-                  if (const auto *sym = extractSubscriptSymbol(arrExpr)) {
-                    auto symVal = symMap.lookupSymbol(*sym);
-                    symVal.match(
-                        [&](const fir::ArrayBoxValue &v) {
-                          trips.push_back(getLBound(v, 0, one));
-                          trips.push_back(getUBound(v, 0, one));
-                          trips.push_back(one);
-                        },
-                        [&](auto) { useInexactRange(); });
-                  } else {
-                    useInexactRange();
-                  }
+                  // Create a slice with the vector size so that the shape
+                  // of array reference is correctly computed in later phase,
+                  // even though this is not a triplet.
+                  auto vectorSubscriptShape = getShape(arrLoad);
+                  assert(vectorSubscriptShape.size() == 1);
+                  trips.push_back(one);
+                  trips.push_back(vectorSubscriptShape[0]);
+                  trips.push_back(one);
                 } else {
                   // A regular scalar index, which does not yield an array
                   // section. Use a degenerate slice operation `(e:undef:undef)`
