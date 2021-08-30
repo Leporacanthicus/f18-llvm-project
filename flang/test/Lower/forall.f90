@@ -1034,7 +1034,7 @@ subroutine test_forall_with_slice(i1,i2)
      end function f
   end interface
   type t
-     integer :: arr(5:15)
+     integer :: arr(11)
   end type t
   type(t) :: a(10,10)
 
@@ -1115,7 +1115,7 @@ subroutine test_forall_with_ranked_dimension
      end function f
   end interface
   type t
-     integer :: arr(5:15)
+     integer :: arr(11)
   end type t
   type(t) :: a(10,10)
   
@@ -1132,9 +1132,7 @@ subroutine test_forall_with_ranked_dimension
   forall (i=1:5)
   ! CHECK: %[[V_7:.*]] = fir.call @_QPf(%[[VAL_0]]) : (!fir.ref<i32>) -> i32
   ! CHECK-DAG: %[[V_8:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK-DAG: %[[V_9:.*]] = constant 4 : i32
-  ! CHECK: %[[V_10:.*]] = addi %[[V_8]], %[[V_9]] : i32
-  ! CHECK: %[[V_11:.*]] = fir.convert %[[V_10]] : (i32) -> i64
+  ! CHECK: %[[V_11:.*]] = fir.convert %[[V_8]] : (i32) -> i64
   ! CHECK: %[[V_12:.*]] = fir.convert %[[V_11]] : (i64) -> index
   ! CHECK: %[[V_13:.*]] = fir.field_index arr, !fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>
   ! CHECK: %[[V_14:.*]] = constant 1 : i64
@@ -1148,7 +1146,7 @@ subroutine test_forall_with_ranked_dimension
   ! CHECK: }
   ! CHECK: fir.result %[[V_4]] : !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>
   ! CHECK: }
-     a(i,:)%arr(i+4) = f(i)
+     a(i,:)%arr(i) = f(i)
   end forall
   ! CHECK: fir.array_merge_store %[[VAL_5]], %[[V_0]] to %[[VAL_3]] : !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>, !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>, !fir.ref<!fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>>>
   ! CHECK: return
