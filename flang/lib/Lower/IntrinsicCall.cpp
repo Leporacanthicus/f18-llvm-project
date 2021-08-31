@@ -686,7 +686,7 @@ static constexpr IntrinsicHandler handlers[]{
      &I::genEoshift,
      {{{"array", asAddr},
        {"shift", asAddr},
-       {"boundary", asValue},
+       {"boundary", asAddr},
        {"dim", asValue}}},
      /*isElemental=*/false},
     {"exponent", &I::genExponent},
@@ -2150,47 +2150,10 @@ IntrinsicLibrary::genEoshift(mlir::Type resultType,
       fir::factory::getMutableIRBox(builder, loc, resultMutableBox);
 
   // Handle optional BOUNDARY argument
-  mlir::Type arrayEleTy = arrayBox.getEleTy();
-  mlir::Value boundary = nullptr;
-
-  if (isAbsent(args[2])) {
-    if (arrayEleTy.isa<mlir::IntegerType>() ||
-        arrayEleTy.isa<mlir::FloatType>() ||
-        arrayEleTy.isa<fir::LogicalType>()) {
-      // fill in with appropriate number of 0 or .false.
-      auto zero = builder.createIntegerConstant(loc, builder.getIndexType(), 0);
-      auto temp = builder.createTemporary(loc, arrayEleTy);
-      auto cast = builder.createConvert(loc, arrayEleTy, zero);
-      builder.create<fir::StoreOp>(loc, cast, temp);
-      boundary = builder.createBox(loc, temp);
-    } else if (arrayEleTy.isa<fir::CharacterType>()) {
-      // fill in with appropriate number of blanks
-      fir::factory::CharacterExprHelper helper{builder, loc};
-      fir::CharacterType charTy = helper.getCharacterType(arrayEleTy);
-      fir::CharBoxValue temp =
-          helper.createCharacterTemp(arrayEleTy, charTy.getLen());
-      auto zero = builder.createIntegerConstant(loc, builder.getIndexType(), 0);
-      auto len = builder.createIntegerConstant(
-          loc, builder.getCharacterLengthType(), charTy.getLen());
-
-      helper.createPadding(temp, zero, len);
-
-      boundary = builder.createBox(loc, temp);
-    } else
-      fir::emitFatalError(loc, "bad type for EOSHIFT");
-  } else {
-    if (arrayEleTy.isa<mlir::IntegerType>() ||
-        arrayEleTy.isa<mlir::FloatType>() ||
-        arrayEleTy.isa<fir::LogicalType>()) {
-      auto temp = builder.createTemporary(loc, arrayEleTy);
-      auto cast = builder.createConvert(loc, arrayEleTy, fir::getBase(args[2]));
-      builder.create<fir::StoreOp>(loc, cast, temp);
-      boundary = builder.createBox(loc, temp);
-    } else if (arrayEleTy.isa<fir::CharacterType>())
-      boundary = builder.createBox(loc, args[2]);
-    else
-      fir::emitFatalError(loc, "bad type for EOSHIFT");
-  }
+  auto boundary = isAbsent(args[2])
+                      ? builder.create<fir::AbsentOp>(
+                            loc, fir::BoxType::get(builder.getNoneType()))
+                      : builder.createBox(loc, args[2]);
 
   if (arrayRank == 1) {
     // Vector case
