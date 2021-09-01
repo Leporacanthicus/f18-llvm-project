@@ -9,8 +9,8 @@
 #ifndef OPTIMIZER_DESCRIPTOR_MODEL_H
 #define OPTIMIZER_DESCRIPTOR_MODEL_H
 
-#include "../runtime/descriptor.h"
 #include "flang/ISO_Fortran_binding.h"
+#include "flang/Runtime/descriptor.h"
 #include "mlir/Dialect/LLVMIR/LLVMTypes.h"
 #include "llvm/Support/ErrorHandling.h"
 #include <tuple>

@@ -7,17 +7,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/Runtime.h"
-#include "../../runtime/misc-intrinsic.h"
-#include "../runtime/pointer.h"
-#include "../runtime/random.h"
-#include "../runtime/stop.h"
-#include "../runtime/time-intrinsic.h"
 #include "StatementContext.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Parser/parse-tree.h"
+#include "flang/Runtime/misc-intrinsic.h"
+#include "flang/Runtime/pointer.h"
+#include "flang/Runtime/random.h"
+#include "flang/Runtime/stop.h"
+#include "flang/Runtime/time-intrinsic.h"
 #include "flang/Semantics/tools.h"
 #include "llvm/Support/Debug.h"
 

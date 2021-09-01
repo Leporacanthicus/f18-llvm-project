@@ -11,11 +11,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/IO.h"
-#include "RTBuilder.h"
+#include "ConvertVariable.h"
 #include "StatementContext.h"
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/ConvertExpr.h"
+#include "flang/Lower/IO.h"
 #include "flang/Lower/PFTBuilder.h"
 #include "flang/Lower/Runtime.h"
 #include "flang/Lower/Support/Utils.h"
@@ -32,9 +33,6 @@
 #include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "flang-lower-io"
-
-// List the runtime headers we want to be able to dissect
-#include "../../runtime/io-api.h"
 
 // Define additional runtime type models specific to IO.
 namespace fir::runtime {

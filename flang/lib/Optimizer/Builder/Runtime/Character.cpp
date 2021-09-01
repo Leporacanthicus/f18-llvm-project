@@ -6,18 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "flang/Lower/CharacterRuntime.h"
-#include "RTBuilder.h"
-#include "flang/Lower/Bridge.h"
-#include "flang/Lower/CharacterExpr.h"
-#include "flang/Lower/FIRBuilder.h"
-#include "flang/Runtime/character.h"
-#include "flang/Lower/Support/BoxValue.h"
+#include "flang/Optimizer/Builder/Runtime/Character.h"
 #include "flang/Lower/Todo.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
+#include "flang/Runtime/character.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
 using namespace Fortran::runtime;

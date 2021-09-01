@@ -1,5 +1,5 @@
-#include "main.h"
-#include "stop.h"
+#include "flang/Runtime/main.h"
+#include "flang/Runtime/stop.h"
 
 /* main entry into PROGRAM */
 void _QQmain();

@@ -11,8 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/Allocatable.h"
-#include "../runtime/allocatable.h"
-#include "../runtime/pointer.h"
 #include "StatementContext.h"
 #include "flang/Evaluate/tools.h"
 #include "flang/Lower/AbstractConverter.h"
@@ -25,6 +23,8 @@
 #include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Parser/parse-tree.h"
+#include "flang/Runtime/allocatable.h"
+#include "flang/Runtime/pointer.h"
 #include "flang/Semantics/tools.h"
 #include "flang/Semantics/type.h"
 #include "llvm/Support/CommandLine.h"

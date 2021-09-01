@@ -342,7 +342,7 @@ void fir::runtime::genTrim(fir::FirOpBuilder &builder,
 The key point is `getRuntimeFunc<mkRTKey(Trim)>(loc, builder)` that builds the FIR signature for the runtime
 function automatically. The name passed to `mkRTKey` must be the same as the one inside `RTNAME` when declaring
 the function in the runtime headers. The runtime header must be included in the current file to use `getRuntimeFunc<>`
-(note the `#include "../../runtime/character.h"` at the top of the file). So at least the runtime API must be designed before adding
+(note the `#include "flang/Runtime/character.h"` at the top of the file). So at least the runtime API must be designed before adding
 the support in lowering.
 
 Then, the source file name and line number are lowered from the current location so that they can be passed to the runtime.
