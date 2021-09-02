@@ -25,6 +25,7 @@ namespace Fortran::lower {
 /// StatementContext back to the "end" of the statement.
 class StatementContext {
 public:
+  /// Default constructor.
   explicit StatementContext() {
     cleanup = []() {};
   }
@@ -62,16 +63,19 @@ public:
     cleanup = []() { llvm::report_fatal_error("already finalized"); };
   }
 
+  /// Does the statement context have any cleanups to perform?
   bool hasCleanups() const { return cleanupAdded; }
 
+  /// Reset the statement context to its default initial state.
   void reset() {
     assert((finalized || !cleanupAdded) &&
            "statement context is not empty and not finalized");
     cleanup = []() {};
-    finalized = false;
+    finalized = cleanupAdded = false;
   }
 
 private:
+  // A statement context should never be copied or moved.
   StatementContext(const StatementContext &) = delete;
   StatementContext &operator=(const StatementContext &) = delete;
   StatementContext(StatementContext &&) = delete;

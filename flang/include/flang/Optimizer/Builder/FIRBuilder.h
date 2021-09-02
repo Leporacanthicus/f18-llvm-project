@@ -338,7 +338,7 @@ public:
   mlir::Value genIsNotNull(mlir::Location loc, mlir::Value addr);
 
 private:
-  const fir::KindMapping &kindMap;
+  const KindMapping &kindMap;
 };
 
 } // namespace fir

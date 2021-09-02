@@ -14,9 +14,8 @@
 #define FORTRAN_LOWER_ITERATIONSPACE_H
 
 #include "StatementContext.h"
+#include "flang/Evaluate/tools.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
-#include "llvm/ADT/SmallVector.h"
-#include <functional>
 
 namespace llvm {
 class raw_ostream;
@@ -33,6 +32,9 @@ namespace lower {
 
 using MaskAddrAndShape = std::pair<mlir::Value, mlir::Value>;
 using FrontEndExpr = const evaluate::Expr<evaluate::SomeType> *;
+using FrontEndSymbol = const semantics::Symbol *;
+
+class AbstractConverter;
 
 template <typename A>
 class StackableConstructExpr {
@@ -111,7 +113,7 @@ public:
 
   llvm::SmallVector<FrontEndMaskExpr> getExprs() const {
     auto maskList = getMasks()[0];
-    for (unsigned i = 1, d = getMasks().size(); i < d; ++i)
+    for (size_t i = 1, d = getMasks().size(); i < d; ++i)
       maskList.append(getMasks()[i].begin(), getMasks()[i].end());
     return maskList;
   }
@@ -130,6 +132,16 @@ private:
 class ExplicitIterSpace;
 llvm::raw_ostream &operator<<(llvm::raw_ostream &, const ExplicitIterSpace &);
 
+/// Create all the array_load ops for the explicit iteration space context. The
+/// nest of FORALLs must have been analyzed a priori.
+void createArrayLoads(AbstractConverter &converter, ExplicitIterSpace &esp,
+                      SymMap &symMap);
+
+/// Create the array_merge_store ops after the explicit iteration space context
+/// is conmpleted.
+void createArrayMergeStores(AbstractConverter &converter,
+                            ExplicitIterSpace &esp);
+
 /// Fortran also allows arrays to be evaluated under constructs which allow the
 /// user to explicitly specify the iteration space using concurrent-control
 /// expressions. These constructs allow the user to define both an iteration
@@ -141,81 +153,177 @@ llvm::raw_ostream &operator<<(llvm::raw_ostream &, const ExplicitIterSpace &);
 /// concurrent-control expressions to be used to generate the iteration space
 /// and associated masks (if any) for a set of nested FORALL constructs around
 /// assignment and WHERE constructs.
-class ExplicitIterSpace
-    : public StackableConstructExpr<std::pair<
-          llvm::SmallVector<std::tuple<const semantics::Symbol *, FrontEndExpr,
-                                       FrontEndExpr, FrontEndExpr>>,
-          FrontEndExpr>> {
+class ExplicitIterSpace {
 public:
-  using FrontEndSymbol = const semantics::Symbol *;
   using IterSpaceDim =
       std::tuple<FrontEndSymbol, FrontEndExpr, FrontEndExpr, FrontEndExpr>;
   using ConcurrentSpec =
       std::pair<llvm::SmallVector<IterSpaceDim>, FrontEndExpr>;
+  using ArrayBases = std::variant<FrontEndSymbol, const evaluate::Component *,
+                                  const evaluate::ArrayRef *>;
 
+  friend void createArrayLoads(AbstractConverter &converter,
+                               ExplicitIterSpace &esp, SymMap &symMap);
+  friend void createArrayMergeStores(AbstractConverter &converter,
+                                     ExplicitIterSpace &esp);
+
+  /// Is a FORALL context presently active?
+  /// If we are lowering constructs/statements nested within a FORALL, then a
+  /// FORALL context is active.
+  bool isActive() const { return forallContextOpen != 0; }
+
+  /// Get the statement context.
+  StatementContext &stmtContext() { return *stmtCtxStack.back(); }
+
+  //===--------------------------------------------------------------------===//
+  // Analysis support
+  //===--------------------------------------------------------------------===//
+
+  /// Open a new construct. The analysis phase starts here.
+  void pushLevel();
+
+  /// Close the construct.
+  void popLevel();
+
+  /// Add new concurrent header control variable symbol.
+  void addSymbol(FrontEndSymbol sym);
+
+  /// Collect array bases from the expression, `x`.
+  void exprBase(FrontEndExpr x, bool lhs);
+
+  /// Return all the active control variables on the stack.
+  llvm::SmallVector<FrontEndSymbol> collectAllSymbols();
+
+  /// Cleanup the analysis results.
+  void conditionalCleanup();
+
+  //===--------------------------------------------------------------------===//
+  // Code gen support
+  //===--------------------------------------------------------------------===//
+
+  /// Get the inner arguments that correspond to the output arrays.
+  mlir::ValueRange getInnerArgs() const { return innerArgsStack.back(); }
+
+  /// Set the inner arguments for the next loop level.
+  void setInnerArgs(llvm::ArrayRef<mlir::BlockArgument> args) {
+    innerArgsStack.back().clear();
+    for (auto &arg : args)
+      innerArgsStack.back().push_back(arg);
+  }
+
+  void setOuterLoop(fir::DoLoopOp loop) { outerLoopStack.back() = loop; }
+
+  void setInnerArg(size_t offset, mlir::Value val) {
+    assert(offset < innerArgsStack.back().size());
+    innerArgsStack.back()[offset] = val;
+  }
+
+  /// Get the types of the output arrays.
+  llvm::SmallVector<mlir::Type> innerArgTypes() const {
+    llvm::SmallVector<mlir::Type> result;
+    for (auto &arg : innerArgsStack.back())
+      result.push_back(arg.getType());
+    return result;
+  }
+
+  /// Create a binding between an Ev::Expr node pointer and a fir::array_load
+  /// op. This bindings will be used when generating the IR.
+  void bindLoad(const ArrayBases &base, fir::ArrayLoadOp load);
+
+  template <typename A>
+  fir::ArrayLoadOp findBinding(const A *base) {
+    using T = std::remove_cv_t<std::remove_pointer_t<decltype(base)>>;
+    return loadBindings.lookup(static_cast<void *>(const_cast<T *>(base)));
+  }
+  fir::ArrayLoadOp findBinding(const ArrayBases &base) {
+    return std::visit([&](const auto *p) { return findBinding(p); }, base);
+  }
+
+  /// `load` must be a LHS array_load. Returns `llvm::None` on error.
+  llvm::Optional<size_t> findArgPosition(fir::ArrayLoadOp load);
+
+  bool isLHS(fir::ArrayLoadOp load) { return findArgPosition(load).hasValue(); }
+
+  /// `load` must be a LHS array_load. Determine the threaded inner argument
+  /// corresponding to this load.
+  mlir::Value findArgumentOfLoad(fir::ArrayLoadOp load) {
+    if (auto opt = findArgPosition(load))
+      return innerArgsStack.back()[*opt];
+    llvm_unreachable("array load argument not found");
+  }
+
+  size_t argPosition(mlir::Value arg) {
+    for (auto i : llvm::enumerate(innerArgsStack.back()))
+      if (arg == i.value())
+        return i.index();
+    llvm_unreachable("inner argument value was not found");
+  }
+
+  fir::ArrayLoadOp getLhsLoad(size_t i) {
+    assert(i < lhsBases.size());
+    return findBinding(lhsBases[i]);
+  }
+
+  /// Return the outermost loop in this FORALL nest.
+  fir::DoLoopOp getOuterLoop() { return outerLoopStack.back(); }
+
+  /// Enter a new statement context.
+  void enter() {
+    auto *ctx = new StatementContext;
+    stmtCtxStack.push_back(ctx);
+  }
+
+  /// Finalize and delete the current statement context.
+  void finalize() {
+    stmtCtxStack.back()->finalize();
+    stmtCtxStack.pop_back();
+  }
+
+  // LLVM standard dump method.
+  LLVM_DUMP_METHOD void dump() const;
+
+  // Pretty-print.
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &,
                                        const ExplicitIterSpace &);
 
-  LLVM_DUMP_METHOD void dump() const;
-
-  /// Append a new dimension to the set of iteration spaces. If `step` is a
-  /// nullptr, then the step of the loop is the constant 1.
-  void emplace_back(FrontEndSymbol sym, FrontEndExpr lo, FrontEndExpr hi,
-                    FrontEndExpr step) {
-    assert(!empty());
-    dims().back().first.emplace_back(sym, lo, hi, step);
-  }
-
-  void setMaskExpr(FrontEndExpr mask) {
-    assert(!dims().back().second);
-    dims().back().second = mask;
-  }
-
-  /// Get a list of all curently active FORALL concurrent control expressions.
-  llvm::SmallVector<IterSpaceDim> getDims() const {
-    llvm::SmallVector<IterSpaceDim> dimList = dims()[0].first;
-    for (unsigned i = 1, d = dims().size(); i < d; ++i)
-      dimList.append(dims()[i].first.begin(), dims()[i].first.end());
-    return dimList;
-  }
-
-  /// Get a list of all currently active FORALL mask expressions.
-  llvm::SmallVector<FrontEndExpr> getMasks() const {
-    llvm::SmallVector<FrontEndExpr> res;
-    for (auto &pr : dims())
-      if (pr.second)
-        res.push_back(pr.second);
-    return res;
-  }
-
-  const llvm::SmallVector<ConcurrentSpec> &getSpecs() const { return dims(); }
-
-  /// Return the total number of explicit controls on this stack.
-  std::size_t size() const {
-    std::size_t size = 0;
-    for (auto &v : dims())
-      size += v.first.size();
-    return size;
-  }
-
-  StatementContext &markInnerContext() {
-    if (!innerStmtCtx)
-      innerStmtCtx = new StatementContext;
-    return *innerStmtCtx;
-  }
-
-  void freeInnerContext() {
-    if (innerStmtCtx)
-      delete innerStmtCtx;
-    innerStmtCtx = nullptr;
-  }
-
 private:
-  llvm::SmallVector<ConcurrentSpec> &dims() { return stack; }
-  const llvm::SmallVector<ConcurrentSpec> &dims() const { return stack; }
+  // A stack of lists of front-end symbols.
+  llvm::SmallVector<llvm::SmallVector<FrontEndSymbol>> symbolStack;
+  llvm::SmallVector<ArrayBases> lhsBases;
+  llvm::SmallVector<ArrayBases> rhsBases;
+  llvm::DenseMap<void *, fir::ArrayLoadOp> loadBindings;
 
-  StatementContext *innerStmtCtx = nullptr;
+  // A stack of FORALL contexts.
+  llvm::SmallVector<StatementContext *> stmtCtxStack;
+  llvm::SmallVector<llvm::SmallVector<mlir::Value>> innerArgsStack;
+  llvm::SmallVector<fir::DoLoopOp> outerLoopStack;
+  size_t forallContextOpen = 0;
 };
+
+/// Is there a Symbol in common between the concurrent header set and the set
+/// of symbols in the expression?
+template <typename A>
+bool symbolSetsIntersect(llvm::ArrayRef<FrontEndSymbol> ctrlSet,
+                         const A &exprSyms) {
+  for (const auto &sym : exprSyms)
+    if (std::find(ctrlSet.begin(), ctrlSet.end(), &sym.get()) != ctrlSet.end())
+      return true;
+  return false;
+}
+
+/// Determine if the subscript expression symbols from an Ev::ArrayRef
+/// intersects with the set of concurrent control symbols, `ctrlSet`.
+template <typename A>
+bool symbolsIntersectSubscripts(llvm::ArrayRef<FrontEndSymbol> ctrlSet,
+                                const A &subscripts) {
+  for (auto &sub : subscripts) {
+    if (const auto *expr =
+            std::get_if<evaluate::IndirectSubscriptIntegerExpr>(&sub.u))
+      if (symbolSetsIntersect(ctrlSet, evaluate::CollectSymbols(expr->value())))
+        return true;
+  }
+  return false;
+}
 
 } // namespace lower
 } // namespace Fortran

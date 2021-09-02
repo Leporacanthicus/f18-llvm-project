@@ -12,6 +12,7 @@ add_flang_library(FortranLower
   HostAssociations.cpp
   IntrinsicCall.cpp
   IO.cpp
+  IterationSpace.cpp
   Mangler.cpp
   OpenACC.cpp
   OpenMP.cpp

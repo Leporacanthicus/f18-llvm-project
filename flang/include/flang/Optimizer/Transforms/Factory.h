@@ -27,6 +27,10 @@ class Value;
 
 namespace fir::factory {
 
+constexpr llvm::StringRef attrFortranArrayOffsets() {
+  return "Fortran.offsets";
+}
+
 /// Generate a character copy with optimized forms.
 ///
 /// If the lengths are constant and equal, use load/store rather than a loop.
@@ -137,6 +141,19 @@ void genCharacterCopy(mlir::Value src, mlir::Value srcLen, mlir::Value dst,
   builder.restoreInsertionPoint(insPt);
 }
 
+/// Get extents from fir.shape/fir.shape_shift op. Empty result if
+/// \p shapeVal is empty or is a fir.shift.
+inline std::vector<mlir::Value> getExtents(mlir::Value shapeVal) {
+  if (shapeVal)
+    if (auto *shapeOp = shapeVal.getDefiningOp()) {
+      if (auto shOp = mlir::dyn_cast<fir::ShapeOp>(shapeOp))
+        return shOp.getExtents();
+      if (auto shOp = mlir::dyn_cast<fir::ShapeShiftOp>(shapeOp))
+        return shOp.getExtents();
+    }
+  return {};
+}
+
 /// Get origins from fir.shape_shift/fir.shift op. Empty result if
 /// \p shapeVal is empty or is a fir.shape.
 inline std::vector<mlir::Value> getOrigins(mlir::Value shapeVal) {
@@ -144,7 +161,7 @@ inline std::vector<mlir::Value> getOrigins(mlir::Value shapeVal) {
     if (auto *shapeOp = shapeVal.getDefiningOp()) {
       if (auto shOp = mlir::dyn_cast<fir::ShapeShiftOp>(shapeOp))
         return shOp.getOrigins();
-      else if (auto shOp = mlir::dyn_cast<fir::ShiftOp>(shapeOp))
+      if (auto shOp = mlir::dyn_cast<fir::ShiftOp>(shapeOp))
         return shOp.getOrigins();
     }
   return {};

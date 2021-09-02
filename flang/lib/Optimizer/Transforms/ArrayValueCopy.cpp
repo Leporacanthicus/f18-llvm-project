@@ -470,14 +470,17 @@ static mlir::Type toRefType(mlir::Type ty) {
   return fir::ReferenceType::get(ty);
 }
 
-static mlir::Value genCoorOp(mlir::PatternRewriter &rewriter,
-                             mlir::Location loc, mlir::Type eleTy,
-                             mlir::Type resTy, mlir::Value alloc,
-                             mlir::Value shape, mlir::Value slice,
-                             mlir::ValueRange indices,
-                             mlir::ValueRange typeparams) {
-  auto originated = fir::factory::originateIndices(
-      loc, rewriter, alloc.getType(), shape, indices);
+static mlir::Value
+genCoorOp(mlir::PatternRewriter &rewriter, mlir::Location loc, mlir::Type eleTy,
+          mlir::Type resTy, mlir::Value alloc, mlir::Value shape,
+          mlir::Value slice, mlir::ValueRange indices,
+          mlir::ValueRange typeparams, bool skipOrig = false) {
+  llvm::SmallVector<mlir::Value> originated;
+  if (skipOrig)
+    originated.assign(indices.begin(), indices.end());
+  else
+    originated = fir::factory::originateIndices(loc, rewriter, alloc.getType(),
+                                                shape, indices);
   auto seqTy = fir::dyn_cast_ptrOrBoxEleTy(alloc.getType());
   assert(seqTy && seqTy.isa<fir::SequenceType>());
   const auto dimension = seqTy.cast<fir::SequenceType>().getDimension();
@@ -563,7 +566,8 @@ public:
       auto coor =
           genCoorOp(rewriter, loc, getEleTy(load.getType()),
                     toRefType(update.merge().getType()), allocmem, shapeOp,
-                    load.slice(), update.indices(), load.typeparams());
+                    load.slice(), update.indices(), load.typeparams(),
+                    update->hasAttr(fir::factory::attrFortranArrayOffsets()));
       copyElement(coor);
       auto *storeOp = useMap.lookup(loadOp);
       rewriter.setInsertionPoint(storeOp);
@@ -581,7 +585,8 @@ public:
       auto coor =
           genCoorOp(rewriter, loc, coorTy, toRefType(update.merge().getType()),
                     load.memref(), load.shape(), load.slice(), update.indices(),
-                    load.typeparams());
+                    load.typeparams(),
+                    update->hasAttr(fir::factory::attrFortranArrayOffsets()));
       copyElement(coor);
     }
     update.replaceAllUsesWith(load.getResult());
@@ -672,7 +677,8 @@ public:
     auto coor =
         genCoorOp(rewriter, loc, getEleTy(load.getType()),
                   toRefType(fetch.getType()), load.memref(), load.shape(),
-                  load.slice(), fetch.indices(), load.typeparams());
+                  load.slice(), fetch.indices(), load.typeparams(),
+                  fetch->hasAttr(fir::factory::attrFortranArrayOffsets()));
     if (fir::isa_ref_type(fetch.getType()))
       rewriter.replaceOp(fetch, coor);
     else

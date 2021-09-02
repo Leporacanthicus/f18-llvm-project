@@ -19,6 +19,7 @@
 
 #include "flang/Evaluate/shape.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
+#include "flang/Optimizer/Builder/FIRBuilder.h"
 
 namespace mlir {
 class Location;
@@ -175,6 +176,14 @@ fir::ExtendedValue
 createSomeArrayBox(AbstractConverter &converter,
                    const evaluate::Expr<evaluate::SomeType> &expr,
                    SymMap &symMap, StatementContext &stmtCtx);
+
+// Attribute for an alloca that is a trivial adaptor for converting a value to
+// pass-by-ref semantics for a VALUE parameter. The optimizer may be able to
+// eliminate these.
+inline mlir::NamedAttribute getAdaptToByRefAttr(fir::FirOpBuilder &builder) {
+  return {mlir::Identifier::get("adapt.valuebyref", builder.getContext()),
+          builder.getUnitAttr()};
+}
 
 } // namespace Fortran::lower
 

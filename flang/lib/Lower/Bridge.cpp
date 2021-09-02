@@ -1191,10 +1191,31 @@ private:
     genFIR(stmt.statement);
   }
 
+  /// Force the binding of an explicit symbol. This is used to bind and re-bind
+  /// a concurrent control symbol to its value.
+  void forceControlVariableBinding(const Fortran::semantics::Symbol *sym,
+                                   mlir::Value inducVar) {
+    auto loc = toLocation();
+    assert(sym && "There must be a symbol to bind");
+    auto toTy = genType(*sym);
+    // FIXME: this should be a "per iteration" temporary.
+    auto tmp = builder->createTemporary(
+        loc, toTy, toStringRef(sym->name()),
+        llvm::ArrayRef<mlir::NamedAttribute>{
+            Fortran::lower::getAdaptToByRefAttr(*builder)});
+    auto cast = builder->createConvert(loc, toTy, inducVar);
+    builder->create<fir::StoreOp>(loc, cast, tmp);
+    localSymbols.addSymbol(*sym, tmp, /*force=*/true);
+  }
+
+  /// Process a concurrent header for a FORALL. (Concurrent headers for DO
+  /// CONCURRENT loops are lowered elsewhere.)
   void genFIR(const Fortran::parser::ConcurrentHeader &header) {
-    explicitIterSpace.growStack();
     // Create our iteration space from the header spec.
     localSymbols.pushScope();
+    auto idxTy = builder->getIndexType();
+    auto loc = toLocation();
+    llvm::SmallVector<fir::DoLoopOp> loops;
     for (auto &ctrl :
          std::get<std::list<Fortran::parser::ConcurrentControl>>(header.t)) {
       const auto *ctrlVar = std::get<Fortran::parser::Name>(ctrl.t).symbol;
@@ -1202,32 +1223,74 @@ private:
       const auto *hi = Fortran::semantics::GetExpr(std::get<2>(ctrl.t));
       auto &optStep =
           std::get<std::optional<Fortran::parser::ScalarIntExpr>>(ctrl.t);
-      const auto *step = optStep.has_value()
-                             ? Fortran::semantics::GetExpr(optStep.value())
-                             : nullptr; /* default; step is 1 */
-      explicitIterSpace.emplace_back(ctrlVar, lo, hi, step);
+      auto lb = builder->createConvert(
+          loc, idxTy,
+          fir::getBase(genExprValue(*lo, explicitIterSpace.stmtContext())));
+      auto ub = builder->createConvert(
+          loc, idxTy,
+          fir::getBase(genExprValue(*hi, explicitIterSpace.stmtContext())));
+      auto by = optStep.has_value()
+                    ? builder->createConvert(
+                          loc, idxTy,
+                          fir::getBase(genExprValue(
+                              *Fortran::semantics::GetExpr(*optStep),
+                              explicitIterSpace.stmtContext())))
+                    : builder->createIntegerConstant(loc, idxTy, 1);
+      auto lp = builder->create<fir::DoLoopOp>(
+          loc, lb, ub, by, /*unordered=*/true,
+          /*finalCount=*/false, explicitIterSpace.getInnerArgs());
+      if (!loops.empty())
+        builder->create<fir::ResultOp>(loc, lp.getResults());
+      explicitIterSpace.setInnerArgs(lp.getRegionIterArgs());
+      builder->setInsertionPointToStart(lp.getBody());
+      forceControlVariableBinding(ctrlVar, lp.getInductionVar());
+      loops.push_back(lp);
     }
-    // If it exists, add the mask expression to the stack.
-    if (auto &mask =
+    explicitIterSpace.setOuterLoop(loops[0]);
+    if (const auto &mask =
             std::get<std::optional<Fortran::parser::ScalarLogicalExpr>>(
-                header.t))
-      explicitIterSpace.setMaskExpr(Fortran::semantics::GetExpr(*mask));
+                header.t);
+        mask.has_value()) {
+      auto i1Ty = builder->getI1Type();
+      auto maskExv = genExprValue(*Fortran::semantics::GetExpr(mask.value()),
+                                  explicitIterSpace.stmtContext());
+      auto cond = builder->createConvert(loc, i1Ty, fir::getBase(maskExv));
+      auto ifOp = builder->create<fir::IfOp>(
+          loc, explicitIterSpace.innerArgTypes(), cond,
+          /*withElseRegion=*/true);
+      builder->create<fir::ResultOp>(loc, ifOp.getResults());
+      builder->setInsertionPointToStart(&ifOp.elseRegion().front());
+      builder->create<fir::ResultOp>(loc, explicitIterSpace.getInnerArgs());
+      builder->setInsertionPointToStart(&ifOp.thenRegion().front());
+    }
   }
 
   void genFIR(const Fortran::parser::ForallAssignmentStmt &stmt) {
     std::visit([&](const auto &x) { genFIR(x); }, stmt.u);
   }
 
-  /// Cleanup the FORALL context information when we exit.
-  void genCleanupForall() {
-    explicitIterSpace.shrinkStack();
+  void genFIR(const Fortran::parser::EndForallStmt &) {
+    explicitIterSpace.finalize();
+    cleanupExplicitSpace();
+  }
+
+  template <typename A>
+  void prepareExplicitSpace(const A &forall) {
+    analyzeExplicitSpace(forall);
+    explicitIterSpace.enter();
+    Fortran::lower::createArrayLoads(*this, explicitIterSpace, localSymbols);
+  }
+
+  /// Cleanup all the FORALL context information when we exit.
+  void cleanupExplicitSpace() {
+    Fortran::lower::createArrayMergeStores(*this, explicitIterSpace);
+    explicitIterSpace.conditionalCleanup();
     localSymbols.popScope();
   }
 
-  void genFIR(const Fortran::parser::EndForallStmt &) { genCleanupForall(); }
-
   /// Generate FIR for a FORALL statement.
   void genFIR(const Fortran::parser::ForallStmt &stmt) {
+    prepareExplicitSpace(stmt);
     genFIR(std::get<
                Fortran::common::Indirection<Fortran::parser::ConcurrentHeader>>(
                stmt.t)
@@ -1235,25 +1298,18 @@ private:
     genFIR(std::get<Fortran::parser::UnlabeledStatement<
                Fortran::parser::ForallAssignmentStmt>>(stmt.t)
                .statement);
-    genCleanupForall();
-  }
-
-  /// Lower the concurrent header specification.
-  void genFIR(const Fortran::parser::ForallConstructStmt &stmt) {
-    genFIR(std::get<
-               Fortran::common::Indirection<Fortran::parser::ConcurrentHeader>>(
-               stmt.t)
-               .value());
+    cleanupExplicitSpace();
   }
 
   /// Generate FIR for a FORALL construct.
-  void genFIR(const Fortran::parser::ForallConstruct &forallConstruct) {
+  void genFIR(const Fortran::parser::ForallConstruct &forall) {
+    prepareExplicitSpace(forall);
     genNestedStatement(
         std::get<
             Fortran::parser::Statement<Fortran::parser::ForallConstructStmt>>(
-            forallConstruct.t));
-    for (auto &s : std::get<std::list<Fortran::parser::ForallBodyConstruct>>(
-             forallConstruct.t)) {
+            forall.t));
+    for (const auto &s :
+         std::get<std::list<Fortran::parser::ForallBodyConstruct>>(forall.t)) {
       std::visit(
           Fortran::common::visitors{
               [&](const Fortran::parser::WhereConstruct &b) { genFIR(b); },
@@ -1264,7 +1320,15 @@ private:
     }
     genNestedStatement(
         std::get<Fortran::parser::Statement<Fortran::parser::EndForallStmt>>(
-            forallConstruct.t));
+            forall.t));
+  }
+
+  /// Lower the concurrent header specification.
+  void genFIR(const Fortran::parser::ForallConstructStmt &stmt) {
+    genFIR(std::get<
+               Fortran::common::Indirection<Fortran::parser::ConcurrentHeader>>(
+               stmt.t)
+               .value());
   }
 
   void genFIR(const Fortran::parser::CompilerDirective &) {
@@ -1697,7 +1761,7 @@ private:
   /// Return true if context is currently an explicit iteration space. A scalar
   /// assignment expression may be contextually within a user-defined iteration
   /// space, transforming it into an array expression.
-  bool explicitIterationSpace() { return !explicitIterSpace.empty(); }
+  bool explicitIterationSpace() { return explicitIterSpace.isActive(); }
 
   /// Generate an array assignment.
   /// This is an assignment expression with rank > 0. The assignment may or may
@@ -1853,8 +1917,8 @@ private:
             // [2] User defined assignment. If the context is a scalar
             // expression then call the procedure.
             [&](const Fortran::evaluate::ProcedureRef &procRef) {
-              if (explicitIterationSpace())
-                TODO(loc, "user defined assignment within FORALL");
+              if (implicitIterationSpace())
+                TODO(loc, "user defined assignment within WHERE");
               Fortran::semantics::SomeExpr expr{procRef};
               createFIRExpr(toLocation(), &expr, stmtCtx);
             },
@@ -1869,13 +1933,8 @@ private:
                   (rhsType && rhsType->IsPolymorphic()))
                 TODO(loc, "pointer assignment involving polymorphic entity");
 
-              if (explicitIterationSpace()) {
-                Fortran::lower::createAnyArrayPointerAssignment(
-                    *this, assign.lhs, assign.rhs, lbExprs, explicitIterSpace,
-                    implicitIterSpace, localSymbols);
-                return;
-              }
-
+              // FIXME: in the explicit space context, we want to use
+              // ScalarArrayExprLowering here.
               auto lhs = genExprMutableBox(loc, assign.lhs);
               llvm::SmallVector<mlir::Value> lbounds;
               for (const auto &lbExpr : lbExprs)
@@ -1896,13 +1955,8 @@ private:
                   (rhsType && rhsType->IsPolymorphic()))
                 TODO(loc, "pointer assignment involving polymorphic entity");
 
-              if (explicitIterationSpace()) {
-                Fortran::lower::createAnyArrayPointerAssignment(
-                    *this, assign.lhs, assign.rhs, boundExprs,
-                    explicitIterSpace, implicitIterSpace, localSymbols);
-                return;
-              }
-
+              // FIXME: in the explicit space context, we want to use
+              // ScalarArrayExprLowering here.
               auto lhs = genExprMutableBox(loc, assign.lhs);
               if (Fortran::evaluate::UnwrapExpr<Fortran::evaluate::NullPointer>(
                       assign.rhs)) {
@@ -2462,9 +2516,9 @@ private:
       currentPosition = position;
   }
 
-  //
+  //===--------------------------------------------------------------------===//
   // Utility methods
-  //
+  //===--------------------------------------------------------------------===//
 
   /// Convert a parser CharBlock to a Location
   mlir::Location toLocation(const Fortran::parser::CharBlock &cb) {
@@ -2484,6 +2538,145 @@ private:
   getShape(const Fortran::lower::SomeExpr &expr) {
     return Fortran::evaluate::GetShape(foldingContext, expr);
   }
+
+  //===--------------------------------------------------------------------===//
+  // Analysis on a nested explicit iteration space.
+  //===--------------------------------------------------------------------===//
+
+  void analyzeExplicitSpace(const Fortran::parser::ConcurrentHeader &header) {
+    explicitIterSpace.pushLevel();
+    for (const auto &ctrl :
+         std::get<std::list<Fortran::parser::ConcurrentControl>>(header.t)) {
+      const auto *ctrlVar = std::get<Fortran::parser::Name>(ctrl.t).symbol;
+      explicitIterSpace.addSymbol(ctrlVar);
+    }
+    if (const auto &mask =
+            std::get<std::optional<Fortran::parser::ScalarLogicalExpr>>(
+                header.t);
+        mask.has_value())
+      analyzeExplicitSpace(*Fortran::semantics::GetExpr(*mask));
+  }
+  template <bool LHS = false, typename A>
+  void analyzeExplicitSpace(const Fortran::evaluate::Expr<A> &e) {
+    explicitIterSpace.exprBase(&e, LHS);
+  }
+  void analyzeExplicitSpace(const Fortran::evaluate::Assignment *assign) {
+    analyzeExplicitSpace</*LHS=*/true>(assign->lhs);
+    analyzeExplicitSpace(assign->rhs);
+  }
+  void analyzeExplicitSpace(const Fortran::parser::ForallAssignmentStmt &stmt) {
+    std::visit([&](const auto &s) { analyzeExplicitSpace(s); }, stmt.u);
+  }
+  void analyzeExplicitSpace(const Fortran::parser::AssignmentStmt &s) {
+    analyzeExplicitSpace(s.typedAssignment->v.operator->());
+  }
+  void analyzeExplicitSpace(const Fortran::parser::PointerAssignmentStmt &s) {
+    analyzeExplicitSpace(s.typedAssignment->v.operator->());
+  }
+  void analyzeExplicitSpace(const Fortran::parser::WhereConstruct &c) {
+    analyzeExplicitSpace(
+        std::get<
+            Fortran::parser::Statement<Fortran::parser::WhereConstructStmt>>(
+            c.t)
+            .statement);
+    for (const auto &body :
+         std::get<std::list<Fortran::parser::WhereBodyConstruct>>(c.t))
+      analyzeExplicitSpace(body);
+    for (const auto &e :
+         std::get<std::list<Fortran::parser::WhereConstruct::MaskedElsewhere>>(
+             c.t))
+      analyzeExplicitSpace(e);
+    if (const auto &e =
+            std::get<std::optional<Fortran::parser::WhereConstruct::Elsewhere>>(
+                c.t);
+        e.has_value())
+      analyzeExplicitSpace(e.operator->());
+  }
+  void analyzeExplicitSpace(const Fortran::parser::WhereConstructStmt &ws) {
+    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(ws.t)));
+  }
+  void analyzeExplicitSpace(
+      const Fortran::parser::WhereConstruct::MaskedElsewhere &ew) {
+    analyzeExplicitSpace(
+        std::get<
+            Fortran::parser::Statement<Fortran::parser::MaskedElsewhereStmt>>(
+            ew.t)
+            .statement);
+    for (const auto &e :
+         std::get<std::list<Fortran::parser::WhereBodyConstruct>>(ew.t))
+      analyzeExplicitSpace(e);
+  }
+  void analyzeExplicitSpace(const Fortran::parser::WhereBodyConstruct &body) {
+    std::visit(Fortran::common::visitors{
+                   [&](const Fortran::common::Indirection<
+                       Fortran::parser::WhereConstruct> &wc) {
+                     analyzeExplicitSpace(wc.value());
+                   },
+                   [&](const auto &s) { analyzeExplicitSpace(s.statement); }},
+               body.u);
+  }
+  void analyzeExplicitSpace(const Fortran::parser::MaskedElsewhereStmt &stmt) {
+    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(stmt.t)));
+  }
+  void
+  analyzeExplicitSpace(const Fortran::parser::WhereConstruct::Elsewhere *ew) {
+    for (const auto &e :
+         std::get<std::list<Fortran::parser::WhereBodyConstruct>>(ew->t))
+      analyzeExplicitSpace(e);
+  }
+  void analyzeExplicitSpace(const Fortran::parser::WhereStmt &stmt) {
+    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(stmt.t)));
+    const auto &assign =
+        std::get<Fortran::parser::AssignmentStmt>(stmt.t).typedAssignment->v;
+    assert(assign.has_value() && "WHERE has no statement");
+    analyzeExplicitSpace(assign.operator->());
+  }
+  void analyzeExplicitSpace(const Fortran::parser::ForallStmt &forall) {
+    analyzeExplicitSpace(
+        std::get<
+            Fortran::common::Indirection<Fortran::parser::ConcurrentHeader>>(
+            forall.t)
+            .value());
+    analyzeExplicitSpace(std::get<Fortran::parser::UnlabeledStatement<
+                             Fortran::parser::ForallAssignmentStmt>>(forall.t)
+                             .statement);
+    analyzeExplicitSpacePop();
+  }
+  void
+  analyzeExplicitSpace(const Fortran::parser::ForallConstructStmt &forall) {
+    analyzeExplicitSpace(
+        std::get<
+            Fortran::common::Indirection<Fortran::parser::ConcurrentHeader>>(
+            forall.t)
+            .value());
+  }
+  void analyzeExplicitSpace(const Fortran::parser::ForallConstruct &forall) {
+    analyzeExplicitSpace(
+        std::get<
+            Fortran::parser::Statement<Fortran::parser::ForallConstructStmt>>(
+            forall.t)
+            .statement);
+    for (const auto &s :
+         std::get<std::list<Fortran::parser::ForallBodyConstruct>>(forall.t)) {
+      std::visit(Fortran::common::visitors{
+                     [&](const Fortran::common::Indirection<
+                         Fortran::parser::ForallConstruct> &b) {
+                       analyzeExplicitSpace(b.value());
+                     },
+                     [&](const Fortran::parser::WhereConstruct &w) {
+                       analyzeExplicitSpace(w);
+                     },
+                     [&](const auto &b) { analyzeExplicitSpace(b.statement); }},
+                 s.u);
+    }
+    analyzeExplicitSpacePop();
+  }
+  void analyzeExplicitSpacePop() { explicitIterSpace.popLevel(); }
+
+  //===--------------------------------------------------------------------===//
 
   Fortran::lower::LoweringBridge &bridge;
   Fortran::evaluate::FoldingContext foldingContext;
