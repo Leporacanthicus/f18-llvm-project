@@ -2073,21 +2073,27 @@ public:
 
       if (arg.passBy == PassBy::BaseAddress || arg.passBy == PassBy::BoxChar) {
         auto argAddr = [&]() -> ExtValue {
-          // Non contiguous variable need to be copied into a contiguous temp,
-          // and the temp need to be copied back after the call in case it was
-          // modified.
-          if (Fortran::evaluate::IsVariable(*expr) && expr->Rank() > 0 &&
-              !Fortran::evaluate::IsSimplyContiguous(
-                  *expr, converter.getFoldingContext())) {
+          ExtValue baseAddr;
+          if (Fortran::evaluate::IsVariable(*expr) && expr->Rank() > 0) {
             auto box = genBoxArg(*expr);
-            auto temp = genTempFromMold(box, ".copyinout");
-            if (arg.mayBeReadByCall())
-              genArrayCopy(temp, box);
-            if (arg.mayBeModifiedByCall())
-              copyOutPairs.emplace_back(box, temp);
-            return temp;
-          }
-          auto baseAddr = genExtAddr(*expr);
+            if (!Fortran::evaluate::IsSimplyContiguous(
+                    *expr, converter.getFoldingContext())) {
+              // Non contiguous variable need to be copied into a contiguous
+              // temp, and the temp need to be copied back after the call in
+              // case it was modified.
+              auto temp = genTempFromMold(box, ".copyinout");
+              if (arg.mayBeReadByCall())
+                genArrayCopy(temp, box);
+              if (arg.mayBeModifiedByCall())
+                copyOutPairs.emplace_back(box, temp);
+              return temp;
+            }
+            // Contiguous: just use the box we created above!
+            // This gets "unboxed" below, if needed.
+            baseAddr = box;
+          } else
+            baseAddr = genExtAddr(*expr);
+
           // Scalar and contiguous expressions may be lowered to a fir.box,
           // either to account for potential polymorphism, or because lowering
           // did not account for some contiguity hints.
