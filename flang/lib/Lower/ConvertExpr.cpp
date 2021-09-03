@@ -3994,7 +3994,6 @@ public:
             Fortran::common::TypeCategory TC2>
   CC genarr(const Fortran::evaluate::Convert<Fortran::evaluate::Type<TC1, KIND>,
                                              TC2> &x) {
-    // assert(isArray(x));
     auto loc = getLoc();
     auto lambda = genarr(x.left());
     auto ty = converter.genType(TC1, KIND);
