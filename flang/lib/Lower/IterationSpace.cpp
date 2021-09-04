@@ -244,7 +244,10 @@ void Fortran::lower::ExplicitIterSpace::bindLoad(
       [&](const auto *p) {
         using T = std::remove_cv_t<std::remove_pointer_t<decltype(p)>>;
         void *vp = static_cast<void *>(const_cast<T *>(p));
-        assert(!loadBindings.count(vp) && "duplicate key");
+        if constexpr (!std::is_same_v<T, Fortran::semantics::Symbol>) {
+          // Se::Symbol* are inalienably shared; never assert on them.
+          assert(!loadBindings.count(vp) && "duplicate key");
+        }
         loadBindings.try_emplace(vp, load);
       },
       base);
