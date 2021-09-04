@@ -2451,12 +2451,13 @@ private:
     ExtValue result;
     if (semant == ConstituentSemantics::ProjectedCopyInCopyOut) {
       auto innerArg = expSpace.findArgumentOfLoad(load);
-      auto resTy = adjustedArrayElementType(innerArg.getType());
       auto path = lowerPath(load.getType());
-      auto eleTy = fir::applyPathToType(resTy, path);
-      auto castedElement = builder.createConvert(loc, eleTy, elementalValue);
-      auto update = builder.create<fir::ArrayUpdateOp>(
-          loc, resTy, innerArg, castedElement, path, load.typeparams());
+      auto eleTy = fir::applyPathToType(innerArg.getType(), path);
+      auto toTy = adjustedArrayElementType(eleTy);
+      auto castedElement = builder.createConvert(loc, toTy, elementalValue);
+      auto update = builder.create<fir::ArrayUpdateOp>(loc, innerArg.getType(),
+                                                       innerArg, castedElement,
+                                                       path, load.typeparams());
       // Flag the offsets as "Fortran" as they are not zero-origin.
       update->setAttr(fir::factory::attrFortranArrayOffsets(),
                       builder.getUnitAttr());
