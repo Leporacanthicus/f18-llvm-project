@@ -1393,10 +1393,15 @@ struct SymbolDependenceDepth {
       LLVM_DEBUG(llvm::dbgs() << "symbol: " << ultimate << '\n');
       LLVM_DEBUG(llvm::dbgs() << "scope: " << scope << '\n');
       auto off = ultimate.offset();
+      auto symSize = ultimate.size();
       for (auto &v : stores) {
         if (&v.getOwningScope() == &scope) {
-          auto bot = std::get<0>(v.interval);
-          if (off >= bot && off < bot + std::get<1>(v.interval))
+          auto intervalOff = std::get<0>(v.interval);
+          auto intervalSize = std::get<1>(v.interval);
+          if (off >= intervalOff && off < intervalOff + intervalSize)
+            return &v;
+          // Zero sized symbol in zero sized equivalence.
+          if (off == intervalOff && symSize == 0)
             return &v;
         }
       }

@@ -5,6 +5,7 @@
 ! CHECK: @_QBy = common global [12 x i8] zeroinitializer
 ! CHECK: @_QBz = global { i32, [4 x i8], float } { i32 42, [4 x i8] undef, float 3.000000e+00 }
 ! CHECK: @_QBrien = common global [1 x i8] zeroinitializer
+! CHECK: @_QBwith_empty_equiv = common global [8 x i8] zeroinitializer
 
 ! CHECK-LABEL: _QPs0
 subroutine s0
@@ -63,3 +64,10 @@ subroutine s5
   real r(1:0)
   common /rien/ r
 end subroutine s5
+
+! CHECK-LABEL: _QPs6
+subroutine s6
+  real r1(1:0), r2(1:0), x, y
+  common /with_empty_equiv/ x, r1, y
+  equivalence(r1, r2)
+end subroutine s6
