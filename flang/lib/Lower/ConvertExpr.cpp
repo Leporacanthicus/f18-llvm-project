@@ -2187,7 +2187,9 @@ public:
         continue;
       }
       const bool actualArgIsVariable = Fortran::evaluate::IsVariable(*expr);
-      if (arg.passBy == PassBy::BaseAddress || arg.passBy == PassBy::BoxChar) {
+      if (arg.passBy == PassBy::BaseAddress ||
+          arg.passBy == PassBy::BaseAddressValueAttribute ||
+          arg.passBy == PassBy::BoxChar) {
         auto argAddr = [&]() -> ExtValue {
           ExtValue baseAddr;
           if (actualArgIsVariable && expr->Rank() > 0) {
@@ -2225,7 +2227,8 @@ public:
             return fir::factory::readBoxValue(builder, loc, *box);
           return baseAddr;
         }();
-        if (arg.passBy == PassBy::BaseAddress) {
+        if (arg.passBy == PassBy::BaseAddress ||
+            arg.passBy == PassBy::BaseAddressValueAttribute) {
           caller.placeInput(arg, fir::getBase(argAddr));
         } else {
           assert(arg.passBy == PassBy::BoxChar);
