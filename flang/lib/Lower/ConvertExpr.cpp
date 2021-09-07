@@ -2392,12 +2392,14 @@ public:
     // 2) Lower the lhs expression to an array_update.
     semant = ConstituentSemantics::ProjectedCopyInCopyOut;
     auto lexv = lower(lhs);
-    // 3) Thread the array value updated forward
-    auto oldInnerArg =
-        mlir::cast<fir::ArrayUpdateOp>(fir::getBase(lexv).getDefiningOp())
-            .sequence();
-    auto offset = expSpace.argPosition(oldInnerArg);
-    expSpace.setInnerArg(offset, fir::getBase(lexv));
+    // 3) Thread the array value updated forward. Note: the lhs might be
+    // ill-formed, in which case there is no array to thread.
+    if (auto updateOp = mlir::dyn_cast<fir::ArrayUpdateOp>(
+            fir::getBase(lexv).getDefiningOp())) {
+      auto oldInnerArg = updateOp.sequence();
+      auto offset = expSpace.argPosition(oldInnerArg);
+      expSpace.setInnerArg(offset, fir::getBase(lexv));
+    }
     return lexv;
   }
 
