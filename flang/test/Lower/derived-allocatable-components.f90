@@ -249,8 +249,10 @@ subroutine ref_scalar_def_char_a(a0_0, a1_0, a0_1, a1_1)
   ! CHECK: %[[sub:.*]] = subi %[[c7]], %[[dims]]#0 : index 
   ! CHECK: %[[mul:.*]] = muli %[[len]], %[[sub]] : index 
   ! CHECK: %[[offset:.*]] = addi %[[mul]], %c0{{.*}} : index
-  ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[cast]], %[[offset]]
-  ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[addr]], %[[len]]
+  ! CHECK: %[[cnvt:.*]] = fir.convert %[[cast]]
+  ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[cnvt]], %[[offset]]
+  ! CHECK: %[[cnvt:.*]] = fir.convert %[[addr]]
+  ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[cnvt]], %[[len]]
   ! CHECK: fir.call @_QPtakes_char_scalar(%[[boxchar]])
   call takes_char_scalar(a1_0%p(7))
 
@@ -267,8 +269,10 @@ subroutine ref_scalar_def_char_a(a0_0, a1_0, a0_1, a1_1)
   ! CHECK: %[[sub:.*]] = subi %[[c7]], %[[dims]]#0 : index 
   ! CHECK: %[[mul:.*]] = muli %[[len]], %[[sub]] : index 
   ! CHECK: %[[offset:.*]] = addi %[[mul]], %c0{{.*}} : index
-  ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[cast]], %[[offset]]
-  ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[addr]], %[[len]]
+  ! CHECK: %[[cnvt:.*]] = fir.convert %[[cast]]
+  ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[cnvt]], %[[offset]]
+  ! CHECK: %[[cnvt:.*]] = fir.convert %[[addr]]
+  ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[cnvt]], %[[len]]
   ! CHECK: fir.call @_QPtakes_char_scalar(%[[boxchar]])
   call takes_char_scalar(a1_1(5)%p(7))
 

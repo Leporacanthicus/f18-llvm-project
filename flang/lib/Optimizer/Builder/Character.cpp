@@ -26,9 +26,8 @@ static fir::CharacterType recoverCharacterType(mlir::Type type) {
   if (auto boxType = type.dyn_cast<fir::BoxCharType>())
     return boxType.getEleTy();
   while (true) {
-    if (auto pointedType = fir::dyn_cast_ptrEleTy(type))
-      type = pointedType;
-    else if (auto boxTy = type.dyn_cast<fir::BoxType>())
+    type = fir::unwrapRefType(type);
+    if (auto boxTy = type.dyn_cast<fir::BoxType>())
       type = boxTy.getEleTy();
     else
       break;
@@ -643,15 +642,11 @@ bool fir::factory::CharacterExprHelper::isCharacterLiteral(mlir::Type type) {
 bool fir::factory::CharacterExprHelper::isCharacterScalar(mlir::Type type) {
   if (type.isa<fir::BoxCharType>())
     return true;
-  if (auto pointedType = fir::dyn_cast_ptrEleTy(type))
-    type = pointedType;
+  type = fir::unwrapRefType(type);
   if (auto boxTy = type.dyn_cast<fir::BoxType>())
     type = boxTy.getEleTy();
-  if (auto pointedType = fir::dyn_cast_ptrEleTy(type))
-    type = pointedType;
-  if (auto seqType = type.dyn_cast<fir::SequenceType>())
-    return false;
-  return fir::isa_char(type);
+  type = fir::unwrapRefType(type);
+  return !type.isa<fir::SequenceType>() && fir::isa_char(type);
 }
 
 fir::KindTy

@@ -1481,6 +1481,19 @@ public:
           delta = builder.create<mlir::MulIOp>(loc, delta, ext);
         ++dim;
       }
+#if 1
+      if (fir::factory::CharacterExprHelper::isCharacterScalar(refTy)) {
+        auto chTy = fir::factory::CharacterExprHelper::getCharacterType(refTy);
+        if (fir::characterWithDynamicLen(chTy)) {
+          auto ctx = builder.getContext();
+          auto kind = fir::factory::CharacterExprHelper::getCharacterKind(chTy);
+          auto singleTy = fir::CharacterType::getSingleton(ctx, kind);
+          refTy = builder.getRefType(singleTy);
+          auto seqRefTy = builder.getRefType(builder.getVarLenSeqTy(singleTy));
+          base = builder.createConvert(loc, seqRefTy, base);
+        }
+      }
+#endif
       return builder.create<fir::CoordinateOp>(
           loc, refTy, base, llvm::ArrayRef<mlir::Value>{total});
     };
