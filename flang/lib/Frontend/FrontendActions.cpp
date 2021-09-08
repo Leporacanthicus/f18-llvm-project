@@ -372,7 +372,6 @@ void GetSymbolsSourcesAction::ExecuteAction() {
 
 // Translate front-end KINDs for use in the IR and code gen. Extracted from
 // bbc.cpp.
-// TODO: How to share this with bbc.cpp?
 static std::vector<fir::KindTy>
 fromDefaultKinds(const Fortran::common::IntrinsicTypeDefaultKinds &defKinds) {
   return {static_cast<fir::KindTy>(defKinds.GetDefaultKind(
@@ -405,7 +404,7 @@ void EmitFirAction::ExecuteAction() {
       ci.invocation().semanticsContext().intrinsics(), ci.parsing().allCooked(),
       "", kindMap);
 
-  // Create PFT and lower it to FIR
+  // Create a parse tree and lower it to FIR
   auto &parseTree{*ci.parsing().parseTree()};
   lb.lower(parseTree, ci.invocation().semanticsContext());
 
@@ -415,19 +414,32 @@ void EmitFirAction::ExecuteAction() {
   pm.addPass(std::make_unique<Fortran::lower::VerifierPass>());
   mlir::ModuleOp mlirModule = lb.getModule();
   if (mlir::failed(pm.run(mlirModule))) {
-    // TODO: Replace with a diagnostic
-    llvm::errs() << "FATAL: verification of lowering to FIR failed";
+    unsigned diagID =
+        ci.diagnostics().getCustomDiagID(clang::DiagnosticsEngine::Error,
+            "verification of lowering to FIR failed");
+    ci.diagnostics().Report(diagID);
+    return;
   }
 
-  // Print the output
+  // Print the output. If a pre-defined output stream exists, dump the MLIR
+  // content there.
+  if (!ci.IsOutputStreamNull()) {
+    mlirModule.print(ci.GetOutputStream());
+    return;
+  }
+
+  // ... otherwise, print to a file.
   auto os{ci.CreateDefaultOutputFile(
-          /*Binary=*/true, /*InFile=*/GetCurrentFileOrBufferName(), "mlir")};
+      /*Binary=*/true, /*InFile=*/GetCurrentFileOrBufferName(), "mlir")};
   if (!os) {
+    unsigned diagID = ci.diagnostics().getCustomDiagID(
+        clang::DiagnosticsEngine::Error, "failed to create the output file");
+    ci.diagnostics().Report(diagID);
     return;
   }
 
   mlirModule.print(*os);
-  }
+}
 
 void EmitObjAction::ExecuteAction() {
   CompilerInstance &ci = this->instance();

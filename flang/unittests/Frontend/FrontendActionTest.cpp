@@ -161,4 +161,30 @@ TEST_F(FrontendActionTest, ParseSyntaxOnly) {
           .contains(
               ":1:14: error: IF statement is not allowed in IF statement\n"));
 }
+
+TEST_F(FrontendActionTest, EmitFir) {
+  // Populate the input file with the pre-defined input and flush it.
+  *(inputFileOs_) << "end program";
+  inputFileOs_.reset();
+
+  // Set-up the action kind.
+  compInst_.invocation().frontendOpts().programAction = EmitFir;
+  compInst_.invocation().preprocessorOpts().noReformat = true;
+
+  // Set-up the output stream. We are using output buffer wrapped as an output
+  // stream, as opposed to an actual file (or a file descriptor).
+  llvm::SmallVector<char, 256> outputFileBuffer;
+  std::unique_ptr<llvm::raw_pwrite_stream> outputFileStream(
+      new llvm::raw_svector_ostream(outputFileBuffer));
+  compInst_.set_outputStream(std::move(outputFileStream));
+
+  // Execute the action.
+  bool success = ExecuteCompilerInvocation(&compInst_);
+
+  // Validate the expected output.
+  EXPECT_TRUE(success);
+  EXPECT_TRUE(!outputFileBuffer.empty());
+  EXPECT_TRUE(
+      llvm::StringRef(outputFileBuffer.data()).contains("func @_QQmain"));
+}
 } // namespace
