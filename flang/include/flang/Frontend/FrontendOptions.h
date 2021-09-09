@@ -32,7 +32,7 @@ enum ActionKind {
   ParseSyntaxOnly,
 
   /// Emit a .mlir file
-  EmitFir,
+  EmitMLIR,
 
   /// Emit a .o file.
   EmitObj,

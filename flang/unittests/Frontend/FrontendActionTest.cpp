@@ -162,13 +162,13 @@ TEST_F(FrontendActionTest, ParseSyntaxOnly) {
               ":1:14: error: IF statement is not allowed in IF statement\n"));
 }
 
-TEST_F(FrontendActionTest, EmitFir) {
+TEST_F(FrontendActionTest, EmitMLIR) {
   // Populate the input file with the pre-defined input and flush it.
   *(inputFileOs_) << "end program";
   inputFileOs_.reset();
 
   // Set-up the action kind.
-  compInst_.invocation().frontendOpts().programAction = EmitFir;
+  compInst_.invocation().frontendOpts().programAction = EmitMLIR;
   compInst_.invocation().preprocessorOpts().noReformat = true;
 
   // Set-up the output stream. We are using output buffer wrapped as an output

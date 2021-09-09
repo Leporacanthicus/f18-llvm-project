@@ -24,12 +24,8 @@ add_flang_library(flangFrontend
   FIRDialect
   FIRAnalysis
   FIRSupport
-  FIRTransforms
   FIRBuilder
-  FIRRuntime
   ${dialect_libs}
-  MLIRAffineToStandard
-  MLIRSCFToStandard
 
   LINK_COMPONENTS
   Option

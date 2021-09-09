@@ -7,13 +7,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Frontend/FrontendActions.h"
+#include "mlir/IR/Dialect.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LogicalResult.h"
 #include "flang/Common/default-kinds.h"
 #include "flang/Frontend/CompilerInstance.h"
 #include "flang/Frontend/FrontendOptions.h"
 #include "flang/Frontend/PreprocessorOptions.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/PFTBuilder.h"
+#include "flang/Lower/Support/Verifier.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
+#include "flang/Optimizer/Support/InitFIR.h"
+#include "flang/Optimizer/Support/KindMapping.h"
 #include "flang/Parser/dump-parse-tree.h"
 #include "flang/Parser/parsing.h"
 #include "flang/Parser/provenance.h"
@@ -27,13 +33,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include <clang/Basic/Diagnostic.h>
 #include <memory>
-#include "mlir/IR/Dialect.h"
-#include "flang/Optimizer/Support/InitFIR.h"
-#include "flang/Optimizer/Support/KindMapping.h"
-#include "flang/Lower/Bridge.h"
-#include "mlir/Pass/PassManager.h"
-#include "mlir/Support/LogicalResult.h"
-#include "flang/Lower/Support/Verifier.h"
 
 using namespace Fortran::frontend;
 
@@ -387,7 +386,7 @@ fromDefaultKinds(const Fortran::common::IntrinsicTypeDefaultKinds &defKinds) {
               defKinds.GetDefaultKind(Fortran::common::TypeCategory::Real))};
 }
 
-void EmitFirAction::ExecuteAction() {
+void EmitMLIRAction::ExecuteAction() {
   CompilerInstance &ci = this->instance();
 
   // Load the MLIR dialects required by Flang
