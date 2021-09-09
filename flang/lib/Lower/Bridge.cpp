@@ -31,10 +31,10 @@
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
+#include "flang/Optimizer/Builder/Runtime/Character.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
-#include "flang/Optimizer/Builder/Runtime/Character.h"
 #include "flang/Optimizer/Support/FIRContext.h"
 #include "flang/Optimizer/Support/FatalError.h"
 #include "flang/Optimizer/Support/InternalNames.h"
@@ -2593,8 +2593,10 @@ private:
       analyzeExplicitSpace(e.operator->());
   }
   void analyzeExplicitSpace(const Fortran::parser::WhereConstructStmt &ws) {
-    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
-        std::get<Fortran::parser::LogicalExpr>(ws.t)));
+    auto *exp = Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(ws.t));
+    addMaskVariable(exp);
+    analyzeExplicitSpace(*exp);
   }
   void analyzeExplicitSpace(
       const Fortran::parser::WhereConstruct::MaskedElsewhere &ew) {
@@ -2617,8 +2619,10 @@ private:
                body.u);
   }
   void analyzeExplicitSpace(const Fortran::parser::MaskedElsewhereStmt &stmt) {
-    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
-        std::get<Fortran::parser::LogicalExpr>(stmt.t)));
+    auto *exp = Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(stmt.t));
+    addMaskVariable(exp);
+    analyzeExplicitSpace(*exp);
   }
   void
   analyzeExplicitSpace(const Fortran::parser::WhereConstruct::Elsewhere *ew) {
@@ -2627,8 +2631,10 @@ private:
       analyzeExplicitSpace(e);
   }
   void analyzeExplicitSpace(const Fortran::parser::WhereStmt &stmt) {
-    analyzeExplicitSpace(*Fortran::semantics::GetExpr(
-        std::get<Fortran::parser::LogicalExpr>(stmt.t)));
+    auto *exp = Fortran::semantics::GetExpr(
+        std::get<Fortran::parser::LogicalExpr>(stmt.t));
+    addMaskVariable(exp);
+    analyzeExplicitSpace(*exp);
     const auto &assign =
         std::get<Fortran::parser::AssignmentStmt>(stmt.t).typedAssignment->v;
     assert(assign.has_value() && "WHERE has no statement");
@@ -2674,7 +2680,31 @@ private:
     }
     analyzeExplicitSpacePop();
   }
+
   void analyzeExplicitSpacePop() { explicitIterSpace.popLevel(); }
+
+  void addMaskVariable(Fortran::lower::FrontEndExpr exp) {
+    // Note: use i8 to store bool values. This avoids round-down behavior found
+    // with sequences of i1. That is, an array of i1 will be truncated in size
+    // and be too small. For example, a buffer of type fir.array<7xi1> will have
+    // 0 size.
+    auto ty = fir::HeapType::get(builder->getIntegerType(8));
+    auto loc = toLocation();
+    auto var = builder->createTemporary(loc, ty);
+    auto nil = builder->createNullConstant(loc, ty);
+    builder->create<fir::StoreOp>(loc, nil, var);
+    implicitIterSpace.addMaskVariable(exp, var);
+    explicitIterSpace.outermostContext().attachCleanup([=]() {
+      auto load = builder->create<fir::LoadOp>(loc, var);
+      auto cmp = builder->genIsNotNull(loc, load);
+      auto ifOp =
+          builder->create<fir::IfOp>(loc, cmp, /*withElseRegion=*/false);
+      auto insPt = builder->saveInsertionPoint();
+      builder->setInsertionPointToStart(&ifOp.thenRegion().front());
+      builder->create<fir::FreeMemOp>(loc, load);
+      builder->restoreInsertionPoint(insPt);
+    });
+  }
 
   //===--------------------------------------------------------------------===//
 

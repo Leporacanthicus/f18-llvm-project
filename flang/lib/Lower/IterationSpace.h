@@ -66,6 +66,10 @@ public:
     return vmap.lookup(e);
   }
   bool isLowered(FrontEndExpr e) const { return vmap.count(e); }
+  void replaceBinding(FrontEndExpr e, mlir::Value v, mlir::Value shape) {
+    vmap.erase(e);
+    vmap.try_emplace(e, v, shape);
+  }
 
   StatementContext &stmtContext() { return stmtCtx; }
 
@@ -118,6 +122,15 @@ public:
     return maskList;
   }
 
+  /// Add a variable binding, `var`, for the mask expression `exp`.
+  void addMaskVariable(FrontEndExpr exp, mlir::Value var) {
+    maskVarMap.try_emplace(exp, var);
+  }
+
+  mlir::Value lookupVariable(FrontEndExpr exp) {
+    return maskVarMap.lookup(exp);
+  }
+
 private:
   // Stack of WHERE constructs, each building a list of mask expressions.
   llvm::SmallVector<llvm::SmallVector<FrontEndMaskExpr>> &getMasks() {
@@ -127,6 +140,8 @@ private:
   getMasks() const {
     return stack;
   }
+
+  llvm::DenseMap<FrontEndExpr, mlir::Value> maskVarMap;
 };
 
 class ExplicitIterSpace;
@@ -267,6 +282,9 @@ public:
   /// Return the outermost loop in this FORALL nest.
   fir::DoLoopOp getOuterLoop() { return outerLoopStack.back(); }
 
+  /// Return the statement context for the entire, outermost FORALL construct.
+  StatementContext &outermostContext() { return outerContext; }
+
   /// Enter a new statement context.
   void enter() {
     auto *ctx = new StatementContext;
@@ -287,6 +305,8 @@ public:
                                        const ExplicitIterSpace &);
 
 private:
+  StatementContext outerContext;
+
   // A stack of lists of front-end symbols.
   llvm::SmallVector<llvm::SmallVector<FrontEndSymbol>> symbolStack;
   llvm::SmallVector<ArrayBases> lhsBases;

@@ -440,12 +440,23 @@ mlir::Value fir::FirOpBuilder::createBox(mlir::Location loc,
       });
 }
 
+static mlir::Value genNullPointerComparison(fir::FirOpBuilder &builder,
+                                            mlir::Location loc,
+                                            mlir::Value addr,
+                                            mlir::CmpIPredicate condition) {
+  auto intPtrTy = builder.getIntPtrType();
+  auto ptrToInt = builder.createConvert(loc, intPtrTy, addr);
+  auto c0 = builder.createIntegerConstant(loc, intPtrTy, 0);
+  return builder.create<mlir::CmpIOp>(loc, condition, ptrToInt, c0);
+}
+
 mlir::Value fir::FirOpBuilder::genIsNotNull(mlir::Location loc,
                                             mlir::Value addr) {
-  auto intPtrTy = getIntPtrType();
-  auto ptrToInt = createConvert(loc, intPtrTy, addr);
-  auto c0 = createIntegerConstant(loc, intPtrTy, 0);
-  return create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::ne, ptrToInt, c0);
+  return genNullPointerComparison(*this, loc, addr, mlir::CmpIPredicate::ne);
+}
+
+mlir::Value fir::FirOpBuilder::genIsNull(mlir::Location loc, mlir::Value addr) {
+  return genNullPointerComparison(*this, loc, addr, mlir::CmpIPredicate::eq);
 }
 
 //===--------------------------------------------------------------------===//

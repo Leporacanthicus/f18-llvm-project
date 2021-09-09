@@ -336,6 +336,9 @@ public:
 
   /// Generate code testing \p addr is not a null address.
   mlir::Value genIsNotNull(mlir::Location loc, mlir::Value addr);
+   
+  /// Generate code testing \p addr is a null address.
+  mlir::Value genIsNull(mlir::Location loc, mlir::Value addr);
 
 private:
   const KindMapping &kindMap;
