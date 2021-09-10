@@ -207,54 +207,6 @@ static bool isAllocatableOrPointer(const Fortran::lower::SomeExpr &expr) {
   return sym && Fortran::semantics::IsAllocatableOrPointer(*sym);
 }
 
-/// Given the address of an array element and the ExtendedValue describing the
-/// array, returns the ExtendedValue describing the array element. The purpose
-/// is to propagate the length parameters of the array to the element.
-/// This can be used for elements of `array` or `array(i:j:k)`. If \p element
-/// belongs to an array section `array%x` whose base is \p array,
-/// arraySectionElementToExtendedValue must be used instead.
-static fir::ExtendedValue
-arrayElementToExtendedValue(fir::FirOpBuilder &builder, mlir::Location loc,
-                            const fir::ExtendedValue &array,
-                            mlir::Value element) {
-  return array.match(
-      [&](const fir::CharBoxValue &cb) -> fir::ExtendedValue {
-        return cb.clone(element);
-      },
-      [&](const fir::CharArrayBoxValue &bv) -> fir::ExtendedValue {
-        return bv.cloneElement(element);
-      },
-      [&](const fir::BoxValue &box) -> fir::ExtendedValue {
-        if (box.isCharacter()) {
-          auto len = fir::factory::readCharLen(builder, loc, box);
-          return fir::CharBoxValue{element, len};
-        }
-        if (box.isDerivedWithLengthParameters())
-          TODO(loc, "get length parameters from derived type BoxValue");
-        return element;
-      },
-      [&](const auto &) -> fir::ExtendedValue { return element; });
-}
-
-/// Build the ExtendedValue for \p element that is an element of an array or
-/// array section with \p array base (`array` or `array(i:j:k)%x%y`).
-/// If it is an array section, \p slice must be provided and be a fir::SliceOp
-/// that describes the section.
-static fir::ExtendedValue arraySectionElementToExtendedValue(
-    fir::FirOpBuilder &builder, mlir::Location loc,
-    const fir::ExtendedValue &array, mlir::Value element, mlir::Value slice) {
-  if (!slice)
-    return arrayElementToExtendedValue(builder, loc, array, element);
-  auto sliceOp = mlir::dyn_cast_or_null<fir::SliceOp>(slice.getDefiningOp());
-  assert(sliceOp && "slice must be a sliceOp");
-  if (sliceOp.fields().empty())
-    return arrayElementToExtendedValue(builder, loc, array, element);
-  // For F95, using componentToExtendedValue will work, but when PDTs are
-  // lowered. It will be required to go down the slice to propagate the length
-  // parameters.
-  return fir::factory::componentToExtendedValue(builder, loc, element);
-}
-
 /// Convert the array_load, `load`, to an extended value. If `path` is not
 /// empty, then traverse through the components designated. The base value is
 /// `newBase`. This does not accept an array_load with a slice operand.
@@ -1442,7 +1394,7 @@ public:
     assert(args.size() == seqTy.getDimension());
     auto ty = builder.getRefType(seqTy.getEleTy());
     auto addr = builder.create<fir::CoordinateOp>(loc, ty, base, args);
-    return arrayElementToExtendedValue(builder, loc, array, addr);
+    return fir::factory::arrayElementToExtendedValue(builder, loc, array, addr);
   }
 
   /// Lower an ArrayRef to a fir.coordinate_of using an element offset instead
@@ -1552,7 +1504,8 @@ public:
     auto elementAddr = builder.create<fir::ArrayCoorOp>(
         loc, refTy, addr, shape, /*slice=*/mlir::Value{}, arrayCoorArgs,
         fir::getTypeParams(exv));
-    return arrayElementToExtendedValue(builder, loc, exv, elementAddr);
+    return fir::factory::arrayElementToExtendedValue(builder, loc, exv,
+                                                     elementAddr);
   }
 
   /// Return the coordinate of the array reference.
@@ -4842,8 +4795,8 @@ public:
         mlir::Value coor = builder.create<fir::ArrayCoorOp>(
             loc, refEleTy, memref, shape, slice, indices,
             fir::getTypeParams(extMemref));
-        return arraySectionElementToExtendedValue(builder, loc, extMemref, coor,
-                                                  slice);
+        return fir::factory::arraySectionElementToExtendedValue(
+            builder, loc, extMemref, coor, slice);
       };
     }
     auto arrLoad = builder.create<fir::ArrayLoadOp>(
@@ -4893,8 +4846,8 @@ public:
             llvm::ArrayRef<mlir::NamedAttribute>{
                 Fortran::lower::getAdaptToByRefAttr(builder)});
         builder.create<fir::StoreOp>(loc, base, temp);
-        return arraySectionElementToExtendedValue(builder, loc, extMemref, temp,
-                                                  slice);
+        return fir::factory::arraySectionElementToExtendedValue(
+            builder, loc, extMemref, temp, slice);
       };
     }
     // In the default case, the array reference forwards an `array_fetch` Op
@@ -4903,8 +4856,8 @@ public:
       auto arrFetch = builder.create<fir::ArrayFetchOp>(
           loc, adjustedArraySubtype(arrTy, iters.iterVec()), arrLd,
           iters.iterVec(), arrLdTypeParams);
-      return arraySectionElementToExtendedValue(builder, loc, extMemref,
-                                                arrFetch, slice);
+      return fir::factory::arraySectionElementToExtendedValue(
+          builder, loc, extMemref, arrFetch, slice);
     };
   }
 

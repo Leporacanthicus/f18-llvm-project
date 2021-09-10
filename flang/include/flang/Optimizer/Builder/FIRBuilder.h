@@ -336,7 +336,7 @@ public:
 
   /// Generate code testing \p addr is not a null address.
   mlir::Value genIsNotNull(mlir::Location loc, mlir::Value addr);
-   
+
   /// Generate code testing \p addr is a null address.
   mlir::Value genIsNull(mlir::Location loc, mlir::Value addr);
 
@@ -428,12 +428,37 @@ fir::ExtendedValue componentToExtendedValue(fir::FirOpBuilder &builder,
                                             mlir::Location loc,
                                             mlir::Value component);
 
+/// Given the address of an array element and the ExtendedValue describing the
+/// array, returns the ExtendedValue describing the array element. The purpose
+/// is to propagate the length parameters of the array to the element.
+/// This can be used for elements of `array` or `array(i:j:k)`. If \p element
+/// belongs to an array section `array%x` whose base is \p array,
+/// arraySectionElementToExtendedValue must be used instead.
+fir::ExtendedValue arrayElementToExtendedValue(fir::FirOpBuilder &builder,
+                                               mlir::Location loc,
+                                               const fir::ExtendedValue &array,
+                                               mlir::Value element);
+
+/// Build the ExtendedValue for \p element that is an element of an array or
+/// array section with \p array base (`array` or `array(i:j:k)%x%y`).
+/// If it is an array section, \p slice must be provided and be a fir::SliceOp
+/// that describes the section.
+fir::ExtendedValue arraySectionElementToExtendedValue(
+    fir::FirOpBuilder &builder, mlir::Location loc,
+    const fir::ExtendedValue &array, mlir::Value element, mlir::Value slice);
+
 /// Assign \p rhs to \p lhs. Both \p rhs and \p lhs must be scalar derived
 /// types. The assignment follows Fortran intrinsic assignment semantic for
 /// derived types (10.2.1.3 point 13).
 void genRecordAssignment(fir::FirOpBuilder &builder, mlir::Location loc,
                          const fir::ExtendedValue &lhs,
                          const fir::ExtendedValue &rhs);
+
+/// Compute the extent of (lb:ub:step) as max((ub-lb+step)/step, 0). See Fortran
+/// 2018 9.5.3.3.2 section for more details.
+mlir::Value computeTripletExtent(fir::FirOpBuilder &builder, mlir::Location loc,
+                                 mlir::Value lb, mlir::Value ub,
+                                 mlir::Value step, mlir::Type type);
 } // namespace fir::factory
 
 #endif // FORTRAN_OPTIMIZER_BUILDER_FIRBUILDER_H

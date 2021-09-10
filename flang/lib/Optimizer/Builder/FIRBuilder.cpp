@@ -753,6 +753,43 @@ fir::ExtendedValue fir::factory::componentToExtendedValue(
   return component;
 }
 
+fir::ExtendedValue fir::factory::arrayElementToExtendedValue(
+    fir::FirOpBuilder &builder, mlir::Location loc,
+    const fir::ExtendedValue &array, mlir::Value element) {
+  return array.match(
+      [&](const fir::CharBoxValue &cb) -> fir::ExtendedValue {
+        return cb.clone(element);
+      },
+      [&](const fir::CharArrayBoxValue &bv) -> fir::ExtendedValue {
+        return bv.cloneElement(element);
+      },
+      [&](const fir::BoxValue &box) -> fir::ExtendedValue {
+        if (box.isCharacter()) {
+          auto len = fir::factory::readCharLen(builder, loc, box);
+          return fir::CharBoxValue{element, len};
+        }
+        if (box.isDerivedWithLengthParameters())
+          TODO(loc, "get length parameters from derived type BoxValue");
+        return element;
+      },
+      [&](const auto &) -> fir::ExtendedValue { return element; });
+}
+
+fir::ExtendedValue fir::factory::arraySectionElementToExtendedValue(
+    fir::FirOpBuilder &builder, mlir::Location loc,
+    const fir::ExtendedValue &array, mlir::Value element, mlir::Value slice) {
+  if (!slice)
+    return arrayElementToExtendedValue(builder, loc, array, element);
+  auto sliceOp = mlir::dyn_cast_or_null<fir::SliceOp>(slice.getDefiningOp());
+  assert(sliceOp && "slice must be a sliceOp");
+  if (sliceOp.fields().empty())
+    return arrayElementToExtendedValue(builder, loc, array, element);
+  // For F95, using componentToExtendedValue will work, but when PDTs are
+  // lowered. It will be required to go down the slice to propagate the length
+  // parameters.
+  return fir::factory::componentToExtendedValue(builder, loc, element);
+}
+
 /// Can the assignment of this record type be implement with a simple memory
 /// copy ?
 static bool recordTypeCanBeMemCopied(fir::RecordType recordType) {
@@ -804,4 +841,21 @@ void fir::factory::genRecordAssignment(fir::FirOpBuilder &builder,
   // the component by component assignment can be replaced by a memory copy.
   auto load = builder.create<fir::LoadOp>(loc, fir::getBase(rhs));
   builder.create<fir::StoreOp>(loc, load, fir::getBase(lhs));
+}
+
+mlir::Value fir::factory::computeTripletExtent(fir::FirOpBuilder &builder,
+                                               mlir::Location loc,
+                                               mlir::Value lb, mlir::Value ub,
+                                               mlir::Value step,
+                                               mlir::Type type) {
+  auto zero = builder.createIntegerConstant(loc, type, 0);
+  lb = builder.createConvert(loc, type, lb);
+  ub = builder.createConvert(loc, type, ub);
+  step = builder.createConvert(loc, type, step);
+  auto diff = builder.create<mlir::SubIOp>(loc, ub, lb);
+  auto add = builder.create<mlir::AddIOp>(loc, diff, step);
+  auto div = builder.create<mlir::SignedDivIOp>(loc, add, step);
+  auto cmp =
+      builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, div, zero);
+  return builder.create<mlir::SelectOp>(loc, cmp, div, zero);
 }

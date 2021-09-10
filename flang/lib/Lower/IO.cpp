@@ -20,6 +20,7 @@
 #include "flang/Lower/Runtime.h"
 #include "flang/Lower/Support/Utils.h"
 #include "flang/Lower/Todo.h"
+#include "flang/Lower/VectorSubscripts.h"
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/Complex.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
@@ -499,6 +500,36 @@ static mlir::FuncOp getInputFunc(mlir::Location loc, fir::FirOpBuilder &builder,
   return getIORuntimeFunc<mkIOKey(InputDescriptor)>(loc, builder);
 }
 
+static mlir::Value createIoRuntimeCallForItem(mlir::Location loc,
+                                              fir::FirOpBuilder &builder,
+                                              mlir::FuncOp inputFunc,
+                                              mlir::Value cookie,
+                                              const fir::ExtendedValue &item) {
+  auto argType = inputFunc.getType().getInput(1);
+  llvm::SmallVector<mlir::Value> inputFuncArgs = {cookie};
+  if (argType.isa<fir::BoxType>()) {
+    auto box = fir::getBase(item);
+    assert(box.getType().isa<fir::BoxType>() && "must be previously emboxed");
+    inputFuncArgs.push_back(builder.createConvert(loc, argType, box));
+  } else {
+    auto itemAddr = fir::getBase(item);
+    auto itemTy = fir::unwrapPassByRefType(itemAddr.getType());
+    inputFuncArgs.push_back(builder.createConvert(loc, argType, itemAddr));
+    fir::factory::CharacterExprHelper charHelper{builder, loc};
+    if (charHelper.isCharacterScalar(itemTy)) {
+      auto len = fir::getLen(item);
+      inputFuncArgs.push_back(
+          builder.createConvert(loc, inputFunc.getType().getInput(2), len));
+    } else if (itemTy.isa<mlir::IntegerType>()) {
+      inputFuncArgs.push_back(builder.create<mlir::ConstantOp>(
+          loc, builder.getI32IntegerAttr(
+                   itemTy.cast<mlir::IntegerType>().getWidth() / 8)));
+    }
+  }
+  return builder.create<fir::CallOp>(loc, inputFunc, inputFuncArgs)
+      .getResult(0);
+}
+
 /// Generate a sequence of input data transfer calls.
 static void genInputItemList(Fortran::lower::AbstractConverter &converter,
                              mlir::Value cookie,
@@ -519,33 +550,39 @@ static void genInputItemList(Fortran::lower::AbstractConverter &converter,
     const auto *expr = Fortran::semantics::GetExpr(pVar);
     if (!expr)
       fir::emitFatalError(loc, "internal error: could not get evaluate::Expr");
+    if (Fortran::evaluate::HasVectorSubscript(*expr)) {
+      auto vectorSubscriptBox =
+          Fortran::lower::genVectorSubscriptBox(loc, converter, stmtCtx, *expr);
+      auto inputFunc = getInputFunc(
+          loc, builder, vectorSubscriptBox.getElementType(), isFormatted);
+      const bool mustBox = inputFunc.getType().getInput(1).isa<fir::BoxType>();
+      if (!checkResult) {
+        auto elementalGenerator = [&](const fir::ExtendedValue &element) {
+          createIoRuntimeCallForItem(loc, builder, inputFunc, cookie,
+                                     mustBox ? builder.createBox(loc, element)
+                                             : element);
+        };
+        vectorSubscriptBox.loopOverElements(builder, loc, elementalGenerator);
+      } else {
+        auto elementalGenerator =
+            [&](const fir::ExtendedValue &element) -> mlir::Value {
+          return createIoRuntimeCallForItem(
+              loc, builder, inputFunc, cookie,
+              mustBox ? builder.createBox(loc, element) : element);
+        };
+        if (!ok)
+          ok = builder.createBool(loc, true);
+        ok = vectorSubscriptBox.loopOverElementsWhile(builder, loc,
+                                                      elementalGenerator, ok);
+      }
+      continue;
+    }
     auto itemTy = converter.genType(*expr);
     auto inputFunc = getInputFunc(loc, builder, itemTy, isFormatted);
-    auto argType = inputFunc.getType().getInput(1);
-
-    llvm::SmallVector<mlir::Value> inputFuncArgs = {cookie};
-    if (argType.isa<fir::BoxType>()) {
-      if (Fortran::evaluate::HasVectorSubscript(*expr))
-        TODO(loc, "IO input item with vector subscripts");
-      auto box = fir::getBase(converter.genExprBox(*expr, stmtCtx, loc));
-      inputFuncArgs.push_back(builder.createConvert(loc, argType, box));
-    } else {
-      auto itemExv = converter.genExprAddr(expr, stmtCtx, loc);
-      auto itemAddr = fir::getBase(itemExv);
-      inputFuncArgs.push_back(builder.createConvert(loc, argType, itemAddr));
-      fir::factory::CharacterExprHelper charHelper{builder, loc};
-      if (charHelper.isCharacterScalar(itemTy)) {
-        auto len = fir::getLen(itemExv);
-        inputFuncArgs.push_back(
-            builder.createConvert(loc, inputFunc.getType().getInput(2), len));
-      } else if (itemTy.isa<mlir::IntegerType>()) {
-        inputFuncArgs.push_back(builder.create<mlir::ConstantOp>(
-            loc, builder.getI32IntegerAttr(
-                     itemTy.cast<mlir::IntegerType>().getWidth() / 8)));
-      }
-    }
-    ok =
-        builder.create<fir::CallOp>(loc, inputFunc, inputFuncArgs).getResult(0);
+    auto itemExv = inputFunc.getType().getInput(1).isa<fir::BoxType>()
+                       ? converter.genExprBox(*expr, stmtCtx, loc)
+                       : converter.genExprAddr(expr, stmtCtx, loc);
+    ok = createIoRuntimeCallForItem(loc, builder, inputFunc, cookie, itemExv);
   }
 }
 
@@ -604,7 +641,7 @@ static void genIoLoop(Fortran::lower::AbstractConverter &converter,
   }
   // Check IO call results - the loop is a fir.iterate_while op.
   if (!ok)
-    ok = builder.createIntegerConstant(loc, builder.getI1Type(), 1);
+    ok = builder.createBool(loc, true);
   auto iterWhileOp = builder.create<fir::IterWhileOp>(
       loc, lowerValue, upperValue, stepValue, ok, /*finalCountValue*/ true);
   builder.setInsertionPointToStart(iterWhileOp.getBody());
