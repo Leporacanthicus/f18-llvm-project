@@ -3356,7 +3356,7 @@ public:
     auto loc = getLoc();
     // Once the loop extents have been computed, which may require being inside
     // some explicit loops, lazily allocate the expression on the heap.
-    ccPrelude = [=](llvm::ArrayRef<mlir::Value> shape) -> mlir::Value {
+    ccPrelude = [=](llvm::ArrayRef<mlir::Value> shape) {
       auto load = builder.create<fir::LoadOp>(loc, var);
       auto eleTy = fir::unwrapRefType(load.getType());
       auto unknown = fir::SequenceType::getUnknownExtent();
@@ -3365,15 +3365,14 @@ public:
       auto toTy = fir::HeapType::get(seqTy);
       auto castTo = builder.createConvert(loc, toTy, load);
       auto cmp = builder.genIsNull(loc, castTo);
-      auto ifOp = builder.create<fir::IfOp>(loc, cmp, /*withElseRegion=*/false);
-      auto insPt = builder.saveInsertionPoint();
-      builder.setInsertionPointToStart(&ifOp.thenRegion().front());
-      auto mem = builder.create<fir::AllocMemOp>(loc, seqTy, ".lazy.mask",
-                                                 llvm::None, shape);
-      auto uncast = builder.createConvert(loc, load.getType(), mem);
-      builder.create<fir::StoreOp>(loc, uncast, var);
-      builder.restoreInsertionPoint(insPt);
-      return mem;
+      builder.genIfThen(loc, cmp)
+          .genThen([&]() {
+            auto mem = builder.create<fir::AllocMemOp>(loc, seqTy, ".lazy.mask",
+                                                       llvm::None, shape);
+            auto uncast = builder.createConvert(loc, load.getType(), mem);
+            builder.create<fir::StoreOp>(loc, uncast, var);
+          })
+          .end();
     };
     // Create a dummy array_load before the loop. We're storing to a lazy
     // temporary, so there will be no conflict and no copy-in.
@@ -3603,7 +3602,7 @@ public:
       // Mask expressions are array expressions too.
       for (const auto *e : implicitSpace->getExprs())
         if (e && !implicitSpace->isLowered(e)) {
-          if (auto var = implicitSpace->lookupVariable(e)) {
+          if (auto var = implicitSpace->lookupMaskVariable(e)) {
             // Allocate the mask buffer lazily.
             auto tmp = Fortran::lower::createLazyArrayTempValue(
                 converter, *e, var, symMap, stmtCtx);
@@ -3660,10 +3659,8 @@ public:
     llvm::SmallVector<mlir::Value> ivars;
     if (loopDepth > 0) {
       // Generate the lazy mask allocation, if one was given.
-      if (ccPrelude.hasValue()) {
-        [[maybe_unused]] auto allocMem = ccPrelude.getValue()(shape);
-        assert(allocMem && "mask buffer allocation failure");
-      }
+      if (ccPrelude.hasValue())
+        ccPrelude.getValue()(shape);
 
       auto *startBlock = builder.getBlock();
       for (auto i : llvm::enumerate(llvm::reverse(loopUppers))) {
@@ -5540,8 +5537,7 @@ private:
   Fortran::lower::SymMap &symMap;
   /// The continuation to generate code to update the destination.
   llvm::Optional<CC> ccStoreToDest;
-  llvm::Optional<std::function<mlir::Value(llvm::ArrayRef<mlir::Value>)>>
-      ccPrelude;
+  llvm::Optional<std::function<void(llvm::ArrayRef<mlir::Value>)>> ccPrelude;
   llvm::Optional<std::function<fir::ArrayLoadOp(llvm::ArrayRef<mlir::Value>)>>
       ccLoadDest;
   /// The destination is the loaded array into which the results will be

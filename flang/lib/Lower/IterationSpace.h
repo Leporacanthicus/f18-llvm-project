@@ -127,7 +127,7 @@ public:
     maskVarMap.try_emplace(exp, var);
   }
 
-  mlir::Value lookupVariable(FrontEndExpr exp) {
+  mlir::Value lookupMaskVariable(FrontEndExpr exp) {
     return maskVarMap.lookup(exp);
   }
 

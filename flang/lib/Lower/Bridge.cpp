@@ -2697,12 +2697,9 @@ private:
     explicitIterSpace.outermostContext().attachCleanup([=]() {
       auto load = builder->create<fir::LoadOp>(loc, var);
       auto cmp = builder->genIsNotNull(loc, load);
-      auto ifOp =
-          builder->create<fir::IfOp>(loc, cmp, /*withElseRegion=*/false);
-      auto insPt = builder->saveInsertionPoint();
-      builder->setInsertionPointToStart(&ifOp.thenRegion().front());
-      builder->create<fir::FreeMemOp>(loc, load);
-      builder->restoreInsertionPoint(insPt);
+      builder->genIfThen(loc, cmp)
+          .genThen([&]() { builder->create<fir::FreeMemOp>(loc, load); })
+          .end();
     });
   }
 
