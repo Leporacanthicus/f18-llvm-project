@@ -16,7 +16,6 @@
 #include "flang/Lower/Allocatable.h"
 #include "flang/Lower/Bridge.h"
 #include "flang/Lower/ConvertExpr.h"
-#include "flang/Lower/IO.h"
 #include "flang/Lower/PFTBuilder.h"
 #include "flang/Lower/Runtime.h"
 #include "flang/Lower/Support/Utils.h"
@@ -947,12 +946,22 @@ mlir::Value genIOOption<Fortran::parser::IoControlSpec::Pos>(
     const Fortran::parser::IoControlSpec::Pos &spec) {
   return genIntIOOption<mkIOKey(SetPos)>(converter, loc, cookie, stmtCtx, spec);
 }
+
 template <>
 mlir::Value genIOOption<Fortran::parser::IoControlSpec::Rec>(
     Fortran::lower::AbstractConverter &converter, mlir::Location loc,
     mlir::Value cookie, Fortran::lower::StatementContext &stmtCtx,
     const Fortran::parser::IoControlSpec::Rec &spec) {
   return genIntIOOption<mkIOKey(SetRec)>(converter, loc, cookie, stmtCtx, spec);
+}
+
+template <>
+mlir::Value genIOOption<Fortran::parser::IoControlSpec::Size>(
+    Fortran::lower::AbstractConverter &converter, mlir::Location loc,
+    mlir::Value cookie, Fortran::lower::StatementContext &,
+    const Fortran::parser::IoControlSpec::Size &) {
+  // Runtime GetSize is not implemented yet.
+  TODO(loc, "SIZE= specifier in a data transfer statement");
 }
 
 //===----------------------------------------------------------------------===//
