@@ -21,7 +21,7 @@
 ! CHECK-NEXT: -cpp      Enable predefined and command line preprocessor macros
 ! CHECK-NEXT: -c        Only run preprocess, compile, and assemble steps
 ! CHECK-NEXT: -D <macro>=<value>     Define <macro> to <value> (or 1 if <value> omitted)
-! CHECK-NEXT: -emit-fir              Build the parse tree, then convert to FIR and dump
+! CHECK-NEXT: -emit-mlir             Build the parse tree, then lower it to MLIR and dump
 ! CHECK-NEXT: -E        Only run the preprocessor
 ! CHECK-NEXT: -falternative-parameter-statement
 ! CHECK-NEXT: Enable the old style PARAMETER statement

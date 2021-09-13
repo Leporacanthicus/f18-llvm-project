@@ -21,7 +21,7 @@
 ! HELP-NEXT: -cpp                   Enable predefined and command line preprocessor macros
 ! HELP-NEXT: -c                     Only run preprocess, compile, and assemble steps
 ! HELP-NEXT: -D <macro>=<value>     Define <macro> to <value> (or 1 if <value> omitted)
-! HELP-NEXT: -emit-fir              Build the parse tree, then convert to FIR and dump
+! HELP-NEXT: -emit-mlir             Build the parse tree, then lower it to MLIR and dump
 ! HELP-NEXT: -E                     Only run the preprocessor
 ! HELP-NEXT: -falternative-parameter-statement
 ! HELP-NEXT: Enable the old style PARAMETER statement
@@ -65,7 +65,7 @@
 ! HELP-FC1-NEXT:OPTIONS:
 ! HELP-FC1-NEXT: -cpp                   Enable predefined and command line preprocessor macros
 ! HELP-FC1-NEXT: -D <macro>=<value>     Define <macro> to <value> (or 1 if <value> omitted)
-! HELP-FC1-NEXT: -emit-fir              Build the parse tree, then convert to FIR and dump
+! HELP-FC1-NEXT: -emit-mlir             Build the parse tree, then lower it to MLIR and dump
 ! HELP-FC1-NEXT: -emit-obj Emit native object files
 ! HELP-FC1-NEXT: -E                     Only run the preprocessor
 ! HELP-FC1-NEXT: -falternative-parameter-statement
