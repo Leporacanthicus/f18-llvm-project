@@ -204,6 +204,12 @@ private:
 
 } // namespace
 
+void Fortran::lower::ExplicitIterSpace::leave() {
+  ccLoopNest.pop_back();
+  --forallContextOpen;
+  conditionalCleanup();
+}
+
 void Fortran::lower::ExplicitIterSpace::addSymbol(
     Fortran::lower::FrontEndSymbol sym) {
   assert(!symbolStack.empty());
@@ -215,9 +221,21 @@ void Fortran::lower::ExplicitIterSpace::exprBase(Fortran::lower::FrontEndExpr x,
   ArrayBaseFinder finder(collectAllSymbols());
   finder(*x);
   auto bases = finder.getBases();
-  auto *list = lhs ? &lhsBases : &rhsBases;
-  list->append(bases.begin(), bases.end());
+  if (rhsBases.empty())
+    endAssign();
+  if (lhs) {
+    if (bases.empty()) {
+      lhsBases.push_back(llvm::None);
+      return;
+    }
+    assert(bases.size() == 1);
+    lhsBases.push_back(bases.front());
+    return;
+  }
+  rhsBases.back().append(bases.begin(), bases.end());
 }
+
+void Fortran::lower::ExplicitIterSpace::endAssign() { rhsBases.emplace_back(); }
 
 void Fortran::lower::ExplicitIterSpace::pushLevel() {
   symbolStack.push_back(llvm::SmallVector<Fortran::lower::FrontEndSymbol>{});
@@ -227,13 +245,20 @@ void Fortran::lower::ExplicitIterSpace::popLevel() { symbolStack.pop_back(); }
 
 void Fortran::lower::ExplicitIterSpace::conditionalCleanup() {
   if (forallContextOpen == 0) {
-    // Clear all the cached information.
+    // Exiting the outermost FORALL context.
+    // Cleanup any residual mask buffers.
+    outermostContext().finalize();
+    outermostContext().reset();
+    // Clear and reset all the cached information.
     symbolStack.clear();
     lhsBases.clear();
     rhsBases.clear();
     loadBindings.clear();
-    innerArgsStack.clear();
-    outerLoopStack.clear();
+    ccLoopNest.clear();
+    stmtCtx.reset();
+    innerArgs.clear();
+    outerLoop = llvm::None;
+    counter = 0;
   }
 }
 
@@ -255,24 +280,19 @@ void Fortran::lower::ExplicitIterSpace::bindLoad(
 
 llvm::Optional<size_t>
 Fortran::lower::ExplicitIterSpace::findArgPosition(fir::ArrayLoadOp load) {
-  // Assertion: lhsBases and innerArgs maintain an ordered one-to-one
-  // correspondence.
-  for (auto i : llvm::enumerate(lhsBases)) {
-    if (auto val = std::visit(
-            [&](const auto *x) -> llvm::Optional<size_t> {
-              using T = std::remove_cv_t<std::remove_pointer_t<decltype(x)>>;
-              void *vp = static_cast<void *>(const_cast<T *>(x));
-              auto ld = loadBindings.find(vp);
-              if (ld == loadBindings.end())
-                return llvm::None;
-              if (ld->second == load) {
-                assert(i.index() < innerArgsStack.back().size());
-                return {i.index()};
-              }
-              return llvm::None;
-            },
-            i.value()))
-      return val;
+  if (lhsBases[counter].hasValue()) {
+    [[maybe_unused]] auto optPos = std::visit(
+        [&](const auto *x) -> llvm::Optional<size_t> {
+          using T = std::remove_cv_t<std::remove_pointer_t<decltype(x)>>;
+          void *vp = static_cast<void *>(const_cast<T *>(x));
+          auto ld = loadBindings.find(vp);
+          if (ld != loadBindings.end() && ld->second == load)
+            return {0};
+          return llvm::None;
+        },
+        lhsBases[counter].getValue());
+    assert(optPos.hasValue() && "load does not correspond to lhs");
+    return {0};
   }
   return llvm::None;
 }
@@ -320,10 +340,14 @@ Fortran::lower::operator<<(llvm::raw_ostream &s,
   };
   s << "LHS bases:\n";
   for (auto &u : e.lhsBases)
-    dump(u);
+    if (u.hasValue())
+      dump(u.getValue());
   s << "RHS bases:\n";
-  for (auto &u : e.rhsBases)
-    dump(u);
+  for (auto &bases : e.rhsBases) {
+    for (auto &u : bases)
+      dump(u);
+    s << '\n';
+  }
   return s;
 }
 

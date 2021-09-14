@@ -248,10 +248,10 @@ public:
   }
 
   /// Construct one of the two forms of shape op from an array box.
-  mlir::Value consShape(mlir::Location loc, const fir::AbstractArrayBox &arr);
-  mlir::Value consShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> shift,
+  mlir::Value genShape(mlir::Location loc, const fir::AbstractArrayBox &arr);
+  mlir::Value genShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> shift,
                         llvm::ArrayRef<mlir::Value> exts);
-  mlir::Value consShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> exts);
+  mlir::Value genShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> exts);
 
   /// Create one of the shape ops given an extended value. For a boxed value,
   /// this may create a `fir.shift` op.

@@ -299,15 +299,15 @@ fir::StringLitOp fir::FirOpBuilder::createStringLitOp(mlir::Location loc,
                                   llvm::None, attrs);
 }
 
-mlir::Value fir::FirOpBuilder::consShape(mlir::Location loc,
-                                         llvm::ArrayRef<mlir::Value> exts) {
+mlir::Value fir::FirOpBuilder::genShape(mlir::Location loc,
+                                        llvm::ArrayRef<mlir::Value> exts) {
   auto shapeType = fir::ShapeType::get(getContext(), exts.size());
   return create<fir::ShapeOp>(loc, shapeType, exts);
 }
 
-mlir::Value fir::FirOpBuilder::consShape(mlir::Location loc,
-                                         llvm::ArrayRef<mlir::Value> shift,
-                                         llvm::ArrayRef<mlir::Value> exts) {
+mlir::Value fir::FirOpBuilder::genShape(mlir::Location loc,
+                                        llvm::ArrayRef<mlir::Value> shift,
+                                        llvm::ArrayRef<mlir::Value> exts) {
   auto shapeType = fir::ShapeShiftType::get(getContext(), exts.size());
   llvm::SmallVector<mlir::Value> shapeArgs;
   auto idxTy = getIndexType();
@@ -319,18 +319,18 @@ mlir::Value fir::FirOpBuilder::consShape(mlir::Location loc,
   return create<fir::ShapeShiftOp>(loc, shapeType, shapeArgs);
 }
 
-mlir::Value fir::FirOpBuilder::consShape(mlir::Location loc,
-                                         const fir::AbstractArrayBox &arr) {
+mlir::Value fir::FirOpBuilder::genShape(mlir::Location loc,
+                                        const fir::AbstractArrayBox &arr) {
   if (arr.lboundsAllOne())
-    return consShape(loc, arr.getExtents());
-  return consShape(loc, arr.getLBounds(), arr.getExtents());
+    return genShape(loc, arr.getExtents());
+  return genShape(loc, arr.getLBounds(), arr.getExtents());
 }
 
 mlir::Value fir::FirOpBuilder::createShape(mlir::Location loc,
                                            const fir::ExtendedValue &exv) {
   return exv.match(
-      [&](const fir::ArrayBoxValue &box) { return consShape(loc, box); },
-      [&](const fir::CharArrayBoxValue &box) { return consShape(loc, box); },
+      [&](const fir::ArrayBoxValue &box) { return genShape(loc, box); },
+      [&](const fir::CharArrayBoxValue &box) { return genShape(loc, box); },
       [&](const fir::BoxValue &box) -> mlir::Value {
         if (!box.getLBounds().empty()) {
           auto shiftType =

@@ -3354,14 +3354,14 @@ public:
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
-      mlir::Value var) {
+      mlir::Value var, mlir::Value shape) {
     ArrayExprLowering ael{converter, stmtCtx, symMap};
-    return ael.lowerLazyArrayExpression(expr, var);
+    return ael.lowerLazyArrayExpression(expr, var, shape);
   }
 
   ExtValue lowerLazyArrayExpression(
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
-      mlir::Value var) {
+      mlir::Value var, mlir::Value shapeBuffer) {
     auto loc = getLoc();
     // Once the loop extents have been computed, which may require being inside
     // some explicit loops, lazily allocate the expression on the heap.
@@ -3374,12 +3374,33 @@ public:
       auto toTy = fir::HeapType::get(seqTy);
       auto castTo = builder.createConvert(loc, toTy, load);
       auto cmp = builder.genIsNull(loc, castTo);
+      auto shapeEleTy =
+          fir::unwrapRefType(fir::unwrapRefType(shapeBuffer.getType()));
+      auto shapeSeqTy = fir::SequenceType::get(
+          fir::SequenceType::ShapeRef{
+              static_cast<fir::SequenceType::Extent>(shape.size())},
+          shapeEleTy);
+      auto idxTy = builder.getIndexType();
       builder.genIfThen(loc, cmp)
           .genThen([&]() {
             auto mem = builder.create<fir::AllocMemOp>(loc, seqTy, ".lazy.mask",
                                                        llvm::None, shape);
-            auto uncast = builder.createConvert(loc, load.getType(), mem);
-            builder.create<fir::StoreOp>(loc, uncast, var);
+            auto castVar = builder.createConvert(
+                loc, builder.getRefType(mem.getType()), var);
+            builder.create<fir::StoreOp>(loc, mem, castVar);
+            auto shapeMem = builder.create<fir::AllocMemOp>(
+                loc, shapeSeqTy, ".lazy.mask.shape", llvm::None);
+            auto eleRefTy = builder.getRefType(shapeEleTy);
+            for (auto sh : llvm::enumerate(shape)) {
+              auto offset =
+                  builder.createIntegerConstant(loc, idxTy, sh.index());
+              auto ref = builder.create<fir::CoordinateOp>(loc, eleRefTy,
+                                                           shapeMem, offset);
+              builder.create<fir::StoreOp>(loc, sh.value(), ref);
+            }
+            auto castBuffer = builder.createConvert(
+                loc, builder.getRefType(shapeMem.getType()), shapeBuffer);
+            builder.create<fir::StoreOp>(loc, shapeMem, castBuffer);
           })
           .end();
     };
@@ -3393,7 +3414,7 @@ public:
       auto seqTy = fir::SequenceType::get(extents, eleTy);
       auto toTy = fir::HeapType::get(seqTy);
       auto castTo = builder.createConvert(loc, toTy, load);
-      auto shapeOp = builder.consShape(loc, shape);
+      auto shapeOp = builder.genShape(loc, shape);
       return builder.create<fir::ArrayLoadOp>(
           loc, seqTy, castTo, shapeOp, /*slice=*/mlir::Value{}, llvm::None);
     };
@@ -3407,7 +3428,7 @@ public:
       auto seqTy = fir::SequenceType::get(extents, eleTy);
       auto toTy = fir::HeapType::get(seqTy);
       auto castTo = builder.createConvert(loc, toTy, load);
-      auto shape = builder.consShape(loc, genIterationShape());
+      auto shape = builder.genShape(loc, genIterationShape());
       auto indices = fir::factory::originateIndices(
           loc, builder, castTo.getType(), shape, iters.iterVec());
       auto eleAddr = builder.create<fir::ArrayCoorOp>(
@@ -3418,10 +3439,10 @@ public:
       return iters.innerArgument();
     };
     auto loopRes = lowerArrayExpression(expr);
-    auto load = builder.create<fir::LoadOp>(loc, var);
-    auto eleTy = fir::unwrapRefType(load.getType());
     auto unknown = fir::SequenceType::getUnknownExtent();
     fir::SequenceType::Shape extents(genIterationShape().size(), unknown);
+    auto load = builder.create<fir::LoadOp>(loc, var);
+    auto eleTy = fir::unwrapRefType(load.getType());
     auto seqTy = fir::SequenceType::get(extents, eleTy);
     auto toTy = fir::HeapType::get(seqTy);
     auto tempRes = builder.createConvert(loc, toTy, load);
@@ -3604,6 +3625,44 @@ public:
     return implicitSpace && !implicitSpace->empty();
   }
 
+  void addMaskRebind(Fortran::lower::FrontEndExpr e, mlir::Value var,
+                     mlir::Value shapeBuffer, ExtValue tmp) {
+    auto loc = getLoc();
+    auto unknown = fir::SequenceType::getUnknownExtent();
+    auto size = tmp.rank();
+    fir::SequenceType::Shape extents(size, unknown);
+    auto *implicit = implicitSpace;
+    // After this statement is completed, rebind the mask expression to some
+    // code that loads the mask result from the variable that was initialized
+    // lazily.
+    explicitSpace->attachLoopCleanup([=](fir::FirOpBuilder &builder) {
+      // Do not use `this` in this lambda.
+      auto load = builder.create<fir::LoadOp>(loc, var);
+      auto eleTy = fir::unwrapRefType(load.getType());
+      auto seqTy = fir::SequenceType::get(extents, eleTy);
+      auto toTy = fir::HeapType::get(seqTy);
+      auto base = builder.createConvert(loc, toTy, load);
+      llvm::SmallVector<mlir::Value> shapeVec;
+      auto idxTy = builder.getIndexType();
+      auto refIdxTy = builder.getRefType(idxTy);
+      auto shEleTy =
+          fir::unwrapRefType(fir::unwrapRefType(shapeBuffer.getType()));
+      auto buffTy = builder.getRefType(fir::SequenceType::get(
+          fir::SequenceType::ShapeRef{
+              static_cast<fir::SequenceType::Extent>(size)},
+          shEleTy));
+      auto buffer = builder.createConvert(loc, buffTy, shapeBuffer);
+      for (std::size_t i = 0; i < size; ++i) {
+        auto offset = builder.createIntegerConstant(loc, idxTy, i);
+        auto ele =
+            builder.create<fir::CoordinateOp>(loc, refIdxTy, buffer, offset);
+        shapeVec.push_back(builder.create<fir::LoadOp>(loc, ele));
+      }
+      auto shape = builder.genShape(loc, shapeVec);
+      implicit->replaceBinding(e, base, shape);
+    });
+  }
+
   void genMasks() {
     auto loc = getLoc();
     // Lower the mask expressions, if any.
@@ -3614,9 +3673,13 @@ public:
           if (auto var = implicitSpace->lookupMaskVariable(e)) {
             // Allocate the mask buffer lazily.
             auto tmp = Fortran::lower::createLazyArrayTempValue(
-                converter, *e, var, symMap, stmtCtx);
+                converter, *e, var, implicitSpace->lookupMaskShapeBuffer(e),
+                symMap, stmtCtx);
             auto shape = builder.createShape(loc, tmp);
             implicitSpace->bind(e, fir::getBase(tmp), shape);
+            if (explicitSpaceIsActive())
+              addMaskRebind(e, var, implicitSpace->lookupMaskShapeBuffer(e),
+                            tmp);
             continue;
           }
           auto optShape =
@@ -5665,11 +5728,11 @@ fir::ExtendedValue Fortran::lower::createSomeArrayTempValue(
 fir::ExtendedValue Fortran::lower::createLazyArrayTempValue(
     Fortran::lower::AbstractConverter &converter,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
-    mlir::Value var, Fortran::lower::SymMap &symMap,
+    mlir::Value var, mlir::Value shapeBuffer, Fortran::lower::SymMap &symMap,
     Fortran::lower::StatementContext &stmtCtx) {
   LLVM_DEBUG(expr.AsFortran(llvm::dbgs() << "array value: ") << '\n');
   return ArrayExprLowering::lowerLazyArrayExpression(converter, symMap, stmtCtx,
-                                                     expr, var);
+                                                     expr, var, shapeBuffer);
 }
 
 fir::ExtendedValue Fortran::lower::createSomeArrayBox(
@@ -5725,27 +5788,22 @@ genArrayLoad(mlir::Location loc, Fortran::lower::AbstractConverter &converter,
 void Fortran::lower::createArrayLoads(
     Fortran::lower::AbstractConverter &converter,
     Fortran::lower::ExplicitIterSpace &esp, Fortran::lower::SymMap &symMap) {
-  esp.innerArgsStack.emplace_back();
-  esp.outerLoopStack.emplace_back();
-  if (esp.forallContextOpen++ == 0) {
-    auto &builder = converter.getFirOpBuilder();
-    auto loc = converter.getCurrentLocation();
-    auto &stmtCtx = esp.stmtContext();
-    // Gen the fir.array_load ops.
-    auto genLoad = [&](const auto *x) -> fir::ArrayLoadOp {
-      return genArrayLoad(loc, converter, builder, x, symMap, stmtCtx);
-    };
-    for (auto &base : esp.lhsBases) {
-      auto load = std::visit(genLoad, base);
-      esp.innerArgsStack.back().push_back(load);
-      esp.bindLoad(base, load);
-    }
-    for (auto &base : esp.rhsBases)
-      esp.bindLoad(base, std::visit(genLoad, base));
-  } else {
-    auto last = esp.innerArgsStack.size() - 1;
-    esp.innerArgsStack[last] = esp.innerArgsStack[last - 1];
+  auto counter = esp.getCounter();
+  auto &builder = converter.getFirOpBuilder();
+  auto loc = converter.getCurrentLocation();
+  auto &stmtCtx = esp.stmtContext();
+  // Gen the fir.array_load ops.
+  auto genLoad = [&](const auto *x) -> fir::ArrayLoadOp {
+    return genArrayLoad(loc, converter, builder, x, symMap, stmtCtx);
+  };
+  if (esp.lhsBases[counter].hasValue()) {
+    auto &base = esp.lhsBases[counter].getValue();
+    auto load = std::visit(genLoad, base);
+    esp.innerArgs.push_back(load);
+    esp.bindLoad(base, load);
   }
+  for (auto &base : esp.rhsBases[counter])
+    esp.bindLoad(base, std::visit(genLoad, base));
 }
 
 void Fortran::lower::createArrayMergeStores(
@@ -5753,23 +5811,26 @@ void Fortran::lower::createArrayMergeStores(
     Fortran::lower::ExplicitIterSpace &esp) {
   auto &builder = converter.getFirOpBuilder();
   auto loc = converter.getCurrentLocation();
-  if (esp.innerArgsStack.back().empty()) {
+  esp.finalizeContext();
+  if (esp.innerArgs.empty()) {
     // ResultOp was already created by DoLoopOp builder.
   } else {
-    builder.create<fir::ResultOp>(loc, esp.innerArgsStack.back());
+    builder.create<fir::ResultOp>(loc, esp.innerArgs);
   }
   builder.setInsertionPointAfter(esp.getOuterLoop());
-  if (--esp.forallContextOpen == 0) {
-    // Gen the fir.array_merge_store ops for all LHS arrays.
-    for (auto i : llvm::enumerate(esp.getOuterLoop().getResults())) {
-      auto load = esp.getLhsLoad(i.index());
+  // Gen the fir.array_merge_store ops for all LHS arrays.
+  for (auto i : llvm::enumerate(esp.getOuterLoop().getResults()))
+    if (auto ldOpt = esp.getLhsLoad(i.index())) {
+      auto load = ldOpt.getValue();
       builder.create<fir::ArrayMergeStoreOp>(
           loc, load, i.value(), load.memref(), load.slice(), load.typeparams());
     }
-    // Cleanup any residual mask buffers.
-    esp.outermostContext().finalize();
-    esp.outermostContext().reset();
+  if (esp.loopCleanup.hasValue()) {
+    esp.loopCleanup.getValue()(builder);
+    esp.loopCleanup = llvm::None;
   }
-  esp.outerLoopStack.pop_back();
-  esp.innerArgsStack.pop_back();
+  esp.innerArgs.clear();
+  esp.outerLoop = llvm::None;
+  esp.resetBindings();
+  esp.incrementCounter();
 }

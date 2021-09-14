@@ -54,18 +54,28 @@ public:
       stmtCtx.finalize();
   }
 
+  /// Bind a front-end expression to a value and shape.
   void bind(FrontEndExpr e, mlir::Value v, mlir::Value shape) {
     vmap.try_emplace(e, v, shape);
   }
   void bind(FrontEndExpr e, const MaskAddrAndShape &p) { vmap.insert({e, p}); }
+
+  /// Get the value bound to the front-end expression, `e`.
   mlir::Value getBinding(FrontEndExpr e) const {
     return getBindingWithShape(e).first;
   }
+
+  /// Get the value and shape bound to the front-end expression, `e`.
   MaskAddrAndShape getBindingWithShape(FrontEndExpr e) const {
     assert(vmap.count(e) && "key not already in map");
     return vmap.lookup(e);
   }
+
+  /// Has the front-end expression, `e`, been lowered and bound?
   bool isLowered(FrontEndExpr e) const { return vmap.count(e); }
+
+  /// Replace the binding of front-end expression `e` with a new value and
+  /// shape pair.
   void replaceBinding(FrontEndExpr e, mlir::Value v, mlir::Value shape) {
     vmap.erase(e);
     vmap.try_emplace(e, v, shape);
@@ -122,13 +132,22 @@ public:
     return maskList;
   }
 
-  /// Add a variable binding, `var`, for the mask expression `exp`.
-  void addMaskVariable(FrontEndExpr exp, mlir::Value var) {
-    maskVarMap.try_emplace(exp, var);
+  /// Add a variable binding, `var`, along with its shape for the mask
+  /// expression `exp`.
+  void addMaskVariable(FrontEndExpr exp, mlir::Value var, mlir::Value shape) {
+    maskVarMap.try_emplace(exp, std::make_pair(var, shape));
   }
 
+  /// Lookup the variable corresponding to the temporary buffer that contains
+  /// the mask array expression results.
   mlir::Value lookupMaskVariable(FrontEndExpr exp) {
-    return maskVarMap.lookup(exp);
+    return maskVarMap.lookup(exp).first;
+  }
+
+  /// Lookup the variable containing the shape vector for the mask array
+  /// expression results.
+  mlir::Value lookupMaskShapeBuffer(FrontEndExpr exp) {
+    return maskVarMap.lookup(exp).second;
   }
 
 private:
@@ -141,7 +160,7 @@ private:
     return stack;
   }
 
-  llvm::DenseMap<FrontEndExpr, mlir::Value> maskVarMap;
+  llvm::DenseMap<FrontEndExpr, std::pair<mlir::Value, mlir::Value>> maskVarMap;
 };
 
 class ExplicitIterSpace;
@@ -188,7 +207,7 @@ public:
   bool isActive() const { return forallContextOpen != 0; }
 
   /// Get the statement context.
-  StatementContext &stmtContext() { return *stmtCtxStack.back(); }
+  StatementContext &stmtContext() { return stmtCtx; }
 
   //===--------------------------------------------------------------------===//
   // Analysis support
@@ -206,37 +225,50 @@ public:
   /// Collect array bases from the expression, `x`.
   void exprBase(FrontEndExpr x, bool lhs);
 
+  /// Called at the end of a assignment statement.
+  void endAssign();
+
   /// Return all the active control variables on the stack.
   llvm::SmallVector<FrontEndSymbol> collectAllSymbols();
-
-  /// Cleanup the analysis results.
-  void conditionalCleanup();
 
   //===--------------------------------------------------------------------===//
   // Code gen support
   //===--------------------------------------------------------------------===//
 
+  /// Enter a FORALL context.
+  void enter() { forallContextOpen++; }
+
+  /// Leave a FORALL context.
+  void leave();
+
+  void pushLoopNest(std::function<void()> lambda) {
+    ccLoopNest.push_back(lambda);
+  }
+
   /// Get the inner arguments that correspond to the output arrays.
-  mlir::ValueRange getInnerArgs() const { return innerArgsStack.back(); }
+  mlir::ValueRange getInnerArgs() const { return innerArgs; }
 
   /// Set the inner arguments for the next loop level.
   void setInnerArgs(llvm::ArrayRef<mlir::BlockArgument> args) {
-    innerArgsStack.back().clear();
+    innerArgs.clear();
     for (auto &arg : args)
-      innerArgsStack.back().push_back(arg);
+      innerArgs.push_back(arg);
   }
 
-  void setOuterLoop(fir::DoLoopOp loop) { outerLoopStack.back() = loop; }
+  void setOuterLoop(fir::DoLoopOp loop) {
+    if (!outerLoop.hasValue())
+      outerLoop = loop;
+  }
 
   void setInnerArg(size_t offset, mlir::Value val) {
-    assert(offset < innerArgsStack.back().size());
-    innerArgsStack.back()[offset] = val;
+    assert(offset < innerArgs.size());
+    innerArgs[offset] = val;
   }
 
   /// Get the types of the output arrays.
   llvm::SmallVector<mlir::Type> innerArgTypes() const {
     llvm::SmallVector<mlir::Type> result;
-    for (auto &arg : innerArgsStack.back())
+    for (auto &arg : innerArgs)
       result.push_back(arg.getType());
     return result;
   }
@@ -263,38 +295,63 @@ public:
   /// corresponding to this load.
   mlir::Value findArgumentOfLoad(fir::ArrayLoadOp load) {
     if (auto opt = findArgPosition(load))
-      return innerArgsStack.back()[*opt];
+      return innerArgs[*opt];
     llvm_unreachable("array load argument not found");
   }
 
   size_t argPosition(mlir::Value arg) {
-    for (auto i : llvm::enumerate(innerArgsStack.back()))
+    for (auto i : llvm::enumerate(innerArgs))
       if (arg == i.value())
         return i.index();
     llvm_unreachable("inner argument value was not found");
   }
 
-  fir::ArrayLoadOp getLhsLoad(size_t i) {
+  llvm::Optional<fir::ArrayLoadOp> getLhsLoad(size_t i) {
     assert(i < lhsBases.size());
-    return findBinding(lhsBases[i]);
+    if (lhsBases[counter].hasValue())
+      return findBinding(lhsBases[counter].getValue());
+    return llvm::None;
   }
 
   /// Return the outermost loop in this FORALL nest.
-  fir::DoLoopOp getOuterLoop() { return outerLoopStack.back(); }
+  fir::DoLoopOp getOuterLoop() {
+    assert(outerLoop.hasValue());
+    return outerLoop.getValue();
+  }
 
   /// Return the statement context for the entire, outermost FORALL construct.
   StatementContext &outermostContext() { return outerContext; }
 
-  /// Enter a new statement context.
-  void enter() {
-    auto *ctx = new StatementContext;
-    stmtCtxStack.push_back(ctx);
+  /// Generate the explicit loop nest.
+  void genLoopNest() {
+    for (auto &lambda : ccLoopNest)
+      lambda();
   }
 
-  /// Finalize and delete the current statement context.
-  void finalize() {
-    stmtCtxStack.back()->finalize();
-    stmtCtxStack.pop_back();
+  /// Clear the array_load bindings.
+  void resetBindings() { loadBindings.clear(); }
+
+  /// Get the current counter value.
+  std::size_t getCounter() const { return counter; }
+
+  /// Increment the counter value to the next assignment statement.
+  void incrementCounter() { counter++; }
+
+  bool isOutermostForall() const {
+    assert(forallContextOpen);
+    return forallContextOpen == 1;
+  }
+
+  void attachLoopCleanup(std::function<void(fir::FirOpBuilder &builder)> fn) {
+    if (!loopCleanup.hasValue()) {
+      loopCleanup = fn;
+      return;
+    }
+    auto oldFn = loopCleanup.getValue();
+    loopCleanup = [=](fir::FirOpBuilder &builder) {
+      oldFn(builder);
+      fn(builder);
+    };
   }
 
   // LLVM standard dump method.
@@ -304,20 +361,34 @@ public:
   friend llvm::raw_ostream &operator<<(llvm::raw_ostream &,
                                        const ExplicitIterSpace &);
 
+  /// Finalize the current body statement context.
+  void finalizeContext() {
+    stmtCtx.finalize();
+    stmtCtx.reset();
+  }
+
 private:
+  /// Cleanup the analysis results.
+  void conditionalCleanup();
+
   StatementContext outerContext;
 
   // A stack of lists of front-end symbols.
   llvm::SmallVector<llvm::SmallVector<FrontEndSymbol>> symbolStack;
-  llvm::SmallVector<ArrayBases> lhsBases;
-  llvm::SmallVector<ArrayBases> rhsBases;
+  llvm::SmallVector<llvm::Optional<ArrayBases>> lhsBases;
+  llvm::SmallVector<llvm::SmallVector<ArrayBases>> rhsBases;
   llvm::DenseMap<void *, fir::ArrayLoadOp> loadBindings;
 
-  // A stack of FORALL contexts.
-  llvm::SmallVector<StatementContext *> stmtCtxStack;
-  llvm::SmallVector<llvm::SmallVector<mlir::Value>> innerArgsStack;
-  llvm::SmallVector<fir::DoLoopOp> outerLoopStack;
-  size_t forallContextOpen = 0;
+  // Stack of lambdas to create the loop nest.
+  llvm::SmallVector<std::function<void()>> ccLoopNest;
+
+  // Assignment statement context (inside the loop nest).
+  StatementContext stmtCtx;
+  llvm::SmallVector<mlir::Value> innerArgs;
+  llvm::Optional<fir::DoLoopOp> outerLoop;
+  llvm::Optional<std::function<void(fir::FirOpBuilder &)>> loopCleanup;
+  std::size_t forallContextOpen = 0;
+  std::size_t counter = 0;
 };
 
 /// Is there a Symbol in common between the concurrent header set and the set

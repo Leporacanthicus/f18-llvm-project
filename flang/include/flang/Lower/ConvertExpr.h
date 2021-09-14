@@ -176,8 +176,8 @@ createSomeArrayTempValue(AbstractConverter &converter,
 fir::ExtendedValue
 createLazyArrayTempValue(AbstractConverter &converter,
                          const evaluate::Expr<evaluate::SomeType> &expr,
-                         mlir::Value var, SymMap &symMap,
-                         StatementContext &stmtCtx);
+                         mlir::Value var, mlir::Value shapeBuffer,
+                         SymMap &symMap, StatementContext &stmtCtx);
 
 /// Lower an array expression to a value of type box. The expression must be a
 /// variable.
