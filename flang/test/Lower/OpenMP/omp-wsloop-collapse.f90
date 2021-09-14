@@ -44,7 +44,7 @@ program wsloop_collapse
 ! LLVMIRDialect:           %[[VAL_11:.*]] = llvm.mlir.constant(1 : i64) : i64
 ! LLVMIRDialect:           %[[VAL_12:.*]] = llvm.alloca %[[VAL_11]] x i32 {{{.*}} uniq_name = "_QEc"} : (i64) -> !llvm.ptr<i32>
 ! LLVMIRDialect:           %[[VAL_13:.*]] = llvm.mlir.constant(1 : i64) : i64
-! LLVMIRDialect:           %[[VAL_14:.*]] = llvm.alloca %[[VAL_13]] x i32 {{{.*} uniq_name = "_QEi"} : (i64) -> !llvm.ptr<i32>
+! LLVMIRDialect:           %[[VAL_14:.*]] = llvm.alloca %[[VAL_13]] x i32 {{{.*}} uniq_name = "_QEi"} : (i64) -> !llvm.ptr<i32>
 ! LLVMIRDialect:           %[[VAL_15:.*]] = llvm.mlir.constant(1 : i64) : i64
 ! LLVMIRDialect:           %[[VAL_16:.*]] = llvm.alloca %[[VAL_15]] x i32 {{{.*}} uniq_name = "_QEj"} : (i64) -> !llvm.ptr<i32>
 ! LLVMIRDialect:           %[[VAL_17:.*]] = llvm.mlir.constant(1 : i64) : i64
