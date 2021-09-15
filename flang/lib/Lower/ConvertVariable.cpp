@@ -661,9 +661,9 @@ instantiateAggregateStore(Fortran::lower::AbstractConverter &converter,
   auto &builder = converter.getFirOpBuilder();
   auto i8Ty = builder.getIntegerType(8);
   auto loc = converter.getCurrentLocation();
+  auto aggName = mangleGlobalAggregateStore(var.getAggregateStore());
   if (var.isGlobal()) {
     // The scope of this aggregate is this procedure.
-    auto aggName = mangleGlobalAggregateStore(var.getAggregateStore());
     fir::GlobalOp global = builder.getNamedGlobal(aggName);
     if (!global) {
       auto &aggregate = var.getAggregateStore();
@@ -696,7 +696,7 @@ instantiateAggregateStore(Fortran::lower::AbstractConverter &converter,
   fir::SequenceType::Shape shape(1, size);
   auto seqTy = fir::SequenceType::get(shape, i8Ty);
   auto local =
-      builder.allocateLocal(loc, seqTy, ".aggtmp", "", llvm::None, llvm::None,
+      builder.allocateLocal(loc, seqTy, aggName, "", llvm::None, llvm::None,
                             /*target=*/false);
   insertAggregateStore(storeMap, var, local);
 }

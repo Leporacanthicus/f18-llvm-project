@@ -4,7 +4,7 @@
 SUBROUTINE s1
   INTEGER i
   REAL r
-  ! CHECK: = fir.alloca !fir.array<4xi8>
+  ! CHECK: = fir.alloca !fir.array<4xi8> {uniq_name = "_QFs1Ei"}
   EQUIVALENCE (r,i)
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %{{.*}}, %{{.*}} : (!fir.ref<!fir.array<4xi8>>, index) -> !fir.ref<i8>
   ! CHECK: %[[iloc:.*]] = fir.convert %[[coor]] : (!fir.ref<i8>) -> !fir.ref<i32>
