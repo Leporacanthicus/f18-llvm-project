@@ -179,4 +179,16 @@ def CharacterConversion : Pass<"character-conversion"> {
   ];
 }
 
+def ExternalNameConversion : Pass<"external-name-interop", "mlir::ModuleOp"> {
+  let summary = "Convert name for external interoperability";
+  let description = [{
+    Demangle FIR internal name and mangle them for external interoperability.
+  }];
+  let constructor = "::fir::createExternalNameConversionPass()";
+  let dependentDialects = [ 
+    "fir::FIROpsDialect", "mlir::LLVM::LLVMDialect", 
+    "mlir::acc::OpenACCDialect", "mlir::omp::OpenMPDialect" 
+  ];
+}
+
 #endif // FORTRAN_OPTIMIZER_TRANSFORMS_FIR_PASSES
