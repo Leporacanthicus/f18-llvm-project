@@ -134,7 +134,9 @@ using Constructs =
 
 using Directives =
     std::tuple<parser::CompilerDirective, parser::OpenACCConstruct,
-               parser::OpenMPConstruct, parser::OmpEndLoopDirective>;
+               parser::OpenMPConstruct, parser::OmpEndLoopDirective,
+               parser::OpenMPDeclarativeConstruct,
+               parser::OpenACCDeclarativeConstruct>;
 
 template <typename A>
 static constexpr bool isActionStmt{common::HasMember<A, ActionStmts>};

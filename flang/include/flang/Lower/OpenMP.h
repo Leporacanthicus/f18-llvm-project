@@ -18,6 +18,7 @@
 namespace Fortran {
 namespace parser {
 struct OpenMPConstruct;
+struct OpenMPDeclarativeConstruct;
 struct OmpEndLoopDirective;
 struct OmpClauseList;
 } // namespace parser
@@ -32,6 +33,8 @@ struct Evaluation;
 
 void genOpenMPConstruct(AbstractConverter &, pft::Evaluation &,
                         const parser::OpenMPConstruct &);
+void genOpenMPDeclarativeConstruct(AbstractConverter &, pft::Evaluation &,
+                                   const parser::OpenMPDeclarativeConstruct &);
 
 int64_t getCollapseValue(const Fortran::parser::OmpClauseList &clauseList);
 

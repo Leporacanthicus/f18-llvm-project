@@ -1360,6 +1360,14 @@ private:
     builder->restoreInsertionPoint(insertPt);
   }
 
+  void genFIR(const Fortran::parser::OpenACCDeclarativeConstruct &accDecl) {
+    auto insertPt = builder->saveInsertionPoint();
+    genOpenACCDeclarativeConstruct(*this, getEval(), accDecl);
+    for (auto &e : getEval().getNestedEvaluations())
+      genFIR(e);
+    builder->restoreInsertionPoint(insertPt);
+  }
+
   void genFIR(const Fortran::parser::OpenMPConstruct &omp) {
     auto insertPt = builder->saveInsertionPoint();
     localSymbols.pushScope();
@@ -1389,6 +1397,14 @@ private:
     for (auto &e : curEval->getNestedEvaluations())
       genFIR(e);
     localSymbols.popScope();
+    builder->restoreInsertionPoint(insertPt);
+  }
+
+  void genFIR(const Fortran::parser::OpenMPDeclarativeConstruct &ompDecl) {
+    auto insertPt = builder->saveInsertionPoint();
+    genOpenMPDeclarativeConstruct(*this, getEval(), ompDecl);
+    for (auto &e : getEval().getNestedEvaluations())
+      genFIR(e);
     builder->restoreInsertionPoint(insertPt);
   }
 
