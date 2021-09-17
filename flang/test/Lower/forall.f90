@@ -613,26 +613,26 @@ subroutine test_nested_forall_where(a,b)
   ! CHECK:             %[[VAL_99:.*]] = fir.convert %[[VAL_98]] : (!fir.heap<i8>) -> !fir.heap<!fir.array<?xi8>>
   ! CHECK:             %[[VAL_100:.*]] = fir.shape %[[VAL_97]] : (index) -> !fir.shape<1>
   ! CHECK:             %[[VAL_101:.*]] = fir.array_load %[[VAL_99]](%[[VAL_100]]) : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>) -> !fir.array<?xi8>
-  ! CHECK:             %[[VAL_102:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_103:.*]] = constant 0 : index
-  ! CHECK:             %[[VAL_104:.*]] = subi %[[VAL_97]], %[[VAL_102]] : index
-  ! CHECK:             %[[VAL_105:.*]] = fir.load %[[VAL_7]] : !fir.ref<!fir.heap<i8>>
-  ! CHECK:             %[[VAL_106:.*]] = fir.convert %[[VAL_105]] : (!fir.heap<i8>) -> !fir.heap<!fir.array<?xi8>>
-  ! CHECK:             %[[VAL_107:.*]] = fir.convert %[[VAL_106]] : (!fir.heap<!fir.array<?xi8>>) -> i64
-  ! CHECK:             %[[VAL_108:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_109:.*]] = cmpi eq, %[[VAL_107]], %[[VAL_108]] : i64
-  ! CHECK:             fir.if %[[VAL_109]] {
-  ! CHECK:               %[[VAL_110:.*]] = fir.allocmem !fir.array<?xi8>, %[[VAL_97]] {uniq_name = ".lazy.mask"}
-  ! CHECK:               %[[VAL_111:.*]] = fir.convert %[[VAL_7]] : (!fir.ref<!fir.heap<i8>>) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:               fir.store %[[VAL_110]] to %[[VAL_111]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:               %[[VAL_112:.*]] = fir.allocmem !fir.array<1xindex> {uniq_name = ".lazy.mask.shape"}
-  ! CHECK:               %[[VAL_113:.*]] = constant 0 : index
-  ! CHECK:               %[[VAL_114:.*]] = fir.coordinate_of %[[VAL_112]], %[[VAL_113]] : (!fir.heap<!fir.array<1xindex>>, index) -> !fir.ref<index>
-  ! CHECK:               fir.store %[[VAL_97]] to %[[VAL_114]] : !fir.ref<index>
-  ! CHECK:               %[[VAL_115:.*]] = fir.convert %[[VAL_6]] : (!fir.ref<!fir.heap<index>>) -> !fir.ref<!fir.heap<!fir.array<1xindex>>>
-  ! CHECK:               fir.store %[[VAL_112]] to %[[VAL_115]] : !fir.ref<!fir.heap<!fir.array<1xindex>>>
+  ! CHECK:             %[[VAL_102:.*]] = fir.load %[[VAL_7]] : !fir.ref<!fir.heap<i8>>
+  ! CHECK:             %[[VAL_103:.*]] = fir.convert %[[VAL_102]] : (!fir.heap<i8>) -> !fir.heap<!fir.array<?xi8>>
+  ! CHECK:             %[[VAL_104:.*]] = fir.convert %[[VAL_103]] : (!fir.heap<!fir.array<?xi8>>) -> i64
+  ! CHECK:             %[[VAL_105:.*]] = constant 0 : i64
+  ! CHECK:             %[[VAL_106:.*]] = cmpi eq, %[[VAL_104]], %[[VAL_105]] : i64
+  ! CHECK:             fir.if %[[VAL_106]] {
+  ! CHECK:               %[[VAL_107:.*]] = fir.allocmem !fir.array<?xi8>, %[[VAL_97]] {uniq_name = ".lazy.mask"}
+  ! CHECK:               %[[VAL_108:.*]] = fir.convert %[[VAL_7]] : (!fir.ref<!fir.heap<i8>>) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK:               fir.store %[[VAL_107]] to %[[VAL_108]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK:               %[[VAL_109:.*]] = fir.allocmem !fir.array<1xindex> {uniq_name = ".lazy.mask.shape"}
+  ! CHECK:               %[[VAL_110:.*]] = constant 0 : index
+  ! CHECK:               %[[VAL_111:.*]] = fir.coordinate_of %[[VAL_109]], %[[VAL_110]] : (!fir.heap<!fir.array<1xindex>>, index) -> !fir.ref<index>
+  ! CHECK:               fir.store %[[VAL_97]] to %[[VAL_111]] : !fir.ref<index>
+  ! CHECK:               %[[VAL_112:.*]] = fir.convert %[[VAL_6]] : (!fir.ref<!fir.heap<index>>) -> !fir.ref<!fir.heap<!fir.array<1xindex>>>
+  ! CHECK:               fir.store %[[VAL_109]] to %[[VAL_112]] : !fir.ref<!fir.heap<!fir.array<1xindex>>>
   ! CHECK:             }
-  ! CHECK:             %[[VAL_116:.*]] = fir.do_loop %[[VAL_117:.*]] = %[[VAL_103]] to %[[VAL_104]] step %[[VAL_102]] unordered iter_args(%[[VAL_118:.*]] = %[[VAL_101]]) -> (!fir.array<?xi8>) {
+  ! CHECK:             %[[VAL_113:.*]] = constant 1 : index
+  ! CHECK:             %[[VAL_114:.*]] = constant 0 : index
+  ! CHECK:             %[[VAL_115:.*]] = subi %[[VAL_97]], %[[VAL_113]] : index
+  ! CHECK:             %[[VAL_116:.*]] = fir.do_loop %[[VAL_117:.*]] = %[[VAL_114]] to %[[VAL_115]] step %[[VAL_113]] unordered iter_args(%[[VAL_118:.*]] = %[[VAL_101]]) -> (!fir.array<?xi8>) {
   ! CHECK:               %[[VAL_119:.*]] = fir.array_fetch %[[VAL_90]], %[[VAL_117]] : (!fir.array<100xf32>, index) -> f32
   ! CHECK:               %[[VAL_120:.*]] = cmpf ogt, %[[VAL_119]], %[[VAL_91]] : f32
   ! CHECK:               %[[VAL_121:.*]] = fir.load %[[VAL_7]] : !fir.ref<!fir.heap<i8>>

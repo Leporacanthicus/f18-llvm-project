@@ -662,7 +662,8 @@ private:
     assert(stmt.typedCall && "Call was not analyzed");
     // Call statement lowering shares code with function call lowering.
     Fortran::semantics::SomeExpr expr{*stmt.typedCall};
-    auto res = createFIRExpr(toLocation(), &expr, stmtCtx);
+    auto res = Fortran::lower::createSubroutineCall(
+        *this, expr, localSymbols, stmtCtx, /*isUserDefAssignment=*/false);
     if (!res)
       return; // "Normal" subroutine call.
     // Call with alternate return specifiers.
@@ -1939,11 +1940,13 @@ private:
             [&](const Fortran::evaluate::ProcedureRef &procRef) {
               if (implicitIterationSpace())
                 TODO(loc, "user defined assignment within WHERE");
+
               Fortran::semantics::SomeExpr expr{procRef};
-              createFIRExpr(toLocation(), &expr,
-                            explicitIterationSpace()
-                                ? explicitIterSpace.stmtContext()
-                                : stmtCtx);
+              auto &ctx = explicitIterationSpace()
+                              ? explicitIterSpace.stmtContext()
+                              : stmtCtx;
+              Fortran::lower::createSubroutineCall(
+                  *this, expr, localSymbols, ctx, /*isUserDefAssignment=*/true);
             },
 
             // [3] Pointer assignment with possibly empty bounds-spec. R1035: a

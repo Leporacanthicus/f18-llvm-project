@@ -263,6 +263,26 @@ static fir::ExtendedValue arrayLoadExtValue(fir::FirOpBuilder &builder,
             "properties are explicit, assumed, deferred, or ?");
 }
 
+/// Is this a call to an elemental procedure with at least one array argument ?
+static bool
+isElementalProcWithArrayArgs(const Fortran::evaluate::ProcedureRef &procRef) {
+  if (procRef.IsElemental())
+    for (const auto &arg : procRef.arguments())
+      if (arg && arg->Rank() != 0)
+        return true;
+  return false;
+}
+template <typename T>
+static bool isElementalProcWithArrayArgs(const Fortran::evaluate::Expr<T> &) {
+  return false;
+}
+template <>
+bool isElementalProcWithArrayArgs(const Fortran::lower::SomeExpr &x) {
+  if (const auto *procRef = std::get_if<Fortran::evaluate::ProcedureRef>(&x.u))
+    return isElementalProcWithArrayArgs(*procRef);
+  return false;
+}
+
 namespace {
 
 /// Lowering of Fortran::evaluate::Expr<T> expressions
@@ -1960,13 +1980,16 @@ public:
   /// Lower a non-elemental procedure reference.
   ExtValue genRawProcedureRef(const Fortran::evaluate::ProcedureRef &procRef,
                               llvm::Optional<mlir::Type> resultType) {
+    auto loc = getLoc();
+    if (isElementalProcWithArrayArgs(procRef))
+      fir::emitFatalError(loc, "trying to lower elemental procedure with array "
+                               "arguments as normal procedure");
     if (const auto *intrinsic = procRef.proc().GetSpecificIntrinsic())
       return genIntrinsicRef(procRef, *intrinsic, resultType);
 
     if (isStatementFunctionCall(procRef))
       return genStmtFunctionRef(procRef);
 
-    auto loc = getLoc();
     Fortran::lower::CallerInterface caller(procRef, converter);
     using PassBy = Fortran::lower::CallerInterface::PassEntityBy;
 
@@ -3021,6 +3044,18 @@ class ArrayExprLowering {
     llvm::SmallVector<AccessValue> indices;
   };
 
+  /// Structure to keep track of lowered array operands in the
+  /// array expression. Useful to later deduce the shape of the
+  /// array expression.
+  struct ArrayOperand {
+    /// Array base (can be a fir.box).
+    mlir::Value memref;
+    /// ShapeOp, ShapeShiftOp or ShiftOp
+    mlir::Value shape;
+    /// SliceOp
+    mlir::Value slice;
+  };
+
   /// Active iteration space.
   using IterSpace = const IterationSpace &;
   /// Current continuation. Function that will generate IR for a single
@@ -3181,8 +3216,8 @@ public:
       PushSemantics(ConstituentSemantics::RefTransparent);
       return genarr(rhs);
     }();
-    if (!arrayOperandLoads.empty())
-      destShape = getShape(arrayOperandLoads[0]);
+    if (!arrayOperands.empty())
+      destShape = getShape(arrayOperands[0]);
 
     llvm::SmallVector<mlir::Value> lengthParams;
     // Currently no safe way to gather length from rhs (at least for
@@ -3198,10 +3233,10 @@ public:
     // takeLboundsIfRealloc is only true iff the rhs is a single dataref.
     const bool takeLboundsIfRealloc =
         Fortran::evaluate::UnwrapWholeSymbolOrComponentDataRef(rhs);
-    if (takeLboundsIfRealloc && !arrayOperandLoads.empty()) {
-      assert(arrayOperandLoads.size() == 1 &&
+    if (takeLboundsIfRealloc && !arrayOperands.empty()) {
+      assert(arrayOperands.size() == 1 &&
              "lbounds can only come from one array");
-      auto lbs = fir::factory::getOrigins(arrayOperandLoads[0].shape());
+      auto lbs = fir::factory::getOrigins(arrayOperands[0].shape);
       lbounds.append(lbs.begin(), lbs.end());
     }
     fir::factory::genReallocIfNeeded(builder, loc, mutableBox, lbounds,
@@ -3508,6 +3543,25 @@ public:
     return abstractArrayExtValue(iterSpace.outerResult());
   }
 
+  static void lowerArrayElementalSubroutine(
+      Fortran::lower::AbstractConverter &converter,
+      Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &call) {
+    ArrayExprLowering ael(converter, stmtCtx, symMap,
+                          ConstituentSemantics::RefTransparent);
+    ael.lowerArrayElementalSubroutine(call);
+  }
+
+  // ! Not for user defined assignment elemental subroutine.
+  void lowerArrayElementalSubroutine(
+      const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &call) {
+    auto f = genarr(call);
+    auto shape = genIterationShape();
+    auto [iterSpace, insPt] = genImplicitLoops(shape, /*innerArg=*/{});
+    f(iterSpace);
+    builder.restoreInsertionPoint(insPt);
+  }
+
   /// Compute the shape of a slice.
   llvm::SmallVector<mlir::Value> computeSliceShape(mlir::Value slice) {
     llvm::SmallVector<mlir::Value> slicedShape;
@@ -3538,17 +3592,22 @@ public:
     return slicedShape;
   }
 
-  /// Get the shape from an ArrayLoad. The shape of the array is adjusted if the
-  /// array was sliced.
-  llvm::SmallVector<mlir::Value> getShape(fir::ArrayLoadOp arrayLoad) {
-    if (arrayLoad.slice())
-      return computeSliceShape(arrayLoad.slice());
-    auto memref = arrayLoad.memref();
-    if (memref.getType().isa<fir::BoxType>())
+  /// Get the shape from an ArrayOperand. The shape of the array is adjusted if
+  /// the array was sliced.
+  llvm::SmallVector<mlir::Value> getShape(ArrayOperand array) {
+    if (array.slice)
+      return computeSliceShape(array.slice);
+    if (array.memref.getType().isa<fir::BoxType>())
       return fir::factory::readExtents(builder, getLoc(),
-                                       fir::BoxValue{memref});
-    auto extents = arrayLoad.getExtents();
+                                       fir::BoxValue{array.memref});
+    auto extents = fir::factory::getExtents(array.shape);
     return {extents.begin(), extents.end()};
+  }
+
+  /// Get the shape from an ArrayLoad.
+  llvm::SmallVector<mlir::Value> getShape(fir::ArrayLoadOp arrayLoad) {
+    return getShape(
+        ArrayOperand{arrayLoad.memref(), arrayLoad.shape(), arrayLoad.slice()});
   }
 
   /// Generate the shape of the iteration space over the array expression. The
@@ -3564,8 +3623,8 @@ public:
     if (destination)
       return getShape(destination);
     // Otherwise, use the first ArrayLoad operand shape.
-    if (!arrayOperandLoads.empty())
-      return getShape(arrayOperandLoads[0]);
+    if (!arrayOperands.empty())
+      return getShape(arrayOperands[0]);
     fir::emitFatalError(getLoc(),
                         "failed to compute the array expression shape");
   }
@@ -3645,6 +3704,69 @@ public:
     }
   }
 
+  std::pair<IterationSpace, mlir::OpBuilder::InsertPoint>
+  genImplicitLoops(mlir::ValueRange shape, mlir::Value innerArg) {
+    auto loc = getLoc();
+    auto idxTy = builder.getIndexType();
+    auto one = builder.createIntegerConstant(loc, idxTy, 1);
+    auto zero = builder.createIntegerConstant(loc, idxTy, 0);
+    llvm::SmallVector<mlir::Value> loopUppers;
+
+    // Convert any implied shape to closed interval form. The fir.do_loop will
+    // run from 0 to `extent - 1` inclusive.
+    for (auto extent : shape) {
+      auto up = builder.create<mlir::SubIOp>(loc, extent, one);
+      loopUppers.push_back(up);
+    }
+
+    // Iteration space is created with outermost columns, innermost rows
+    llvm::SmallVector<fir::DoLoopOp> loops;
+
+    const auto loopDepth = loopUppers.size();
+    llvm::SmallVector<mlir::Value> ivars;
+
+    for (auto i : llvm::enumerate(llvm::reverse(loopUppers))) {
+      if (i.index() > 0) {
+        assert(!loops.empty());
+        builder.setInsertionPointToStart(loops.back().getBody());
+      }
+      fir::DoLoopOp loop;
+      if (innerArg) {
+        loop = builder.create<fir::DoLoopOp>(
+            loc, zero, i.value(), one, getUnordered(),
+            /*finalCount=*/false, mlir::ValueRange{innerArg});
+        innerArg = loop.getRegionIterArgs().front();
+      } else {
+        loop = builder.create<fir::DoLoopOp>(loc, zero, i.value(), one,
+                                             getUnordered(),
+                                             /*finalCount=*/false);
+      }
+      ivars.push_back(loop.getInductionVar());
+      loops.push_back(loop);
+    }
+
+    if (innerArg)
+      for (std::remove_const_t<decltype(loopDepth)> i = 0; i + 1 < loopDepth;
+           ++i) {
+        builder.setInsertionPointToEnd(loops[i].getBody());
+        builder.create<fir::ResultOp>(loc, loops[i + 1].getResult(0));
+      }
+
+    // Move insertion point to the start of the innermost loop in the nest.
+    builder.setInsertionPointToStart(loops.back().getBody());
+    // Set `afterLoopNest` to just after the entire loop nest.
+    auto currPt = builder.saveInsertionPoint();
+    builder.setInsertionPointAfter(loops[0]);
+    auto afterLoopNest = builder.saveInsertionPoint();
+    builder.restoreInsertionPoint(currPt);
+
+    // Put the implicit loop variables in row to column order to match FIR's
+    // Ops. (The loops were constructed from outermost column to innermost row.)
+    mlir::Value outerRes = loops[0].getResult(0);
+    return {IterationSpace(innerArg, outerRes, llvm::reverse(ivars)),
+            afterLoopNest};
+  }
+
   /// Build the iteration space into which the array expression will be lowered.
   /// The resultType is used to create a temporary, if needed.
   std::pair<IterationSpace, mlir::OpBuilder::InsertPoint>
@@ -3661,70 +3783,14 @@ public:
       destination = createAndLoadSomeArrayTemp(resultType, shape);
     }
 
-    auto idxTy = builder.getIndexType();
-    auto one = builder.createIntegerConstant(loc, idxTy, 1);
-    auto zero = builder.createIntegerConstant(loc, idxTy, 0);
-    llvm::SmallVector<mlir::Value> loopUppers;
-
-    // Convert any implied shape to closed interval form. The fir.do_loop will
-    // run from 0 to `extent - 1` inclusive.
-    for (auto extent : shape) {
-      auto up = builder.create<mlir::SubIOp>(loc, extent, one);
-      loopUppers.push_back(up);
-    }
-
-    // Iteration space is created with outermost columns, innermost rows
-    mlir::Value innerArg = destination.getResult();
-    llvm::SmallVector<fir::DoLoopOp> loops;
-    llvm::SmallVector<mlir::Value> explicitOffsets;
+    // Generate the lazy mask allocation, if one was given.
+    if (ccPrelude.hasValue())
+      ccPrelude.getValue()(shape);
 
     // Now handle the implicit loops.
-    const auto loopFirst = loops.size();
-    const auto loopDepth = loopUppers.size();
-    llvm::SmallVector<mlir::Value> ivars;
-    if (loopDepth > 0) {
-      // Generate the lazy mask allocation, if one was given.
-      if (ccPrelude.hasValue())
-        ccPrelude.getValue()(shape);
-
-      auto *startBlock = builder.getBlock();
-      for (auto i : llvm::enumerate(llvm::reverse(loopUppers))) {
-        if (i.index() > 0) {
-          assert(!loops.empty());
-          builder.setInsertionPointToStart(loops.back().getBody());
-        }
-        auto loop = builder.create<fir::DoLoopOp>(
-            loc, zero, i.value(), one, /*unordered=*/true,
-            /*finalCount=*/false, mlir::ValueRange{innerArg});
-        innerArg = loop.getRegionIterArgs().front();
-        ivars.push_back(loop.getInductionVar());
-        loops.push_back(loop);
-      }
-      // Add the fir.result for all loops except the innermost one. We must also
-      // terminate the innermost explicit bounds loop here as well.
-      if (loopFirst > 0) {
-        builder.setInsertionPointToEnd(startBlock);
-        builder.create<fir::ResultOp>(loc, loops[loopFirst].getResult(0));
-      }
-      for (std::remove_const_t<decltype(loopFirst)> i = loopFirst;
-           i + 1 < loopFirst + loopDepth; ++i) {
-        builder.setInsertionPointToEnd(loops[i].getBody());
-        builder.create<fir::ResultOp>(loc, loops[i + 1].getResult(0));
-      }
-
-      // Move insertion point to the start of the innermost loop in the nest.
-      builder.setInsertionPointToStart(loops.back().getBody());
-    }
-    // Set `afterLoopNest` to just after the entire loop nest.
-    auto currPt = builder.saveInsertionPoint();
-    builder.setInsertionPointAfter(loops[0]);
-    auto afterLoopNest = builder.saveInsertionPoint();
-    builder.restoreInsertionPoint(currPt);
-
-    // Put the implicit loop variables in row to column order to match FIR's
-    // Ops. (The loops were constructed from outermost column to innermost row.)
-    mlir::Value outerRes = loops[0].getResult(0);
-    IterationSpace iters{innerArg, outerRes, llvm::reverse(ivars)};
+    auto [iters, afterLoopNest] =
+        genImplicitLoops(shape, destination.getResult());
+    auto innerArg = iters.innerArgument();
 
     // Generate the mask conditional structure, if there are masks. Unlike the
     // explicit masks, which are interleaved, these mask expression appear in
@@ -3931,12 +3997,21 @@ public:
       llvm::Optional<mlir::Type> retTy) {
     using PassBy = Fortran::lower::CallerInterface::PassEntityBy;
 
+    // 10.1.4 p5. Impure elemental procedures must be called in element order.
+    if (const auto *procSym = procRef.proc().GetSymbol())
+      if (!Fortran::semantics::IsPureProcedure(*procSym))
+        setUnordered(false);
+
     Fortran::lower::CallerInterface caller(procRef, converter);
     llvm::SmallVector<CC> operands;
     operands.reserve(caller.getPassedArguments().size());
     auto loc = getLoc();
     auto callSiteType = caller.genFunctionType();
     for (const auto &arg : caller.getPassedArguments()) {
+      // 15.8.3 p1. Elemental procedure with intent(out)/intent(inout)
+      // arguments must be called in element order.
+      if (arg.mayBeModifiedByCall())
+        setUnordered(false);
       const auto *actual = arg.entity;
       auto argTy = callSiteType.getInput(arg.firArgument);
       if (!actual) {
@@ -4044,6 +4119,13 @@ public:
     auto loc = getLoc();
     if (procRef.IsElemental()) {
       if (const auto *intrin = procRef.proc().GetSpecificIntrinsic()) {
+        // All elemental intrinsic functions are pure and cannot modify their
+        // arguments. The only elemental subroutine, MVBITS has an Intent(inout)
+        // argument. So for this last one, loops must be in element order
+        // according to 15.8.3 p1.
+        if (!retTy)
+          setUnordered(false);
+
         // Elemental intrinsic call.
         // The intrinsic procedure is called once per element of the array.
         return genElementalIntrinsicProcRef(procRef, retTy, *intrin);
@@ -4108,7 +4190,8 @@ public:
 
   template <typename A>
   CC genarr(const Fortran::evaluate::Expr<A> &x) {
-    if (isArray(x) || explicitSpaceIsActive())
+    if (isArray(x) || explicitSpaceIsActive() ||
+        isElementalProcWithArrayArgs(x))
       return std::visit([&](const auto &e) { return genarr(e); }, x.u);
     return genscl(x);
   }
@@ -4766,6 +4849,7 @@ public:
                    << eleTy << ", " << arrTy << '\n');
       }
     }
+    arrayOperands.push_back(ArrayOperand{memref, shape, slice});
     if (isBoxValue()) {
       // Semantics are a reference to a boxed array.
       // This case just requires that an embox operation be created to box the
@@ -4821,7 +4905,6 @@ public:
         return abstractArrayExtValue(arrUpdate);
       };
     }
-    arrayOperandLoads.emplace_back(arrLoad);
     if (isCopyInCopyOut()) {
       // Semantics are copy-in copy-out.
       // The continuation simply forwards the result of the `array_load` Op,
@@ -5556,6 +5639,11 @@ private:
   /// Array appears in a context where it is passed as a VALUE argument.
   bool isValueAttribute() { return semant == ConstituentSemantics::ByValueArg; }
 
+  /// Can the loops over the expression be unordered ?
+  bool getUnordered() const { return unordered; }
+
+  void setUnordered(bool b) { unordered = b; }
+
   Fortran::lower::AbstractConverter &converter;
   fir::FirOpBuilder &builder;
   Fortran::lower::StatementContext &stmtCtx;
@@ -5571,7 +5659,7 @@ private:
   /// The shape of the destination.
   llvm::SmallVector<mlir::Value> destShape;
   /// List of arrays in the expression that have been loaded.
-  llvm::SmallVector<fir::ArrayLoadOp> arrayOperandLoads;
+  llvm::SmallVector<ArrayOperand> arrayOperands;
   llvm::SmallVector<mlir::Value> sliceTriple;
   llvm::SmallVector<mlir::Value> slicePath;
   /// If there is a user-defined iteration space, explicitShape will hold the
@@ -5580,7 +5668,10 @@ private:
   Fortran::lower::ImplicitIterSpace *implicitSpace = nullptr;
   ConstituentSemantics semant = ConstituentSemantics::RefTransparent;
   bool inSlice = false;
-}; // namespace
+  // Can the array expression be evaluated in any order ?
+  // Will be set to false if any of the expression parts prevent this.
+  bool unordered = true;
+};
 } // namespace
 
 fir::ExtendedValue Fortran::lower::createSomeExtendedExpression(
@@ -5709,6 +5800,29 @@ fir::MutableBoxValue Fortran::lower::createMutableBox(
   Fortran::lower::StatementContext dummyStmtCtx;
   return ScalarExprLowering{loc, converter, symMap, dummyStmtCtx}
       .genMutableBoxValue(expr);
+}
+
+mlir::Value Fortran::lower::createSubroutineCall(
+    AbstractConverter &converter,
+    const evaluate::Expr<evaluate::SomeType> &call, SymMap &symMap,
+    StatementContext &stmtCtx, bool isUserDefAssignment) {
+  auto loc = converter.getCurrentLocation();
+  if (isElementalProcWithArrayArgs(call)) {
+    // Elemental user defined assignment has special requirements to deal with
+    // LHS/RHS overlaps. See 10.2.1.5 p2.
+    if (isUserDefAssignment)
+      TODO(converter.getCurrentLocation(), "elemental user defined assignment");
+    ArrayExprLowering::lowerArrayElementalSubroutine(converter, symMap, stmtCtx,
+                                                     call);
+    return mlir::Value{};
+  }
+  // FIXME: The non elemental user defined assignment case with array arguments
+  // must be take into account potential overlap. So far the front end does not
+  // add parentheses around the RHS argument in the call as it should according
+  // to 15.4.3.4.3 p2.
+  auto res = Fortran::lower::createSomeExtendedExpression(loc, converter, call,
+                                                          symMap, stmtCtx);
+  return fir::getBase(res);
 }
 
 template <typename A>
