@@ -4,7 +4,7 @@
 subroutine eoshift_test1(arr, shift)
   logical, dimension(3) :: arr, res
   integer :: shift
-! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.logical<4>>>> {uniq_name = ""}
+! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.logical<4>>>>
 ! CHECK: %[[res:.*]] = fir.alloca !fir.array<3x!fir.logical<4>> {bindc_name = "res", uniq_name = "_QFeoshift_test1Eres"}
 ! CHECK: %[[resLoad:.*]] = fir.array_load %[[res]]({{.*}}) : (!fir.ref<!fir.array<3x!fir.logical<4>>>, !fir.shape<1>) -> !fir.array<3x!fir.logical<4>>
 ! CHECK: %[[arr:.*]] = fir.embox %arg0({{.*}}) : (!fir.ref<!fir.array<3x!fir.logical<4>>>, !fir.shape<1>) -> !fir.box<!fir.array<3x!fir.logical<4>>>
@@ -28,7 +28,7 @@ subroutine eoshift_test2(arr, shift, bound, dim)
   integer, dimension(3,3) :: arr, res
   integer, dimension(3) :: shift
   integer :: bound, dim
-! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>> {uniq_name = ""}
+! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
 ! CHECK: %[[res:.*]] = fir.alloca !fir.array<3x3xi32> {bindc_name = "res", uniq_name = "_QFeoshift_test2Eres"}
 !CHECK: %[[resLoad:.*]] = fir.array_load %[[res]]({{.*}}) : (!fir.ref<!fir.array<3x3xi32>>, !fir.shape<2>) -> !fir.array<3x3xi32>
 ! CHECK: %[[dim:.*]] = fir.load %arg3 : !fir.ref<i32>
@@ -52,7 +52,7 @@ subroutine eoshift_test3(arr, shift, dim)
   character(4), dimension(3,3) :: arr, res
   integer :: shift, dim
 
-! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?x!fir.char<1,?>>>> {uniq_name = ""}
+! CHECK: %[[resBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?x!fir.char<1,?>>>>
 ! CHECK: %[[arr:.*]]:2 = fir.unboxchar %arg0 : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[array:.*]] = fir.convert %[[arr]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<3x3x!fir.char<1,4>>>
 ! CHECK: %[[res:.*]] = fir.alloca !fir.array<3x3x!fir.char<1,4>> {bindc_name = "res", uniq_name = "_QFeoshift_test3Eres"}

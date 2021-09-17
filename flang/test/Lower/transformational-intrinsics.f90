@@ -132,9 +132,9 @@ subroutine cshift_test()
   integer, dimension(3, 3) :: result
   integer, dimension(6) :: vectorResult
   integer, dimension (6) :: vector
-  ! CHECK-DAG: %[[cs0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {uniq_name = ""}
+  ! CHECK-DAG: %[[cs0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
   ! CHECK-DAG: %[[cs1:.*]] = fir.alloca i32
-  ! CHECK-DAG: %[[cs2:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>> {uniq_name = ""}
+  ! CHECK-DAG: %[[cs2:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
   ! CHECK-DAG: %[[cs3:.*]] = fir.alloca !fir.array<3x3xi32> {bindc_name = "array", uniq_name = "_QMtest2Fcshift_testEarray"}
   ! CHECK-DAG: %[[cs5:.*]] = fir.alloca !fir.array<3xi32> {bindc_name = "shift", uniq_name = "_QMtest2Fcshift_testEshift"}
   ! CHECK-DAG: %[[cs6:.*]] = fir.alloca !fir.array<6xi32> {bindc_name = "vector", uniq_name = "_QMtest2Fcshift_testEvector"}
@@ -191,9 +191,9 @@ subroutine unpack_test()
   logical, dimension(3,3) :: mask
   integer, dimension(3,3) :: result
   result = unpack(vector, mask, field)
-  ! CHECK-DAG: %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>> {uniq_name = ""}
+  ! CHECK-DAG: %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
   ! CHECK-DAG: %[[a1:.*]] = fir.alloca i32
-  ! CHECK-DAG: %[[a2:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>> {uniq_name = ""}
+  ! CHECK-DAG: %[[a2:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
   ! CHECK-DAG: %[[a3:.*]] = fir.alloca !fir.array<3x3xi32> {bindc_name = "field", uniq_name = "_QMtest2Funpack_testEfield"}
   ! CHECK-DAG: %[[a4:.*]] = fir.alloca !fir.array<3x3x!fir.logical<4>> {bindc_name = "mask", uniq_name = "_QMtest2Funpack_testEmask"}
   ! CHECK-DAG: %[[a5:.*]] = fir.alloca !fir.array<3x3xi32> {bindc_name = "result", uniq_name = "_QMtest2Funpack_testEresult"}

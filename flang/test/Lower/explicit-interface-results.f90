@@ -86,7 +86,7 @@ contains
 
 ! CHECK-LABEL: func @_QMcallerPcst_array()
 subroutine cst_array()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.array<20x30xf32> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.array<20x30xf32> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[shape:.*]] = fir.shape %{{.*}}, {{.*}} : (index, index) -> !fir.shape<2>
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_cst_array() : () -> !fir.array<20x30xf32>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]](%[[shape]]) : !fir.array<20x30xf32>, !fir.ref<!fir.array<20x30xf32>>, !fir.shape<2>
@@ -95,7 +95,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPcst_char_cst_array()
 subroutine cst_char_cst_array()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.array<20x30x!fir.char<1,10>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.array<20x30x!fir.char<1,10>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[shape:.*]] = fir.shape %{{.*}}, {{.*}} : (index, index) -> !fir.shape<2>
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_cst_char_cst_array() : () -> !fir.array<20x30x!fir.char<1,10>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]](%[[shape]]) typeparams %{{.*}} : !fir.array<20x30x!fir.char<1,10>>, !fir.ref<!fir.array<20x30x!fir.char<1,10>>>, !fir.shape<2>, index
@@ -104,7 +104,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPalloc()
 subroutine alloc()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xf32>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xf32>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_alloc() : () -> !fir.box<!fir.heap<!fir.array<?xf32>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.heap<!fir.array<?xf32>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
   print *, return_alloc()
@@ -118,7 +118,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPcst_char_alloc()
 subroutine cst_char_alloc()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_cst_char_alloc() : () -> !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>>
   print *, return_cst_char_alloc()
@@ -132,7 +132,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPdef_char_alloc()
 subroutine def_char_alloc()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_def_char_alloc() : () -> !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>>
   print *, return_def_char_alloc()
@@ -146,7 +146,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPpointer_test()
 subroutine pointer_test()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?xf32>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?xf32>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_pointer() : () -> !fir.box<!fir.ptr<!fir.array<?xf32>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.ptr<!fir.array<?xf32>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf32>>>>
   print *, return_pointer()
@@ -155,7 +155,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPcst_char_pointer()
 subroutine cst_char_pointer()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,10>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,10>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_cst_char_pointer() : () -> !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,10>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,10>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,10>>>>>
   print *, return_cst_char_pointer()
@@ -164,7 +164,7 @@ end subroutine
 
 ! CHECK-LABEL: func @_QMcallerPdef_char_pointer()
 subroutine def_char_pointer()
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_def_char_pointer() : () -> !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>
   print *, return_def_char_pointer()
@@ -256,7 +256,7 @@ end subroutine
 ! CHECK-LABEL: @_QMcallerPdyn_char_alloc
 subroutine dyn_char_alloc(l)
   integer :: l
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_dyn_char_alloc({{.*}}) : (!fir.ref<i32>) -> !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>, !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>>
   print *, return_dyn_char_alloc(l)
@@ -271,7 +271,7 @@ end subroutine
 ! CHECK-LABEL: @_QMcallerPdyn_char_pointer
 subroutine dyn_char_pointer(l)
   integer :: l
-  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>> {{{.*}}uniq_name = ".result"}
+  ! CHECK: %[[alloc:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>> {{{.*}}bindc_name = ".result"}
   ! CHECK: %[[res:.*]] = fir.call @_QMcalleePreturn_dyn_char_pointer({{.*}}) : (!fir.ref<i32>) -> !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>
   ! CHECK: fir.save_result %[[res]] to %[[alloc]] : !fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>, !fir.ref<!fir.box<!fir.ptr<!fir.array<?x!fir.char<1,?>>>>>
   print *, return_dyn_char_pointer(l)

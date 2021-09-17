@@ -31,7 +31,8 @@ contains
   ! CHECK-SAME: %[[x:.*]]: !fir.ref<f32>)
   subroutine test_simple(x)
     real :: x
-    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_simple{x:f32}> {uniq_name = {{.*}}}
+    ! CHECK: %[[tmp0:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_simple{x:f32}>
+    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_simple{x:f32}>
     ! CHECK: %[[field:.*]] = fir.field_index x, !fir.type<_QMm_struct_ctorTt_simple{x:f32}>
     ! CHECK: %[[xcoor:.*]] = fir.coordinate_of %[[tmp]], %[[field]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_simple{x:f32}>>, !fir.field) -> !fir.ref<f32>
     ! CHECK: %[[val:.*]] = fir.load %[[x]] : !fir.ref<f32>
@@ -42,9 +43,10 @@ contains
   ! CHECK-LABEL: func @_QMm_struct_ctorPtest_char_scalar(
   ! CHECK-SAME: %[[x:.*]]: !fir.ref<f32>)
   subroutine test_char_scalar(x)
-    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}> {uniq_name = {{.*}}}
+    ! CHECK: %[[tmp0:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}>
+    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}>
     ! CHECK: %[[xfield:.*]] = fir.field_index x, !fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}>
-    ! CHECK: %[[xcoor]] = fir.coordinate_of %[[tmp]], %[[xfield]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}>>, !fir.field) -> !fir.ref<f32>
+    ! CHECK: %[[xcoor:.*]] = fir.coordinate_of %[[tmp]], %[[xfield]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_scalar{x:f32,c:!fir.char<1,3>}>>, !fir.field) -> !fir.ref<f32>
     ! CHECK: %[[val:.*]] = fir.load %[[x]] : !fir.ref<f32>
     ! CHECK: fir.store %[[val]] to %[[xcoor]] : !fir.ref<f32>
 
@@ -64,7 +66,8 @@ contains
     real :: x
     integer :: j(5)
     call print_simple_array(t_array(x=x, i=2*j))
-    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}> {uniq_name = {{.*}}}
+    ! CHECK: %[[tmp0:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>
+    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>
     ! CHECK: %[[xfield:.*]] = fir.field_index x, !fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>
     ! CHECK: %[[xcoor:.*]] = fir.coordinate_of %[[tmp]], %[[xfield]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>>, !fir.field) -> !fir.ref<f32>
     ! CHECK: %[[val:.*]] = fir.load %[[x]] : !fir.ref<f32>
@@ -88,7 +91,7 @@ contains
   subroutine test_char_array(x, c1)
     real :: x
     character(3) :: c1(5)
-    ! CHECK: %1 = fir.alloca !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}> {uniq_name = {{.*}}}
+    ! CHECK: %1 = fir.alloca !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
     ! CHECK: %[[unbox:.*]]:2 = fir.unboxchar %[[c1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
     ! CHECK: %[[c1addr:.*]] = fir.convert %[[unbox]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<5x!fir.char<1,3>>>
     ! CHECK: fir.field_index x, !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
@@ -111,7 +114,8 @@ contains
   subroutine test_ptr(x, a)
     real :: x
     integer, target :: a(:, :)
-    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_ptr{x:f32,p:!fir.box<!fir.ptr<!fir.array<?x?xi32>>>}> {uniq_name = {{.*}}}
+    ! CHECK: %[[tmp0:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_ptr{x:f32,p:!fir.box<!fir.ptr<!fir.array<?x?xi32>>>}>
+    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_ptr{x:f32,p:!fir.box<!fir.ptr<!fir.array<?x?xi32>>>}>
     ! CHECK: fir.field_index x, !fir.type<_QMm_struct_ctorTt_ptr{x:f32,p:!fir.box<!fir.ptr<!fir.array<?x?xi32>>>}>
 
     ! CHECK: %[[pfield:.*]] = fir.field_index p, !fir.type<_QMm_struct_ctorTt_ptr{x:f32,p:!fir.box<!fir.ptr<!fir.array<?x?xi32>>>}>
@@ -129,7 +133,8 @@ contains
   subroutine test_nested(x, d)
     real :: x
     type(t_array) :: d
-    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_nested{x:f32,dt:!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>}> {uniq_name = {{.*}}}
+    ! CHECK: %[[tmp0:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_nested{x:f32,dt:!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>}>
+    ! CHECK: %[[tmp:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_nested{x:f32,dt:!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>}>
     ! CHECK: fir.field_index x, !fir.type<_QMm_struct_ctorTt_nested{x:f32,dt:!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>}>
 
     ! CHECK: %[[dtfield:.*]] = fir.field_index dt, !fir.type<_QMm_struct_ctorTt_nested{x:f32,dt:!fir.type<_QMm_struct_ctorTt_array{x:f32,i:!fir.array<5xi32>}>}>

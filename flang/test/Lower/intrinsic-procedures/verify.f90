@@ -4,7 +4,7 @@
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.boxchar<1>,
 ! CHECK-SAME: %[[VAL_1:.*]]: !fir.boxchar<1>) -> i32 {
 integer function verify_test(s1, s2)
-! CHECK: %[[VAL_2:.*]] = fir.alloca !fir.box<!fir.heap<i32>> {uniq_name = ""}
+! CHECK: %[[VAL_2:.*]] = fir.alloca !fir.box<!fir.heap<i32>>
 ! CHECK: %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_4:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_5:.*]] = fir.alloca i32 {bindc_name = "verify_test", uniq_name = "_QFverify_testEverify_test"}

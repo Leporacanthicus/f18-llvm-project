@@ -34,7 +34,7 @@ subroutine foo1(i, j, c)
 ! CHECK: ^bb2:
 ! CHECK:   %[[VAL_11:.*]] = addi %[[VAL_8]], %[[VAL_3]] : index
 ! CHECK:   %[[VAL_12:.*]] = fir.array_coor %[[VAL_6]](%[[VAL_7]]) %[[VAL_11]] typeparams %[[VAL_4]]#1 : (!fir.ref<!fir.array<10x!fir.char<1,?>>>, !fir.shape<1>, index, index) -> !fir.ref<!fir.char<1,?>>
-! CHECK:   %[[VAL_13:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_4]]#1 : index) {uniq_name = ".chrtmp"}
+! CHECK:   %[[VAL_13:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_4]]#1 : index) {bindc_name = ".chrtmp"}
 ! CHECK:   %[[VAL_14:.*]] = fir.convert %[[VAL_4]]#1 : (index) -> i64
 ! CHECK:   %[[VAL_15:.*]] = fir.convert %[[VAL_13]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_16:.*]] = fir.convert %[[VAL_12]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
@@ -64,7 +64,7 @@ subroutine foo2(i, j, c)
 ! CHECK-DAG:   %[[VAL_27:.*]] = constant 1 : index
 ! CHECK:   %[[VAL_28:.*]]:2 = fir.unboxchar %[[VAL_29]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_30:.*]] = fir.shape %[[VAL_25]] : (index) -> !fir.shape<1>
-! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_28]]#1 : index) {uniq_name = ".chrtmp"}
+! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_28]]#1 : index) {bindc_name = ".chrtmp"}
 ! CHECK:   %[[VAL_32:.*]] = fir.convert %[[VAL_28]]#1 : (index) -> i64
 ! CHECK:   %[[VAL_33:.*]] = fir.convert %[[VAL_31]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_34:.*]] = fir.convert %[[VAL_28]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
@@ -107,7 +107,7 @@ subroutine foo3(i, j)
 ! CHECK:   %[[VAL_57:.*]] = fir.convert %[[VAL_56]] : (i32) -> i8
 ! CHECK:   %[[VAL_58:.*]] = fir.undefined !fir.char<1>
 ! CHECK:   %[[VAL_59:.*]] = fir.insert_value %[[VAL_58]], %[[VAL_57]], [0 : index] : (!fir.char<1>, i8) -> !fir.char<1>
-! CHECK:   %[[VAL_60:.*]] = fir.alloca !fir.char<1> {uniq_name = ".chrtmp"}
+! CHECK:   %[[VAL_60:.*]] = fir.alloca !fir.char<1> {bindc_name = ".chrtmp"}
 ! CHECK:   fir.store %[[VAL_59]] to %[[VAL_60]] : !fir.ref<!fir.char<1>>
 ! CHECK:   %[[VAL_61:.*]] = fir.convert %[[VAL_60]] : (!fir.ref<!fir.char<1>>) -> !fir.ref<!fir.char<1,?>>
 ! CHECK:   %[[VAL_62:.*]] = fir.emboxchar %[[VAL_61]], %[[VAL_48]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
@@ -139,7 +139,7 @@ subroutine foo4(i, j)
 ! CHECK:   %[[VAL_78:.*]] = fir.insert_value %[[VAL_77]], %[[VAL_76]], [0 : index] : (!fir.char<1>, i8) -> !fir.char<1>
 ! CHECK:   %[[VAL_79:.*]] = fir.alloca !fir.char<1>
 ! CHECK:   fir.store %[[VAL_78]] to %[[VAL_79]] : !fir.ref<!fir.char<1>>
-! CHECK:   %[[VAL_80:.*]] = fir.alloca !fir.char<1> {uniq_name = ".chrtmp"}
+! CHECK:   %[[VAL_80:.*]] = fir.alloca !fir.char<1> {bindc_name = ".chrtmp"}
 ! CHECK:   %[[VAL_81:.*]] = fir.convert %[[VAL_71]] : (index) -> i64
 ! CHECK:   %[[VAL_82:.*]] = fir.convert %[[VAL_80]] : (!fir.ref<!fir.char<1>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_83:.*]] = fir.convert %[[VAL_79]] : (!fir.ref<!fir.char<1>>) -> !fir.ref<i8>
@@ -178,7 +178,7 @@ subroutine foo5(i, j)
 ! CHECK-DAG:   %[[VAL_99:.*]] = constant 1 : index
 ! CHECK:   %[[VAL_100:.*]] = fir.shape %[[VAL_97]] : (index) -> !fir.shape<1>
 ! CHECK:   %[[VAL_101:.*]] = fir.address_of(@{{.*}}) : !fir.ref<!fir.char<1,5>>
-! CHECK:   %[[VAL_102:.*]] = fir.alloca !fir.char<1,5> {uniq_name = ".chrtmp"}
+! CHECK:   %[[VAL_102:.*]] = fir.alloca !fir.char<1,5> {bindc_name = ".chrtmp"}
 ! CHECK:   %[[VAL_103:.*]] = fir.convert %[[VAL_95]] : (index) -> i64
 ! CHECK:   %[[VAL_104:.*]] = fir.convert %[[VAL_102]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_105:.*]] = fir.convert %[[VAL_101]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>

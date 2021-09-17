@@ -164,7 +164,7 @@ end subroutine
 subroutine dot_prod_complex_default (x, y, z)
   complex, dimension(1:) :: x,y
   complex, dimension(1:) :: z
-  ! CHECK-DAG: %0 = fir.alloca !fir.complex<4> {uniq_name = ""}
+  ! CHECK-DAG: %0 = fir.alloca !fir.complex<4>
   ! CHECK-DAG: %[[res_conv:[0-9]+]] = fir.convert %0 : (!fir.ref<!fir.complex<4>>) -> !fir.ref<complex<f32>>
   ! CHECK-DAG: %[[x_conv:.*]] = fir.convert %[[x]] : (!fir.box<!fir.array<?x!fir.complex<4>>>) -> !fir.box<none>
   ! CHECK-DAG: %[[y_conv:.*]] = fir.convert %[[y]] : (!fir.box<!fir.array<?x!fir.complex<4>>>) -> !fir.box<none>
@@ -179,7 +179,7 @@ end subroutine
 subroutine dot_prod_complex_kind_4 (x, y, z)
   complex(kind=4), dimension(1:) :: x,y
   complex(kind=4), dimension(1:) :: z
-  ! CHECK-DAG: %0 = fir.alloca !fir.complex<4> {uniq_name = ""}
+  ! CHECK-DAG: %0 = fir.alloca !fir.complex<4>
   ! CHECK-DAG: %[[res_conv:[0-9]+]] = fir.convert %0 : (!fir.ref<!fir.complex<4>>) -> !fir.ref<complex<f32>>
   ! CHECK-DAG: %[[x_conv:.*]] = fir.convert %[[x]] : (!fir.box<!fir.array<?x!fir.complex<4>>>) -> !fir.box<none>
   ! CHECK-DAG: %[[y_conv:.*]] = fir.convert %[[y]] : (!fir.box<!fir.array<?x!fir.complex<4>>>) -> !fir.box<none>
@@ -194,7 +194,7 @@ end subroutine
 subroutine dot_prod_complex_kind_8 (x, y, z)
   complex(kind=8), dimension(1:) :: x,y
   complex(kind=8), dimension(1:) :: z
-  ! CHECK-DAG: %0 = fir.alloca !fir.complex<8> {uniq_name = ""}
+  ! CHECK-DAG: %0 = fir.alloca !fir.complex<8>
   ! CHECK-DAG: %[[res_conv:[0-9]+]] = fir.convert %0 : (!fir.ref<!fir.complex<8>>) -> !fir.ref<complex<f64>>
   ! CHECK-DAG: %[[x_conv:.*]] = fir.convert %[[x]] : (!fir.box<!fir.array<?x!fir.complex<8>>>) -> !fir.box<none>
   ! CHECK-DAG: %[[y_conv:.*]] = fir.convert %[[y]] : (!fir.box<!fir.array<?x!fir.complex<8>>>) -> !fir.box<none>
@@ -209,7 +209,7 @@ end subroutine
 subroutine dot_prod_complex_kind_10 (x, y, z)
   complex(kind=10), dimension(1:) :: x,y
   complex(kind=10), dimension(1:) :: z
-  ! CHECK-DAG: %0 = fir.alloca !fir.complex<10> {uniq_name = ""}
+  ! CHECK-DAG: %0 = fir.alloca !fir.complex<10>
   ! CHECK-DAG: %[[res_conv:[0-9]+]] = fir.convert %0 : (!fir.ref<!fir.complex<10>>) -> !fir.ref<complex<f80>>
   ! CHECK-DAG: %[[x_conv:.*]] = fir.convert %[[x]] : (!fir.box<!fir.array<?x!fir.complex<10>>>) -> !fir.box<none>
   ! CHECK-DAG: %[[y_conv:.*]] = fir.convert %[[y]] : (!fir.box<!fir.array<?x!fir.complex<10>>>) -> !fir.box<none>
@@ -224,7 +224,7 @@ end subroutine
 subroutine dot_prod_complex_kind_16 (x, y, z)
   complex(kind=16), dimension(1:) :: x,y
   complex(kind=16), dimension(1:) :: z
-  ! CHECK-DAG: %0 = fir.alloca !fir.complex<16> {uniq_name = ""}
+  ! CHECK-DAG: %0 = fir.alloca !fir.complex<16>
   ! CHECK-DAG: %[[res_conv:[0-9]+]] = fir.convert %0 : (!fir.ref<!fir.complex<16>>) -> !fir.ref<complex<f128>>
   ! CHECK-DAG: %[[x_conv:.*]] = fir.convert %[[x]] : (!fir.box<!fir.array<?x!fir.complex<16>>>) -> !fir.box<none>
   ! CHECK-DAG: %[[y_conv:.*]] = fir.convert %[[y]] : (!fir.box<!fir.array<?x!fir.complex<16>>>) -> !fir.box<none>

@@ -8,7 +8,7 @@
 subroutine spread_test(s,d,n,r)
   integer :: s,d,n
   integer :: r(:)
-! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK-DAG:  %[[a1:.*]] = fir.load %[[arg1]] : !fir.ref<i32>
 ! CHECK-DAG:  %[[a2:.*]] = fir.load %[[arg2]] : !fir.ref<i32>
 ! CHECK-DAG:  %[[a3:.*]] = fir.embox %[[arg0]] : (!fir.ref<i32>) -> !fir.box<i32>
@@ -30,7 +30,7 @@ end subroutine
 subroutine spread_test2(s,d,n,r)
   integer :: s(:),d,n
   integer :: r(:,:)
-! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
 ! CHECK-DAG:  %[[a1:.*]] = fir.load %[[arg1]] : !fir.ref<i32>
 ! CHECK-DAG:  %[[a2:.*]] = fir.load %[[arg2]] : !fir.ref<i32>
 ! CHECK-DAG:  %[[a7:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?x?xi32>>>>) -> !fir.ref<!fir.box<none>>

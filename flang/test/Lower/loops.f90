@@ -2,17 +2,23 @@
 
 ! CHECK-LABEL: loop_test
 subroutine loop_test
-  ! CHECK-DAG: fir.alloca i16 {{{.*}}uniq_name = "i"}
-  ! CHECK-DAG: fir.alloca i8 {{{.*}}uniq_name = "k"}
-  ! CHECK-DAG: fir.alloca i8 {{{.*}}uniq_name = "j"}
-  ! CHECK-DAG: fir.alloca i8 {{{.*}}uniq_name = "i"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "k"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "j"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "i"}
-  ! CHECK-DAG: fir.alloca !fir.array<5x5x5xi32> {{{.*}}uniq_name = "{{.*}}Ea"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "{{.*}}Ei"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "{{.*}}Ej"}
-  ! CHECK-DAG: fir.alloca i32 {{{.*}}uniq_name = "{{.*}}Ek"}
+  ! CHECK: %[[VAL_2:.*]] = fir.alloca i16 {bindc_name = "i"}
+  ! CHECK: %[[VAL_3:.*]] = fir.alloca i16 {bindc_name = "i"}
+  ! CHECK: %[[VAL_4:.*]] = fir.alloca i16 {bindc_name = "i"}
+  ! CHECK: %[[VAL_5:.*]] = fir.alloca i8 {bindc_name = "k"}
+  ! CHECK: %[[VAL_6:.*]] = fir.alloca i8 {bindc_name = "j"}
+  ! CHECK: %[[VAL_7:.*]] = fir.alloca i8 {bindc_name = "i"}
+  ! CHECK: %[[VAL_8:.*]] = fir.alloca i32 {bindc_name = "k"}
+  ! CHECK: %[[VAL_9:.*]] = fir.alloca i32 {bindc_name = "j"}
+  ! CHECK: %[[VAL_10:.*]] = fir.alloca i32 {bindc_name = "i"}
+  ! CHECK: %[[VAL_11:.*]] = fir.alloca !fir.array<5x5x5xi32> {bindc_name = "a", uniq_name = "_QFloop_testEa"}
+  ! CHECK: %[[VAL_12:.*]] = fir.alloca i32 {bindc_name = "asum", uniq_name = "_QFloop_testEasum"}
+  ! CHECK: %[[VAL_13:.*]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFloop_testEi"}
+  ! CHECK: %[[VAL_14:.*]] = fir.alloca i32 {bindc_name = "j", uniq_name = "_QFloop_testEj"}
+  ! CHECK: %[[VAL_15:.*]] = fir.alloca i32 {bindc_name = "k", uniq_name = "_QFloop_testEk"}
+  ! CHECK: %[[VAL_16:.*]] = fir.alloca f32 {bindc_name = "x", uniq_name = "_QFloop_testEx"}
+  ! CHECK: %[[VAL_17:.*]] = fir.alloca i32 {bindc_name = "xsum", uniq_name = "_QFloop_testExsum"}
+
   integer(4) :: a(5,5,5), i, j, k, asum, xsum
 
   i = 100

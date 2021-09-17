@@ -58,7 +58,7 @@ end subroutine
 ! CHECK-SAME: %[[p:.*]]: !fir.ref<!fir.box<!fir.ptr<f32>>>,
 subroutine test_scalar_mold(p, x)
   real, pointer :: p, x
-  ! CHECK: %[[VAL_0:.*]] = fir.alloca !fir.box<!fir.ptr<f32>> {uniq_name = ""}
+  ! CHECK: %[[VAL_0:.*]] = fir.alloca !fir.box<!fir.ptr<f32>>
   ! CHECK: %[[VAL_1:.*]] = fir.zero_bits !fir.ptr<f32>
   ! CHECK: %[[VAL_2:.*]] = fir.embox %[[VAL_1]] : (!fir.ptr<f32>) -> !fir.box<!fir.ptr<f32>>
   ! CHECK: fir.store %[[VAL_2]] to %[[VAL_0]] : !fir.ref<!fir.box<!fir.ptr<f32>>>
@@ -73,7 +73,7 @@ end subroutine
 ! CHECK-SAME: %[[p:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.char<1,?>>>>,
 subroutine test_scalar_char_mold(p, x)
   character(:), pointer :: p, x
-  ! CHECK: %[[VAL_7:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.char<1,?>>> {uniq_name = ""}
+  ! CHECK: %[[VAL_7:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.char<1,?>>>
   ! CHECK: %[[VAL_8:.*]] = fir.zero_bits !fir.ptr<!fir.char<1,?>>
   ! CHECK: %[[VAL_9:.*]] = constant 0 : index
   ! CHECK: %[[VAL_10:.*]] = fir.embox %[[VAL_8]] typeparams %[[VAL_9]] : (!fir.ptr<!fir.char<1,?>>, index) -> !fir.box<!fir.ptr<!fir.char<1,?>>>
@@ -90,7 +90,7 @@ end subroutine
 ! CHECK-SAME: %[[p:.*]]: !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf32>>>>,
 subroutine test_array_mold(p, x)
   real, pointer :: p(:), x(:)
-  ! CHECK: %[[VAL_0:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?xf32>>> {uniq_name = ""}
+  ! CHECK: %[[VAL_0:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?xf32>>>
   ! CHECK: %[[VAL_1:.*]] = fir.zero_bits !fir.ptr<!fir.array<?xf32>>
   ! CHECK: %[[VAL_2:.*]] = constant 0 : index
   ! CHECK: %[[VAL_3:.*]] = fir.shape %[[VAL_2]] : (index) -> !fir.shape<1>

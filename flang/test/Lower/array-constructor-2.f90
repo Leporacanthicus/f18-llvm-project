@@ -104,8 +104,8 @@ subroutine test4(a, b, n1, m1)
   integer, external :: f1, f2, f3
 
   !  Dynamic array ctor with dynamic extent using implied do loops.
-  ! CHECK-DAG: fir.alloca index {uniq_name = ".buff.pos"}
-  ! CHECK-DAG: fir.alloca index {uniq_name = ".buff.size"}
+  ! CHECK-DAG: fir.alloca index {bindc_name = ".buff.pos"}
+  ! CHECK-DAG: fir.alloca index {bindc_name = ".buff.size"}
   ! CHECK-DAG: %[[c32:.*]] = constant 32 : index
   ! CHECK: fir.allocmem f32, %[[c32]]
   ! CHECK: fir.call @_QPf1(%{{.*}}) : (!fir.ref<i32>) -> i32

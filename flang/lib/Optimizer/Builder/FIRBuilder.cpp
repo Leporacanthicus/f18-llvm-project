@@ -190,7 +190,7 @@ mlir::Block *fir::FirOpBuilder::getAllocaBlock() {
 }
 
 /// Create a temporary variable on the stack. Anonymous temporaries have no
-/// `name` value.
+/// `name` value. Temporaries do not require a uniqued name.
 mlir::Value
 fir::FirOpBuilder::createTemporary(mlir::Location loc, mlir::Type type,
                                    llvm::StringRef name, mlir::ValueRange shape,
@@ -208,8 +208,8 @@ fir::FirOpBuilder::createTemporary(mlir::Location loc, mlir::Type type,
   }
 
   assert(!type.isa<fir::ReferenceType>() && "cannot be a reference");
-  auto ae = create<fir::AllocaOp>(loc, type, name, dynamicLength, dynamicShape,
-                                  attrs);
+  auto ae = create<fir::AllocaOp>(loc, type, /*unique_name=*/llvm::StringRef{},
+                                  name, dynamicLength, dynamicShape, attrs);
   if (hoistAlloc)
     restoreInsertionPoint(insPt);
   return ae;

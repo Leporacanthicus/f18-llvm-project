@@ -3,7 +3,7 @@
 ! CHECK-LABEL: func @_QPimplied_iters_allocatable(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.box<!fir.array<?xf32>>) {
 subroutine implied_iters_allocatable(a1)
-  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_2:.*]] = constant 20 : index
   ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.array<20x!fir.type<_QFimplied_iters_allocatableTt{oui:!fir.logical<4>,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>> {bindc_name = "thing", uniq_name = "_QFimplied_iters_allocatableEthing"}
   ! CHECK:         %[[VAL_4:.*]] = fir.shape %[[VAL_2]] : (index) -> !fir.shape<1>
@@ -92,7 +92,7 @@ end subroutine implied_iters_allocatable
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.box<!fir.array<?x!fir.type<_QFforall_pointer_assignTt{ptr:!fir.box<!fir.ptr<!fir.array<?xf32>>>}>>>, %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.type<_QFforall_pointer_assignTu{targ:!fir.array<20xf32>}>>> {fir.target},
 ! CHECK-SAME: %[[VAL_2:.*]]: !fir.ref<i32>, %[[VAL_3:.*]]: !fir.ref<i32>) {
 subroutine forall_pointer_assign(ap, at, ii, ij)
-  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_5:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
   ! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> index
   ! CHECK:         %[[VAL_7:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
@@ -149,7 +149,7 @@ end subroutine forall_pointer_assign
 
 ! CHECK-LABEL: func @_QPslice_with_explicit_iters() {
 subroutine slice_with_explicit_iters
-  ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_1:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_2:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.array<10x10xi32> {bindc_name = "a", uniq_name = "_QFslice_with_explicit_itersEa"}

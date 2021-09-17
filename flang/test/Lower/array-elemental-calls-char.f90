@@ -147,7 +147,7 @@ subroutine foo3(i, j)
 ! CHECK-DAG:   %[[VAL_69:.*]] = constant 10 : index
 ! CHECK-DAG:   %[[VAL_70:.*]] = constant 0 : index
 ! CHECK-DAG:   %[[VAL_71:.*]] = constant 1 : index
-! CHECK-DAG:   %[[VAL_72:.*]] = fir.alloca !fir.char<1> {uniq_name = ""}
+! CHECK-DAG:   %[[VAL_72:.*]] = fir.alloca !fir.char<1>
 ! CHECK:   %[[VAL_73:.*]] = fir.shape %[[VAL_69]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_70]], %[[VAL_69]] : index, index)
 ! CHECK: ^bb1(%[[VAL_74:.*]]: index, %[[VAL_75:.*]]: index):
@@ -232,7 +232,7 @@ subroutine foo6(c)
 ! CHECK:   %[[VAL_55:.*]] = addi %[[VAL_52]], %[[VAL_47]] : index
 ! CHECK:   %[[VAL_56:.*]] = fir.array_coor %[[VAL_50]](%[[VAL_51]]) %[[VAL_55]] typeparams %[[VAL_48]]#1 : (!fir.ref<!fir.array<10x!fir.char<1,?>>>, !fir.shape<1>, index, index) -> !fir.ref<!fir.char<1,?>>
 ! CHECK:   %[[VAL_57:.*]] = fir.emboxchar %[[VAL_56]], %[[VAL_48]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-! CHECK:   %[[VAL_58:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_48]]#1 : index) {uniq_name = ".result"}
+! CHECK:   %[[VAL_58:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_48]]#1 : index) {bindc_name = ".result"}
 ! CHECK:   %[[VAL_59:.*]] = fir.call @_QMchar_elemPelem_return_char(%[[VAL_58]], %[[VAL_48]]#1, %[[VAL_57]]) : (!fir.ref<!fir.char<1,?>>, index, !fir.boxchar<1>) -> !fir.boxchar<1>
 ! CHECK:   br ^bb3(%[[VAL_46]], %[[VAL_48]]#1 : index, index)
 ! CHECK: ^bb3(%[[VAL_60:.*]]: index, %[[VAL_61:.*]]: index):

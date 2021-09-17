@@ -19,7 +19,7 @@ end function
 ! CHECK-SAME: %[[arg2:.*]]: !fir.box<!fir.array<?x!fir.char<1>>>) -> !fir.boxchar<1>
 character function maxval_test2(a)
   character :: a(:)
-! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.char<1,?>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.char<1,?>>>
 ! CHECK:  %[[a1:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG:  %[[a5:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.char<1,?>>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK:  %[[a6:.*]] = fir.convert %[[arg2]] : (!fir.box<!fir.array<?x!fir.char<1>>>) -> !fir.box<none>
@@ -35,7 +35,7 @@ subroutine maxval_test3(a,r)
   integer :: a(:,:)
   integer :: r(:)
 ! CHECK-DAG:  %[[c2_i32:.*]] = constant 2 : i32
-! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK:  %[[a1:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG:  %[[a6:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK:  %[[a7:.*]] = fir.convert %[[arg0]] : (!fir.box<!fir.array<?x?xi32>>) -> !fir.box<none>

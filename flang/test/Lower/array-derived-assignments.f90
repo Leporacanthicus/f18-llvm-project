@@ -49,7 +49,7 @@ subroutine test_deep_copy(t1, t2)
 ! CHECK-DAG:   %[[VAL_15:.*]] = constant 10 : index
 ! CHECK-DAG:   %[[VAL_16:.*]] = constant 0 : index
 ! CHECK-DAG:   %[[VAL_17:.*]] = constant 1 : index
-! CHECK:   %[[VAL_18:.*]] = fir.alloca !fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{{.*}}>> {uniq_name = ""}
+! CHECK:   %[[VAL_18:.*]] = fir.alloca !fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{{.*}}>>
 ! CHECK:   %[[VAL_19:.*]] = fir.shape %[[VAL_15]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_16]], %[[VAL_15]] : index, index)
 ! CHECK: ^bb1(%[[VAL_20:.*]]: index, %[[VAL_21:.*]]: index):

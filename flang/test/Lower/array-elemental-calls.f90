@@ -36,8 +36,8 @@ end
 ! CHECK-SAME: %[[arg1:.*]]: !fir.ref<!fir.array<100xi32>>
 subroutine test_elem_by_valueref(i, j)
   integer :: i(100), j(100)
-  ! CHECK-DAG: %[[tmpA:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = {{.*}}}
-  ! CHECK-DAG: %[[tmpB:.*]] = fir.alloca f32 {adapt.valuebyref, uniq_name = {{.*}}}
+  ! CHECK-DAG: %[[tmpA:.*]] = fir.alloca i32 {adapt.valuebyref}
+  ! CHECK-DAG: %[[tmpB:.*]] = fir.alloca f32 {adapt.valuebyref}
   ! CHECK: %[[jload:.*]] = fir.array_load %[[arg1]]
   ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
   ! CHECK: fir.store %[[cst]] to %[[tmpB]] : !fir.ref<f32>

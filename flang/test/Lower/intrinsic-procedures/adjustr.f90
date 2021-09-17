@@ -3,7 +3,7 @@
 ! CHECK-LABLE: adjustr_test
 subroutine adjustr_test
   character(len=12) :: adjust_str = '0123456789  '
-! CHECK: %[[strBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.char<1,?>>> {uniq_name = ""}
+! CHECK: %[[strBox:.*]] = fir.alloca !fir.box<!fir.heap<!fir.char<1,?>>>
 ! CHECK: %[[addr0:.*]] = fir.address_of(@_QFadjustr{{.*}}) : !fir.ref<!fir.char<1,12>>
 ! CHECK: %[[eBox:.*]] = fir.embox %[[addr0]] : (!fir.ref<!fir.char<1,12>>) -> !fir.box<!fir.char<1,12>>
 ! CHECK: %[[r0:.*]] = fir.zero_bits !fir.heap<!fir.char<1,?>>

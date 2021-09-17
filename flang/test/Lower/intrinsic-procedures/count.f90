@@ -19,7 +19,7 @@ subroutine test_count2(rslt, mask)
   logical :: mask(:,:)
 ! CHECK-DAG:  %[[c1_i32:.*]] = constant 1 : i32
 ! CHECK-DAG:  %[[c4:.*]] = constant 4 : index
-! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {uniq_name = ""}
+! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK:  %[[a5:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK:  %[[a6:.*]] = fir.convert %[[arg1]] : (!fir.box<!fir.array<?x?x!fir.logical<4>>>) -> !fir.box<none>
 ! CHECK:  %[[a7:.*]] = fir.convert %[[c4]] : (index) -> i32

@@ -9,7 +9,7 @@
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_1:.*]]: !fir.ref<!fir.array<?xf32>>,
 ! CHECK-SAME: %[[VAL_2:.*]]: !fir.ref<i32>) {
 subroutine test9(a,b,n)
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_4:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
   ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i32) -> i64
   ! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i64) -> index
@@ -65,7 +65,7 @@ end subroutine test9
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.ref<!fir.array<200xf32>>,
 ! CHECK-SAME:  %[[VAL_1:.*]]: !fir.ref<!fir.array<200x!fir.logical<4>>>) {
 subroutine test_forall_stmt(x, mask)
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_3:.*]] = constant 200 : index
   ! CHECK:         %[[VAL_4:.*]] = constant 1 : i32
   ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i32) -> index
@@ -108,8 +108,8 @@ end subroutine test_forall_stmt
 ! CHECK-LABEL: func @_QPtest_forall_construct(
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.box<!fir.array<?x?xf32>>, %[[VAL_1:.*]]: !fir.box<!fir.array<?x?xf32>>) {
 subroutine test_forall_construct(a,b)
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_4:.*]] = constant 1 : i32
   ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i32) -> index
   ! CHECK:         %[[VAL_6:.*]] = constant 0 : index
@@ -194,10 +194,10 @@ end subroutine test_forall_construct
 ! CHECK-LABEL: func @_QPtest2_forall_construct(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.ref<!fir.array<100x400xf32>>, %[[VAL_1:.*]]: !fir.ref<!fir.array<200x200xf32>>) {
 subroutine test2_forall_construct(a,b)
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
-  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_6:.*]] = constant 100 : index
   ! CHECK:         %[[VAL_7:.*]] = constant 400 : index
   ! CHECK:         %[[VAL_8:.*]] = constant 200 : index
@@ -301,10 +301,10 @@ end subroutine test2_forall_construct
 ! CHECK-SAME: %[[VAL_1:.*]]: !fir.ref<!fir.array<200x200xf32>>,
 ! CHECK-SAME: %[[VAL_2:.*]]: !fir.ref<!fir.array<100x200x!fir.logical<4>>>) {
 subroutine test3_forall_construct(a,b, mask)
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
-  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_6:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_6:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_7:.*]] = constant 100 : index
   ! CHECK:         %[[VAL_8:.*]] = constant 400 : index
   ! CHECK:         %[[VAL_9:.*]] = constant 200 : index
@@ -441,7 +441,7 @@ end subroutine test3_forall_construct
 ! CHECK-LABEL: func @_QPtest_forall_with_array_assignment(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>>, %[[VAL_1:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFtest_forall_with_array_assignmentTt{block1:!fir.array<64xi64>,block2:!fir.array<64xi64>}>>>) {
 subroutine test_forall_with_array_assignment(aa,bb)
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_3:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_4:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_5:.*]] = constant 1 : i32
@@ -513,12 +513,12 @@ end subroutine test_forall_with_array_assignment
 ! CHECK-LABEL: func @_QPtest_nested_forall_where(
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, %[[VAL_1:.*]]: !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) {
 subroutine test_nested_forall_where(a,b)  
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
-  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
-  ! CHECK:         %[[VAL_6:.*]] = fir.alloca !fir.heap<index> {uniq_name = ""}
-  ! CHECK:         %[[VAL_7:.*]] = fir.alloca !fir.heap<i8> {uniq_name = ""}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK:         %[[VAL_6:.*]] = fir.alloca !fir.heap<index>
+  ! CHECK:         %[[VAL_7:.*]] = fir.alloca !fir.heap<i8>
   ! CHECK:         %[[VAL_8:.*]] = fir.zero_bits !fir.heap<i8>
   ! CHECK:         fir.store %[[VAL_8]] to %[[VAL_7]] : !fir.ref<!fir.heap<i8>>
   ! CHECK:         %[[VAL_9:.*]] = fir.zero_bits !fir.heap<index>
@@ -768,8 +768,8 @@ end subroutine test_nested_forall_where
 ! CHECK-LABEL: func @_QPtest_forall_with_slice(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.ref<i32>, %[[VAL_1:.*]]: !fir.ref<i32>) {
 subroutine test_forall_with_slice(i1,i2)
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "j"}
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_4:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_5:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_6:.*]] = fir.alloca !fir.array<10x10x!fir.type<_QFtest_forall_with_sliceTt{arr:!fir.array<11xi32>}>> {bindc_name = "a", uniq_name = "_QFtest_forall_with_sliceEa"}
@@ -856,7 +856,7 @@ end subroutine test_forall_with_slice
 
 ! CHECK-LABEL: func @_QPtest_forall_with_ranked_dimension() {
 subroutine test_forall_with_ranked_dimension
-  ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_1:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_2:.*]] = constant 10 : index
   ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.array<10x10x!fir.type<_QFtest_forall_with_ranked_dimensionTt{arr:!fir.array<11xi32>}>> {bindc_name = "a", uniq_name = "_QFtest_forall_with_ranked_dimensionEa"}
@@ -922,7 +922,7 @@ end subroutine test_forall_with_ranked_dimension
 ! CHECK-LABEL: func @_QPforall_with_allocatable(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.box<!fir.array<?xf32>>) {
 subroutine forall_with_allocatable(a1)
-  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_2:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xf32>>> {bindc_name = "arr", uniq_name = "_QFforall_with_allocatableEarr"}
   ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.heap<!fir.array<?xf32>> {uniq_name = "_QFforall_with_allocatableEarr.addr"}
   ! CHECK:         %[[VAL_4:.*]] = fir.alloca index {uniq_name = "_QFforall_with_allocatableEarr.lb0"}
@@ -966,7 +966,7 @@ end subroutine forall_with_allocatable
 ! CHECK-LABEL: func @_QPforall_with_allocatable2(
 ! CHECK-SAME:  %[[VAL_0:.*]]: !fir.box<!fir.array<?xf32>>) {
 subroutine forall_with_allocatable2(a1)
-  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, uniq_name = "i"}
+  ! CHECK:         %[[VAL_1:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
   ! CHECK:         %[[VAL_2:.*]] = fir.alloca !fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}> {bindc_name = "thing", uniq_name = "_QFforall_with_allocatable2Ething"}
   ! CHECK:         %[[VAL_3:.*]] = fir.embox %[[VAL_2]] : (!fir.ref<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<!fir.type<_QFforall_with_allocatable2Tt{i:i32,arr:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>
   ! CHECK:         %[[VAL_4:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
