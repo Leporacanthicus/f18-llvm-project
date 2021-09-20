@@ -55,7 +55,7 @@ subroutine only_once(x)
 ! CHECK-DAG: %[[VAL_28:.*]] = constant 0 : i64
 ! CHECK-DAG: %[[VAL_29:.*]] = constant 0 : index
 ! CHECK-DAG: %[[VAL_30:.*]] = constant 1 : index
-! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {uniq_name = ".result"}
+! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {bindc_name = ".result"}
 ! CHECK:   %[[VAL_32:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_33:.*]] = fir.convert %[[VAL_32]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_34:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_26]], %[[VAL_33]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
