@@ -1947,6 +1947,9 @@ private:
                               : stmtCtx;
               Fortran::lower::createSubroutineCall(
                   *this, expr, localSymbols, ctx, /*isUserDefAssignment=*/true);
+              if (explicitIterationSpace())
+                builder->create<fir::ResultOp>(
+                    loc, explicitIterSpace.getInnerArgs());
             },
 
             // [3] Pointer assignment with possibly empty bounds-spec. R1035: a

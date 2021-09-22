@@ -155,6 +155,15 @@ private:
   RT find(const Fortran::evaluate::ProcedureDesignator &x) { return {}; }
   RT find(const Fortran::evaluate::ProcedureRef &x) {
     (void)find(x.proc());
+    if (x.IsElemental())
+      (void)find(x.arguments());
+    return {};
+  }
+  RT find(const Fortran::evaluate::ActualArgument &x) {
+    if (const auto *sym = x.GetAssumedTypeDummy())
+      (void)find(*sym);
+    else
+      (void)find(x.UnwrapExpr());
     return {};
   }
   template <typename T>

@@ -166,7 +166,6 @@ void createAllocatableArrayAssignment(
 /// is fully evaluated prior to being assigned back to a temporary array.
 fir::ExtendedValue
 createSomeArrayTempValue(AbstractConverter &converter,
-                         const std::optional<evaluate::Shape> &shape,
                          const evaluate::Expr<evaluate::SomeType> &expr,
                          SymMap &symMap, StatementContext &stmtCtx);
 

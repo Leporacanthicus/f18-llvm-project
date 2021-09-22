@@ -363,8 +363,8 @@ Fortran::lower::VectorSubscriptBox::genLoopBounds(fir::FirOpBuilder &builder,
       continue;
     mlir::Value lb, ub, step;
     if (const auto *triplet = std::get_if<LoweredTriplet>(&subscript)) {
-      auto extent = fir::factory::computeTripletExtent(
-          builder, loc, triplet->lb, triplet->ub, triplet->stride, idxTy);
+      auto extent = builder.genExtentFromTriplet(loc, triplet->lb, triplet->ub,
+                                                 triplet->stride, idxTy);
       auto baseLb = fir::factory::readLowerBound(builder, loc, loweredBase,
                                                  dimension, one);
       baseLb = builder.createConvert(loc, idxTy, baseLb);

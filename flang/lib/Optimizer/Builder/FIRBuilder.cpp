@@ -459,6 +459,22 @@ mlir::Value fir::FirOpBuilder::genIsNull(mlir::Location loc, mlir::Value addr) {
   return genNullPointerComparison(*this, loc, addr, mlir::CmpIPredicate::eq);
 }
 
+mlir::Value fir::FirOpBuilder::genExtentFromTriplet(mlir::Location loc,
+                                                    mlir::Value lb,
+                                                    mlir::Value ub,
+                                                    mlir::Value step,
+                                                    mlir::Type type) {
+  auto zero = createIntegerConstant(loc, type, 0);
+  lb = createConvert(loc, type, lb);
+  ub = createConvert(loc, type, ub);
+  step = createConvert(loc, type, step);
+  auto diff = create<mlir::SubIOp>(loc, ub, lb);
+  auto add = create<mlir::AddIOp>(loc, diff, step);
+  auto div = create<mlir::SignedDivIOp>(loc, add, step);
+  auto cmp = create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, div, zero);
+  return create<mlir::SelectOp>(loc, cmp, div, zero);
+}
+
 //===--------------------------------------------------------------------===//
 // ExtendedValue inquiry helper implementation
 //===--------------------------------------------------------------------===//
@@ -841,21 +857,4 @@ void fir::factory::genRecordAssignment(fir::FirOpBuilder &builder,
   // the component by component assignment can be replaced by a memory copy.
   auto load = builder.create<fir::LoadOp>(loc, fir::getBase(rhs));
   builder.create<fir::StoreOp>(loc, load, fir::getBase(lhs));
-}
-
-mlir::Value fir::factory::computeTripletExtent(fir::FirOpBuilder &builder,
-                                               mlir::Location loc,
-                                               mlir::Value lb, mlir::Value ub,
-                                               mlir::Value step,
-                                               mlir::Type type) {
-  auto zero = builder.createIntegerConstant(loc, type, 0);
-  lb = builder.createConvert(loc, type, lb);
-  ub = builder.createConvert(loc, type, ub);
-  step = builder.createConvert(loc, type, step);
-  auto diff = builder.create<mlir::SubIOp>(loc, ub, lb);
-  auto add = builder.create<mlir::AddIOp>(loc, diff, step);
-  auto div = builder.create<mlir::SignedDivIOp>(loc, add, step);
-  auto cmp =
-      builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, div, zero);
-  return builder.create<mlir::SelectOp>(loc, cmp, div, zero);
 }

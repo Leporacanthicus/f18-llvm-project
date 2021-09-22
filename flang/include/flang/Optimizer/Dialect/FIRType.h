@@ -162,6 +162,16 @@ inline bool sequenceWithNonConstantShape(fir::SequenceType seqTy) {
 /// Returns true iff the type `t` does not have a constant size.
 bool hasDynamicSize(mlir::Type t);
 
+inline unsigned getRankOfShapeType(mlir::Type t) {
+  if (auto shTy = t.dyn_cast<fir::ShapeType>())
+    return shTy.getRank();
+  if (auto shTy = t.dyn_cast<fir::ShapeShiftType>())
+    return shTy.getRank();
+  if (auto shTy = t.dyn_cast<fir::ShiftType>())
+    return shTy.getRank();
+  return 0;
+}
+
 /// If `t` is a SequenceType return its element type, otherwise return `t`.
 inline mlir::Type unwrapSequenceType(mlir::Type t) {
   if (auto seqTy = t.dyn_cast<fir::SequenceType>())

@@ -2267,10 +2267,7 @@ public:
 
   template <typename A>
   ExtValue asArray(const A &x) {
-    auto expr = toEvExpr(x);
-    auto optShape =
-        Fortran::evaluate::GetShape(converter.getFoldingContext(), expr);
-    return Fortran::lower::createSomeArrayTempValue(converter, optShape, expr,
+    return Fortran::lower::createSomeArrayTempValue(converter, toEvExpr(x),
                                                     symMap, stmtCtx);
   }
 
@@ -2978,32 +2975,6 @@ namespace {
 class ArrayExprLowering {
   using ExtValue = fir::ExtendedValue;
 
-  /// An array is accessed with a vector of subscript values. In an aray
-  /// expression with a user-defined explicit iteration space, the vector may be
-  /// composed of both subscripts using the explicit iteration space and
-  /// implicit subscripts. The explicit subscripts may come before or after the
-  /// implicit subscripts in the vector as applied to a component path.
-  ///
-  /// For example, given a designator of rank 2, `a1(i,j)%a2%a3(k), `i` and `j`
-  /// could be pre-explicit, then two (rank of `a2`) impplicit values, and
-  /// finally `k` which could be a post-explicit access value.
-  enum class AccessKind { Implicit, PreExplicit, PostExplicit };
-
-  /// AccessValue is a (value, tag) pair used by an IterationSpace to keep track
-  /// of the access kind of values in the iteration space so they may be applied
-  /// in a continuation properly.
-  struct AccessValue {
-    explicit AccessValue(AccessKind k, mlir::Value v) : kind{k}, val{v} {}
-    AccessValue(mlir::Value v) : AccessValue(AccessKind::Implicit, v) {}
-
-    mlir::Value value() const { return val; }
-    AccessKind access() const { return kind; }
-
-  private:
-    AccessKind kind;
-    mlir::Value val;
-  };
-
   struct IterationSpace {
     IterationSpace() = default;
 
@@ -3020,15 +2991,10 @@ class ArrayExprLowering {
     bool empty() const { return indices.empty(); }
     mlir::Value innerArgument() const { return inArg; }
     mlir::Value outerResult() const { return outRes; }
-    llvm::SmallVector<mlir::Value> iterVec() const {
-      llvm::SmallVector<mlir::Value> result;
-      for (auto i : indices)
-        result.push_back(i.value());
-      return result;
-    }
+    llvm::SmallVector<mlir::Value> iterVec() const { return indices; }
     mlir::Value iterValue(std::size_t i) const {
       assert(i < indices.size());
-      return indices[i].value();
+      return indices[i];
     }
 
     /// Set (rewrite) the Value at a given index.
@@ -3041,13 +3007,9 @@ class ArrayExprLowering {
       indices.assign(vals.begin(), vals.end());
     }
 
-    void insertIndexValue(std::size_t i, AccessValue av) {
+    void insertIndexValue(std::size_t i, mlir::Value av) {
       assert(i <= indices.size());
       indices.insert(indices.begin() + i, av);
-    }
-
-    void insertIndexValue(std::size_t i, mlir::Value v) {
-      insertIndexValue(i, AccessValue(AccessKind::Implicit, v));
     }
 
     /// Set the `element` value. This is the SSA value that corresponds to an
@@ -3065,49 +3027,11 @@ class ArrayExprLowering {
     }
     ExtValue elementExv() const { return element; }
 
-    /// Index of the first implicit access in indices. Returns the index
-    /// immediately after the last pre explicit index or 0. Returns 0 if there
-    /// are no indices in this iteration space.
-    size_t beginImplicitIndex() const {
-      const auto size = indices.size();
-      std::remove_const_t<decltype(size)> result = 0;
-      while (result < size &&
-             indices[result].access() == AccessKind::PreExplicit)
-        ++result;
-      return result;
-    }
-
-    /// Index of element immediately after the last implicit access index.
-    /// Returns the index immediately before the first post explicit index or 0.
-    /// Returns 0 if there are no indices in this iteration space.
-    size_t endImplicitIndex() const {
-      auto result = indices.size();
-      while (result > 0 &&
-             indices[result - 1].access() == AccessKind::PostExplicit)
-        --result;
-      return result;
-    }
-
-    /// In an explicit space, the context may include an implicit subspace. The
-    /// RHS of the assignment does not necessarily have rank and can be promoted
-    /// from a scalar to an array. In that case, the implicit subscripts must be
-    /// removed.
-    void removeImplicit() {
-      const auto size = indices.size();
-      if (size == 0)
-        return;
-      llvm::SmallVector<AccessValue> newIndices;
-      for (std::remove_const_t<decltype(size)> j = 0; j < size; ++j)
-        if (indices[j].access() != AccessKind::Implicit)
-          newIndices.push_back(indices[j]);
-      indices.swap(newIndices);
-    }
-
   private:
     mlir::Value inArg;
     mlir::Value outRes;
     ExtValue element;
-    llvm::SmallVector<AccessValue> indices;
+    llvm::SmallVector<mlir::Value> indices;
   };
 
   /// Structure to keep track of lowered array operands in the
@@ -3352,11 +3276,9 @@ public:
   static ExtValue lowerNewArrayExpression(
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
-      const std::optional<Fortran::evaluate::Shape> &shape,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr) {
     ArrayExprLowering ael{converter, stmtCtx, symMap};
-    if (shape.has_value())
-      ael.determineShapeOfDest(*shape);
+    ael.determineShapeOfDest(expr);
     auto loopRes = ael.lowerArrayExpression(expr);
     auto dest = ael.destination;
     auto tempRes = dest.memref();
@@ -3384,16 +3306,20 @@ public:
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
       mlir::Value var, mlir::Value shape) {
-    ArrayExprLowering ael{converter, stmtCtx, symMap};
+    ArrayExprLowering ael(converter, stmtCtx, symMap);
     return ael.lowerLazyArrayExpression(expr, var, shape);
   }
 
+  /// Lower the expression \p expr into a buffer that is created on demand. The
+  /// variable containing the pointer to the buffer is \p var and the variable
+  /// containing the shape of the buffer is \p shapeBuffer.
   ExtValue lowerLazyArrayExpression(
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
       mlir::Value var, mlir::Value shapeBuffer) {
     auto loc = getLoc();
     // Once the loop extents have been computed, which may require being inside
-    // some explicit loops, lazily allocate the expression on the heap.
+    // some explicit loops, lazily allocate the expression on the heap. The
+    // following continuation creates the buffer as needed.
     ccPrelude = [=](llvm::ArrayRef<mlir::Value> shape) {
       auto load = builder.create<fir::LoadOp>(loc, var);
       auto eleTy = fir::unwrapRefType(load.getType());
@@ -3467,6 +3393,7 @@ public:
       builder.create<fir::StoreOp>(loc, eleVal, eleAddr);
       return iters.innerArgument();
     };
+    // Lower the array expression now.
     auto loopRes = lowerArrayExpression(expr);
     auto unknown = fir::SequenceType::getUnknownExtent();
     fir::SequenceType::Shape extents(genIterationShape().size(), unknown);
@@ -3527,40 +3454,30 @@ public:
     auto loc = getLoc();
     auto idxTy = builder.getIndexType();
     auto definedShape = fir::factory::getExtents(builder, loc, exv);
-    if (x.subscript().empty()) {
-      destShape = definedShape;
-      return true;
-    }
     auto one = builder.createIntegerConstant(loc, idxTy, 1);
     for (auto ss : llvm::enumerate(x.subscript())) {
-      std::visit(
-          Fortran::common::visitors{
-              [&](const Fortran::evaluate::Triplet &trip) {
-                // For a subscript of triple notation, we compute the range of
-                // this dimension of the iteration space.
-                mlir::Value lo;
-                if (auto optLo = trip.lower())
-                  lo = fir::getBase(asScalar(*optLo));
-                else
-                  lo = getLBound(exv, ss.index(), one);
-                lo = builder.createConvert(loc, idxTy, lo);
-                mlir::Value hi;
-                if (auto optHi = trip.upper())
-                  hi = fir::getBase(asScalar(*optHi));
-                else
-                  hi = getUBound(exv, ss.index(), one);
-                hi = builder.createConvert(loc, idxTy, hi);
-                auto step = builder.createConvert(
-                    loc, idxTy, fir::getBase(asScalar(trip.stride())));
-                // Compute limit where the loop is [0..limit). The loop will not
-                // execute if the limit is non-positive.
-                auto diff = builder.create<mlir::SubIOp>(loc, hi, lo);
-                auto nom = builder.create<mlir::AddIOp>(loc, diff, step);
-                auto res = builder.create<mlir::SignedDivIOp>(loc, nom, step);
-                destShape.push_back(res.getResult());
-              },
-              [&](auto) { destShape.push_back(definedShape[ss.index()]); }},
-          ss.value().u);
+      std::visit(Fortran::common::visitors{
+                     [&](const Fortran::evaluate::Triplet &trip) {
+                       // For a subscript of triple notation, we compute the
+                       // range of this dimension of the iteration space.
+                       auto lo = [&]() {
+                         if (auto optLo = trip.lower())
+                           return fir::getBase(asScalar(*optLo));
+                         return getLBound(exv, ss.index(), one);
+                       }();
+                       auto hi = [&]() {
+                         if (auto optHi = trip.upper())
+                           return fir::getBase(asScalar(*optHi));
+                         return getUBound(exv, ss.index(), one);
+                       }();
+                       auto step = builder.createConvert(
+                           loc, idxTy, fir::getBase(asScalar(trip.stride())));
+                       auto extent = builder.genExtentFromTriplet(loc, lo, hi,
+                                                                  step, idxTy);
+                       destShape.push_back(extent);
+                     },
+                     [&](auto) {}},
+                 ss.value().u);
     }
     return true;
   }
@@ -3581,6 +3498,8 @@ public:
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &lhs) {
     LLVM_DEBUG(Fortran::lower::DumpEvaluateExpr::dump(
         llvm::dbgs() << "determine shape of:\n", lhs));
+    // FIXME: We may not want to use ExtractDataRef here since it doesn't deal
+    // with substrings, etc.
     auto dref = Fortran::evaluate::ExtractDataRef(lhs);
     return dref.has_value() ? genShapeFromDataRef(*dref) : false;
   }
@@ -3698,16 +3617,9 @@ public:
               triples[i + 1].getDefiningOp())) {
         // (..., lb:ub:step, ...) case:  extent = max((ub-lb+step)/step, 0)
         // See Fortran 2018 9.5.3.3.2 section for more details.
-        auto lb = builder.createConvert(loc, idxTy, triples[i]);
-        auto ub = builder.createConvert(loc, idxTy, triples[i + 1]);
-        auto step = builder.createConvert(loc, idxTy, triples[i + 2]);
-        auto diff = builder.create<mlir::SubIOp>(loc, ub, lb);
-        auto add = builder.create<mlir::AddIOp>(loc, diff, step);
-        auto div = builder.create<mlir::SignedDivIOp>(loc, add, step);
-        auto cmp = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt,
-                                                div, zero);
-        slicedShape.emplace_back(
-            builder.create<mlir::SelectOp>(loc, cmp, div, zero));
+        auto res = builder.genExtentFromTriplet(loc, triples[i], triples[i + 1],
+                                                triples[i + 2], idxTy);
+        slicedShape.emplace_back(res);
       } else {
         // do nothing. `..., i, ...` case, so dimension is dropped.
       }
@@ -3798,6 +3710,7 @@ public:
     });
   }
 
+  /// Mask expressions are array expressions too.
   void genMasks() {
     auto loc = getLoc();
     // Lower the mask expressions, if any.
@@ -3817,10 +3730,8 @@ public:
                             tmp);
             continue;
           }
-          auto optShape =
-              Fortran::evaluate::GetShape(converter.getFoldingContext(), *e);
-          auto tmp = Fortran::lower::createSomeArrayTempValue(
-              converter, optShape, *e, symMap, stmtCtx);
+          auto tmp = Fortran::lower::createSomeArrayTempValue(converter, *e,
+                                                              symMap, stmtCtx);
           auto shape = builder.createShape(loc, tmp);
           implicitSpace->bind(e, fir::getBase(tmp), shape);
         }
@@ -3919,11 +3830,6 @@ public:
     // explicit masks, which are interleaved, these mask expression appear in
     // the innermost loop.
     if (implicitSpaceHasMasks()) {
-      auto appendAsNeeded = [&](auto &&indices) {
-        llvm::SmallVector<mlir::Value> result;
-        result.append(indices.begin(), indices.end());
-        return result;
-      };
       auto genCond = [&](Fortran::lower::MaskAddrAndShape &&mask,
                          IterSpace iters) {
         auto tmp = mask.first;
@@ -3933,10 +3839,10 @@ public:
         auto eleRefTy = builder.getRefType(eleTy);
         auto i1Ty = builder.getI1Type();
         // Adjust indices for any shift of the origin of the array.
-        auto indexes = appendAsNeeded(fir::factory::originateIndices(
-            loc, builder, tmp.getType(), shape, iters.iterVec()));
+        auto indices = fir::factory::originateIndices(
+            loc, builder, tmp.getType(), shape, iters.iterVec());
         auto addr = builder.create<fir::ArrayCoorOp>(
-            loc, eleRefTy, tmp, shape, /*slice=*/mlir::Value{}, indexes,
+            loc, eleRefTy, tmp, shape, /*slice=*/mlir::Value{}, indices,
             /*typeParams=*/llvm::None);
         auto load = builder.create<fir::LoadOp>(loc, addr);
         return builder.createConvert(loc, i1Ty, load);
@@ -4871,7 +4777,7 @@ public:
   /// the array expression evaluation.
   CC genarr(const Fortran::evaluate::ArrayRef &x) {
     if (explicitSpaceIsActive())
-      return x.Rank() == 0 ? gensclarr(x) : genexp(x);
+      return x.Rank() == 0 ? gensclarr(x) : genesp(x);
     const auto &arrBase = x.base();
     if (!arrBase.IsSymbol()) {
       // `x` is a component with rank.
@@ -4907,7 +4813,7 @@ public:
   }
   CC genarr(const Fortran::semantics::Symbol &sym) {
     if (explicitSpaceIsActive())
-      return sym.Rank() == 0 ? gensclarr(sym) : genexp(sym);
+      return sym.Rank() == 0 ? gensclarr(sym) : genesp(sym);
     return genarr(asScalarRef(sym));
   }
 
@@ -5091,11 +4997,11 @@ public:
 
   /// Lower a component path with rank unless this is an explicit iteration
   /// space. In the latter case, the expression may be ranked or scalar and
-  /// those are handled by genexp and gensclarr, resp.
+  /// those are handled by genesp and gensclarr, resp.
   /// Example: <code>array%baz%qux%waldo</code>
   CC genarr(const Fortran::evaluate::Component &x) {
     if (explicitSpaceIsActive())
-      return x.Rank() == 0 ? gensclarr(x) : genexp(x);
+      return x.Rank() == 0 ? gensclarr(x) : genesp(x);
     ComponentCollection cmptData;
     auto tup = buildComponentsPath(cmptData, x);
     auto lambda = genSlicePath(std::get<ExtValue>(tup), cmptData.trips,
@@ -5234,12 +5140,9 @@ public:
   genArrayCtorInitializer(const Fortran::evaluate::Expr<A> &x, mlir::Type,
                           mlir::Value, mlir::Value, mlir::Value,
                           Fortran::lower::StatementContext &stmtCtx) {
-    if (isArray(x)) {
-      auto e = toEvExpr(x);
-      auto sh = Fortran::evaluate::GetShape(converter.getFoldingContext(), e);
-      return {lowerNewArrayExpression(converter, symMap, stmtCtx, sh, e),
+    if (isArray(x))
+      return {lowerNewArrayExpression(converter, symMap, stmtCtx, toEvExpr(x)),
               /*needCopy=*/true};
-    }
     return {asScalar(x), /*needCopy=*/true};
   }
 
@@ -5781,12 +5684,8 @@ public:
                      [&](const Fortran::evaluate::Subscript *x) { addSub(*x); },
                      [&](const Fortran::evaluate::ArrayRef *x) {
                        assert(!x->base().IsSymbol());
-                       if (x->subscript().empty()) {
-                         pushAllIters();
-                       } else {
-                         for (const auto &sub : x->subscript())
-                           addSub(sub);
-                       }
+                       for (const auto &sub : x->subscript())
+                         addSub(sub);
                        ty = fir::unwrapSequenceType(ty);
                      },
                      [&](const Fortran::evaluate::Component *x) {
@@ -5846,64 +5745,72 @@ public:
     return lambda;
   }
 
-  CC genexp(const Fortran::semantics::Symbol &x) {
+  CC genesp(const Fortran::semantics::Symbol &x) {
     if (auto load = explicitSpace->findBinding(&x))
       return applyPathToArrayLoad(load);
     if (pathIsEmpty())
       return [=](IterSpace) { return asScalar(x); };
-    return [=](IterSpace) { return ExtValue{}; };
+    auto loc = getLoc();
+    return [=](IterSpace) {
+      fir::emitFatalError(loc, "QQ reached symbol with path");
+      return ExtValue{};
+    };
   }
 
-  CC genexp(const Fortran::evaluate::Component &x) {
+  CC genesp(const Fortran::evaluate::Component &x) {
     if (auto load = explicitSpace->findBinding(&x))
       return applyPathToArrayLoad(load);
     auto top = pathIsEmpty();
     reversePath.push_back(&x);
-    auto result = genexp(x.base());
+    auto result = genesp(x.base());
     if (pathIsEmpty())
       return result;
     if (top)
       return [=](IterSpace) { return asScalar(x); };
-    return [=](IterSpace) { return ExtValue{}; };
+    auto loc = getLoc();
+    return [=](IterSpace) {
+      fir::emitFatalError(loc, "QQ reached component with path");
+      return ExtValue{};
+    };
   }
 
-  CC genexp(const Fortran::evaluate::ArrayRef &x) {
+  CC genesp(const Fortran::evaluate::ArrayRef &x) {
     if (auto load = explicitSpace->findBinding(&x)) {
-      if (x.subscript().empty()) {
-        reversePath.push_back(ImplicitSubscripts{});
-      } else {
-        reversePath.push_back(EndOfSubscripts{}); // flag end of subscripts
-        for (const auto &sub : llvm::reverse(x.subscript()))
-          reversePath.push_back(&sub);
-      }
+      reversePath.push_back(EndOfSubscripts{}); // flag end of subscripts
+      for (const auto &sub : llvm::reverse(x.subscript()))
+        reversePath.push_back(&sub);
       return applyPathToArrayLoad(load);
     }
     auto top = pathIsEmpty();
     reversePath.push_back(&x);
-    auto result = genexp(x.base());
+    auto result = genesp(x.base());
     if (pathIsEmpty())
       return result;
     if (top)
       return [=](IterSpace) { return asScalar(x); };
-    return [=](IterSpace) { return ExtValue{}; };
+    auto loc = getLoc();
+    return [=](IterSpace) {
+      fir::emitFatalError(loc, "QQ reached arrayref with path");
+      return ExtValue{};
+    };
   }
 
-  CC genexp(const Fortran::evaluate::CoarrayRef &x) {
+  CC genesp(const Fortran::evaluate::CoarrayRef &x) {
     TODO(getLoc(), "coarray reference");
     return {};
   }
 
-  CC genexp(const Fortran::evaluate::NamedEntity &x) {
-    return x.IsSymbol() ? genexp(x.GetFirstSymbol()) : genexp(x.GetComponent());
+  CC genesp(const Fortran::evaluate::NamedEntity &x) {
+    return x.IsSymbol() ? genesp(x.GetFirstSymbol()) : genesp(x.GetComponent());
   }
 
-  CC genexp(const Fortran::evaluate::DataRef &x) {
-    return std::visit([&](const auto &v) { return genexp(v); }, x.u);
+  CC genesp(const Fortran::evaluate::DataRef &x) {
+    return std::visit([&](const auto &v) { return genesp(v); }, x.u);
   }
 
   CC genarr(const Fortran::evaluate::DataRef &x) {
     if (explicitSpaceIsActive() && x.Rank() > 0)
-      return genexp(x);
+      return genesp(x);
     return std::visit([&](const auto &v) { return genarr(v); }, x.u);
   }
 
@@ -6087,12 +5994,11 @@ void Fortran::lower::createAllocatableArrayAssignment(
 
 fir::ExtendedValue Fortran::lower::createSomeArrayTempValue(
     Fortran::lower::AbstractConverter &converter,
-    const std::optional<Fortran::evaluate::Shape> &shape,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
     Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx) {
   LLVM_DEBUG(expr.AsFortran(llvm::dbgs() << "array value: ") << '\n');
   return ArrayExprLowering::lowerNewArrayExpression(converter, symMap, stmtCtx,
-                                                    shape, expr);
+                                                    expr);
 }
 
 fir::ExtendedValue Fortran::lower::createLazyArrayTempValue(

@@ -250,7 +250,7 @@ public:
   /// Construct one of the two forms of shape op from an array box.
   mlir::Value genShape(mlir::Location loc, const fir::AbstractArrayBox &arr);
   mlir::Value genShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> shift,
-                        llvm::ArrayRef<mlir::Value> exts);
+                       llvm::ArrayRef<mlir::Value> exts);
   mlir::Value genShape(mlir::Location loc, llvm::ArrayRef<mlir::Value> exts);
 
   /// Create one of the shape ops given an extended value. For a boxed value,
@@ -339,6 +339,12 @@ public:
 
   /// Generate code testing \p addr is a null address.
   mlir::Value genIsNull(mlir::Location loc, mlir::Value addr);
+
+  /// Compute the extent of (lb:ub:step) as max((ub-lb+step)/step, 0). See
+  /// Fortran 2018 9.5.3.3.2 section for more details.
+  mlir::Value genExtentFromTriplet(mlir::Location loc, mlir::Value lb,
+                                   mlir::Value ub, mlir::Value step,
+                                   mlir::Type type);
 
 private:
   const KindMapping &kindMap;
@@ -454,11 +460,6 @@ void genRecordAssignment(fir::FirOpBuilder &builder, mlir::Location loc,
                          const fir::ExtendedValue &lhs,
                          const fir::ExtendedValue &rhs);
 
-/// Compute the extent of (lb:ub:step) as max((ub-lb+step)/step, 0). See Fortran
-/// 2018 9.5.3.3.2 section for more details.
-mlir::Value computeTripletExtent(fir::FirOpBuilder &builder, mlir::Location loc,
-                                 mlir::Value lb, mlir::Value ub,
-                                 mlir::Value step, mlir::Type type);
 } // namespace fir::factory
 
 #endif // FORTRAN_OPTIMIZER_BUILDER_FIRBUILDER_H
