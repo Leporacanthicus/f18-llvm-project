@@ -1977,6 +1977,73 @@ public:
     return call.getResult(0);
   }
 
+  /// Is this a variable wrapped in parentheses ?
+  template <typename A>
+  bool isParenthesizedVariable(const A &) {
+    return false;
+  }
+  template <typename T>
+  bool isParenthesizedVariable(const Fortran::evaluate::Expr<T> &expr) {
+    using ExprVariant = decltype(Fortran::evaluate::Expr<T>::u);
+    using Parentheses = Fortran::evaluate::Parentheses<T>;
+    if constexpr (Fortran::common::HasMember<Parentheses, ExprVariant>) {
+      if (const auto *parentheses = std::get_if<Parentheses>(&expr.u))
+        return Fortran::evaluate::IsVariable(parentheses->left());
+      return false;
+    } else {
+      return std::visit(
+          [&](const auto &x) { return isParenthesizedVariable(x); }, expr.u);
+    }
+  }
+
+  /// Like genExtAddr, but ensure the address returned is a temporary even if \p
+  /// expr is variable inside parentheses.
+  ExtValue genTempExtAddr(const Fortran::lower::SomeExpr &expr) {
+    // In general, genExtAddr might nor create a temp for variable inside
+    // parentheses to avoid creating array temporary in sub-expressions. It only
+    // ensure the sub-expression is not re-associated with other part of the
+    // expression. In the call semantic, there is a difference between expr and
+    // variable (see R1524). For expressions, a variable storage must not be
+    // argument associated since it could be modified inside the call, or the
+    // variable could also be modified by other means during the call.
+    if (!isParenthesizedVariable(expr))
+      return genExtAddr(expr);
+    if (expr.Rank() > 0)
+      return asArray(expr);
+    auto loc = getLoc();
+    return genExtValue(expr).match(
+        [&](const fir::CharBoxValue &boxChar) -> ExtValue {
+          return fir::factory::CharacterExprHelper{builder, loc}.createTempFrom(
+              boxChar);
+        },
+        [&](const fir::UnboxedValue &v) -> ExtValue {
+          auto type = v.getType();
+          mlir::Value value = v;
+          if (fir::isa_ref_type(type))
+            value = builder.create<fir::LoadOp>(loc, value);
+          auto temp = builder.createTemporary(loc, value.getType());
+          builder.create<fir::StoreOp>(loc, value, temp);
+          return temp;
+        },
+        [&](const fir::BoxValue &x) -> ExtValue {
+          // Derived type scalar that may be polymorphic.
+          assert(!x.hasRank() && x.isDerived());
+          if (x.isDerivedWithLengthParameters())
+            fir::emitFatalError(
+                loc, "making temps for derived type with length parameters");
+          // TODO: polymorphic aspects should be kept but for now the temp
+          // created always has the declared type.
+          auto var = fir::getBase(fir::factory::readBoxValue(builder, loc, x));
+          auto value = builder.create<fir::LoadOp>(loc, var);
+          auto temp = builder.createTemporary(loc, value.getType());
+          builder.create<fir::StoreOp>(loc, value, temp);
+          return temp;
+        },
+        [&](const auto &) -> ExtValue {
+          fir::emitFatalError(loc, "expr is not a scalar value");
+        });
+  }
+
   /// Lower a non-elemental procedure reference.
   ExtValue genRawProcedureRef(const Fortran::evaluate::ProcedureRef &procRef,
                               llvm::Optional<mlir::Type> resultType) {
@@ -2049,11 +2116,11 @@ public:
           mutableModifiedByCall.emplace_back(std::move(mutableBox));
         continue;
       }
-
+      const bool actualArgIsVariable = Fortran::evaluate::IsVariable(*expr);
       if (arg.passBy == PassBy::BaseAddress || arg.passBy == PassBy::BoxChar) {
         auto argAddr = [&]() -> ExtValue {
           ExtValue baseAddr;
-          if (Fortran::evaluate::IsVariable(*expr) && expr->Rank() > 0) {
+          if (actualArgIsVariable && expr->Rank() > 0) {
             auto box = genBoxArg(*expr);
             if (!Fortran::evaluate::IsSimplyContiguous(
                     *expr, converter.getFoldingContext())) {
@@ -2070,8 +2137,12 @@ public:
             // Contiguous: just use the box we created above!
             // This gets "unboxed" below, if needed.
             baseAddr = box;
-          } else
+          } else if (actualArgIsVariable) {
             baseAddr = genExtAddr(*expr);
+          } else {
+            // Make sure a variable address is not passed.
+            baseAddr = genTempExtAddr(*expr);
+          }
 
           // Scalar and contiguous expressions may be lowered to a fir.box,
           // either to account for potential polymorphism, or because lowering
@@ -2126,7 +2197,11 @@ public:
           caller.placeInput(arg, builder.create<mlir::SelectOp>(
                                      loc, isAllocated, convertedBox, absent));
         } else {
-          auto box = builder.createBox(loc, genBoxArg(*expr));
+          // Make sure a variable address is only passed if the expression is
+          // actually a variable.
+          auto box = actualArgIsVariable
+                         ? builder.createBox(loc, genBoxArg(*expr))
+                         : builder.createBox(getLoc(), genTempExtAddr(*expr));
           caller.placeInput(arg, box);
         }
       } else if (arg.passBy == PassBy::AddressAndLength) {
