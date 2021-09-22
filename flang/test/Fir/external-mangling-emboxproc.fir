@@ -1,4 +1,5 @@
 // RUN: fir-opt --external-name-interop %s | FileCheck %s
+// RUN: tco --external-name-interop %s | FileCheck %s
 
 func @_QPfoo() {  
   %e6 = fir.alloca tuple<i32,f64>
