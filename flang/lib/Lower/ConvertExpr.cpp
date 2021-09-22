@@ -1999,10 +1999,10 @@ public:
   /// Like genExtAddr, but ensure the address returned is a temporary even if \p
   /// expr is variable inside parentheses.
   ExtValue genTempExtAddr(const Fortran::lower::SomeExpr &expr) {
-    // In general, genExtAddr might nor create a temp for variable inside
+    // In general, genExtAddr might not create a temp for variable inside
     // parentheses to avoid creating array temporary in sub-expressions. It only
-    // ensure the sub-expression is not re-associated with other part of the
-    // expression. In the call semantic, there is a difference between expr and
+    // ensures the sub-expression is not re-associated with other parts of the
+    // expression. In the call semantics, there is a difference between expr and
     // variable (see R1524). For expressions, a variable storage must not be
     // argument associated since it could be modified inside the call, or the
     // variable could also be modified by other means during the call.
