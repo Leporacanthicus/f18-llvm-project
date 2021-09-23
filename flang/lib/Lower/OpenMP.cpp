@@ -370,9 +370,12 @@ getScheduleModifiers(const Fortran::parser::OmpScheduleClause &x) {
       const auto &modType2 = std::get<
           std::optional<Fortran::parser::OmpScheduleModifier::Modifier2>>(
           modifier->t);
-      if (modType2->v.v !=
-          Fortran::parser::OmpScheduleModifierType::ModType::Simd)
+      if (modType2 &&
+          modType2->v.v !=
+              Fortran::parser::OmpScheduleModifierType::ModType::Simd)
         return translateModifier(modType2->v);
+
+      return mlir::omp::ScheduleModifier::none;
     }
 
     return translateModifier(modType1.v);
@@ -396,8 +399,8 @@ getSIMDModifier(const Fortran::parser::OmpScheduleClause &x) {
     const auto &modType2 = std::get<
         std::optional<Fortran::parser::OmpScheduleModifier::Modifier2>>(
         modifier->t);
-    if (modType2->v.v ==
-        Fortran::parser::OmpScheduleModifierType::ModType::Simd)
+    if (modType2 && modType2->v.v ==
+                        Fortran::parser::OmpScheduleModifierType::ModType::Simd)
       return mlir::omp::ScheduleModifier::simd;
   }
   return mlir::omp::ScheduleModifier::none;
