@@ -4599,6 +4599,7 @@ defm logical_abbreviations : OptInFC1FFlag<"logical-abbreviations", "Enable logi
 defm implicit_none : OptInFC1FFlag<"implicit-none", "No implicit typing allowed unless overridden by IMPLICIT statements">;
 def emit_mlir : Flag<["-"], "emit-mlir">, Group<Action_Group>,
   HelpText<"Build the parse tree, then lower it to MLIR and dump">;
+def emit_fir : Flag<["-"], "emit-fir">, Alias<emit_mlir>;
 }
 
 def J : JoinedOrSeparate<["-"], "J">,
