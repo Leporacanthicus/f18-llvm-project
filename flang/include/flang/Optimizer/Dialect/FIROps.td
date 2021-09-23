@@ -1618,16 +1618,13 @@ def fir_ArrayModifyOp : fir_Op<"array_modify", [AttrSizedOperandSegments,
     ```mlir
       %s = fir.shape %n : (index) -> !fir.shape<1>
       // Load the entire array 'a'.
-      %v = fir.array_load %a(%s) : (!fir.ref<!fir.array<?xf32>>, !fir.shape<1>)
-          -> !fir.array<?xf32>
+      %v = fir.array_load %a(%s) : (!fir.ref<!fir.array<?xf32>>, !fir.shape<1>) -> !fir.array<?xf32>
       // Update the value of one of the array value's elements with a user
       // defined assignment from %rhs.
       %new = fir.do_loop %i = ... (%inner = %v) {
         %rhs = ...
-        %addr, %r = fir.array_modify %inner, %i, %j : (!fir.array<?xf32>,
-	    index) -> fir.ref<f32>, !fir.array<?xf32>
-        fir.call @user_def_assign(%addr, %rhs) (fir.ref<f32>,
-	    fir.ref<!fir.type<SomeType>>) -> ()
+        %addr, %r = fir.array_modify %inner, %i, %j : (!fir.array<?xf32>,  index) -> fir.ref<f32>, !fir.array<?xf32>
+        fir.call @user_def_assign(%addr, %rhs) (fir.ref<f32>, fir.ref<!fir.type<SomeType>>) -> ()
         fir.result %r : !fir.ref<!fir.array<?xf32>>
       }
       fir.array_merge_store %v, %new to %a : !fir.ref<!fir.array<?xf32>>
@@ -1650,6 +1647,7 @@ def fir_ArrayModifyOp : fir_Op<"array_modify", [AttrSizedOperandSegments,
   let assemblyFormat = [{
     $sequence `,` $indices (`typeparams` $typeparams^)? attr-dict
       `:` functional-type(operands, results)
+  }];
 
   let verifier = [{ return ::verify(*this); }];
 }
