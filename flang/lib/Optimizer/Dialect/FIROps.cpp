@@ -302,7 +302,7 @@ void fir::AllocMemOp::build(mlir::OpBuilder &builder,
   result.addAttributes(attributes);
 }
 
-static mlir::LogicalResult verify(fir::AllocMemOp op) {
+static mlir::LogicalResult verify(fir::AllocMemOp &op) {
   llvm::SmallVector<llvm::StringRef> visited;
   if (verifyInType(op.getInType(), visited, op.numShapeOperands()))
     return op.emitOpError("invalid type for allocation");
