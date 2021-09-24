@@ -793,6 +793,20 @@ bool fir::SequenceType::hasConstantInterior() const {
   return true;
 }
 
+size_t fir::SequenceType::getNumElements() const {
+  if (hasUnknownShape())
+    return getUnknownExtent();
+
+  size_t numElements = 1;
+  for (auto extent : getShape()) {
+    if (extent != getUnknownExtent())
+      numElements = numElements * extent;
+    else
+      return getUnknownExtent();
+  }
+  return numElements;
+}
+
 mlir::LogicalResult fir::SequenceType::verify(
     llvm::function_ref<mlir::InFlightDiagnostic()> emitError,
     llvm::ArrayRef<int64_t> shape, mlir::Type eleTy,

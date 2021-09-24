@@ -2425,8 +2425,47 @@ struct GlobalOpConversion : public FIROpConversion<fir::GlobalOp> {
         loc, tyAttr, isConst, linkage, global.sym_name(), initAttr);
     auto &gr = g.getInitializerRegion();
     rewriter.inlineRegionBefore(global.region(), gr, gr.end());
+    if (!gr.empty()) {
+      // Replace insert_on_range with a constant dense attribute if the 
+      // initialization is on the full range.
+      auto insertOnRangeOps = gr.front().getOps<fir::InsertOnRangeOp>();
+      for (auto insertOp : insertOnRangeOps) {
+        if (isFullRange(insertOp.coor(), insertOp.getType())) {
+          auto seqTyAttr = convertType(insertOp.getType());
+          auto op = insertOp.val().getDefiningOp();
+          auto constant = mlir::dyn_cast<mlir::ConstantOp>(op);
+          if (!constant) {
+              auto convertOp = mlir::dyn_cast<fir::ConvertOp>(op);
+              if (!convertOp)
+                continue;
+              constant = 
+                  cast<mlir::ConstantOp>(convertOp.value().getDefiningOp());
+          }
+          mlir::Type vecType = mlir::VectorType::get(
+              insertOp.getType().getShape(), constant.getType());
+          auto denseAttr = mlir::DenseElementsAttr::get(
+              vecType.cast<ShapedType>(), constant.getValue());
+          rewriter.setInsertionPointAfter(insertOp);
+          rewriter.replaceOpWithNewOp<mlir::ConstantOp>(insertOp, seqTyAttr,
+                                                        denseAttr);
+        }
+      }
+    }
     rewriter.eraseOp(global);
     return success();
+  }
+
+  bool isFullRange(mlir::ArrayAttr indexes, fir::SequenceType seqTy) const {
+    auto extents = seqTy.getShape();
+    if (indexes.size() / 2 != extents.size())
+      return false;
+    for (unsigned i = 0; i < indexes.size(); i+= 2) {
+      if (indexes[i].cast<IntegerAttr>().getInt() != 0)
+        return false;
+      if (indexes[i+1].cast<IntegerAttr>().getInt() != extents[i/2] - 1)
+        return false;
+    }
+    return true;
   }
 
   mlir::LLVM::Linkage convertLinkage(Optional<StringRef> optLinkage) const {
