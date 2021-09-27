@@ -2660,10 +2660,8 @@ private:
     return fir::factory::ComplexExprHelper{builder, getLoc()}
         .extractComplexPart(fir::getBase(exv), x.isImaginaryPart);
   }
-  template <Fortran::common::TypeCategory TC, int KIND>
-  ExtValue
-  gen(const Fortran::evaluate::Parentheses<Fortran::evaluate::Type<TC, KIND>>
-          &x) {
+  template <typename T>
+  ExtValue gen(const Fortran::evaluate::Parentheses<T> &x) {
     auto exv = gen(x.left());
     auto base = fir::getBase(exv);
     auto newBase =
@@ -4350,10 +4348,8 @@ public:
           lhs, isImagPart);
     };
   }
-  template <Fortran::common::TypeCategory TC, int KIND>
-  CC genarr(
-      const Fortran::evaluate::Parentheses<Fortran::evaluate::Type<TC, KIND>>
-          &x) {
+  template <typename T>
+  CC genarr(const Fortran::evaluate::Parentheses<T> &x) {
     auto loc = getLoc();
     auto f = genarr(x.left());
     return [=](IterSpace iters) -> ExtValue {
