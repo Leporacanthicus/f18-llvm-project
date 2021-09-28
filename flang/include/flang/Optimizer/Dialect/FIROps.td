@@ -170,7 +170,7 @@ def fir_AllocaOp : fir_Op<"alloca", [AttrSizedOperandSegments,
        CArg<"mlir::ValueRange", "{}">:$shape,
        CArg<"llvm::ArrayRef<mlir::NamedAttribute>", "{}">:$attributes)>];
 
-  let verifier = [{ return ::verify(*this); }];
+  let verifier = "return ::verify(*this);";
 
   let extraClassDeclaration = [{
     mlir::Type getAllocatedType();
@@ -228,7 +228,7 @@ def fir_AllocMemOp : fir_Op<"allocmem",
       CArg<"mlir::ValueRange", "{}">:$shape,
       CArg<"llvm::ArrayRef<mlir::NamedAttribute>", "{}">:$attributes)>];
 
-  let verifier = [{ return ::verify(*this); }];
+  let verifier = "return ::verify(*this);";
 
   let extraClassDeclaration = [{
     mlir::Type getAllocatedType();
@@ -484,7 +484,7 @@ def fir_SaveResultOp : fir_Op<"save_result", [AttrSizedOperandSegments]> {
     attr-dict `:` type(operands)
   }];
 
-  let verifier = [{ return ::verify(*this); }];
+  let verifier = "return ::verify(*this);";
 }
 
 def fir_CharConvertOp : fir_Op<"char_convert", []> {
@@ -523,7 +523,7 @@ def fir_CharConvertOp : fir_Op<"char_convert", []> {
     $from `for` $count `to` $to attr-dict `:` type(operands)
   }];
 
-  let verifier = [{ return ::verify(*this); }];
+  let verifier = "return ::verify(*this);";
 }
 
 def fir_UndefOp : fir_OneResultOp<"undefined", [NoSideEffect]> {
@@ -2563,17 +2563,7 @@ def fir_StringLitOp : fir_Op<"string_lit", [NoSideEffect]> {
       "llvm::ArrayRef<char32_t>":$xlist,
       CArg<"llvm::Optional<int64_t>", "{}">:$len)>];
 
-  let verifier = [{
-    if (getSize().cast<mlir::IntegerAttr>().getValue().isNegative())
-      return emitOpError("size must be non-negative");
-    if (auto xl = (*this)->getAttr(xlist())) {
-      auto xList = xl.cast<mlir::ArrayAttr>();
-      for (auto a : xList)
-        if (!a.isa<mlir::IntegerAttr>())
-	    return emitOpError("values in list must be integers");
-    }
-    return mlir::success();
-  }];
+  let verifier = "return ::verify(*this);";
 
   let extraClassDeclaration = [{
     static constexpr const char *size() { return "size"; }
@@ -2600,22 +2590,16 @@ class fir_ArithmeticOp<string mnemonic, list<OpTrait> traits = []> :
     fir_Op<mnemonic,
            !listconcat(traits, [NoSideEffect, SameOperandsAndResultType])>,
     Results<(outs AnyType)> {
-  let parser = [{
-    return impl::parseOneResultSameOperandTypeOp(parser, result);
-  }];
-
-  let printer = [{ return printBinaryOp(this->getOperation(), p); }];
+  let parser = "return impl::parseOneResultSameOperandTypeOp(parser, result);";
+  let printer = "return printBinaryOp(this->getOperation(), p);";
 }
 
 class fir_UnaryArithmeticOp<string mnemonic, list<OpTrait> traits = []> :
       fir_Op<mnemonic,
              !listconcat(traits, [NoSideEffect, SameOperandsAndResultType])>,
       Results<(outs AnyType)> {
-  let parser = [{
-    return impl::parseOneResultSameOperandTypeOp(parser, result);
-  }];
-
-  let printer = [{ return printUnaryOp(this->getOperation(), p); }];
+  let parser = "return impl::parseOneResultSameOperandTypeOp(parser, result);";
+  let printer = "return printUnaryOp(this->getOperation(), p);";
 }
 
 def fir_ConstcOp : fir_Op<"constc", [NoSideEffect]> {

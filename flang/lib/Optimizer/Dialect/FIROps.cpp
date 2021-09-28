@@ -982,11 +982,9 @@ static mlir::ParseResult parseDispatchTableOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DispatchTableOp &op) {
-  auto tableName =
-      op.getOperation()
-          ->getAttrOfType<StringAttr>(mlir::SymbolTable::getSymbolAttrName())
-          .getValue();
-  p << " @" << tableName;
+  auto tableName = op.getOperation()->getAttrOfType<StringAttr>(
+    mlir::SymbolTable::getSymbolAttrName()).getValue();
+  p << op.getOperationName() << " @" << tableName;
 
   Region &body = op.getOperation()->getRegion(0);
   if (!body.empty())
@@ -1080,7 +1078,7 @@ static mlir::ParseResult parseEmboxProcOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::EmboxProcOp &op) {
-  p << ' ' << op.getOperation()->getAttr("funcname");
+  p << op.getOperationName() << ' ' << op.getOperation()->getAttr("funcname");
   auto h = op.host();
   if (h) {
     p << ", ";
@@ -1128,7 +1126,7 @@ static mlir::ParseResult parseGenTypeDescOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::GenTypeDescOp &op) {
-  p << ' ' << op.getOperation()->getAttr("in_type");
+  p << op.getOperationName() << ' ' << op.getOperation()->getAttr("in_type");
   p.printOptionalAttrDict(op.getOperation()->getAttrs(), {"in_type"});
 }
 
@@ -1205,20 +1203,20 @@ static ParseResult parseGlobalOp(OpAsmParser &parser, OperationState &result) {
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::GlobalOp &op) {
+  p << op.getOperationName();
   if (op.linkName().hasValue())
     p << ' ' << op.linkName().getValue();
   p << ' ';
-  p.printAttributeWithoutType(
-      op.getOperation()->getAttr(fir::GlobalOp::symbolAttrName()));
+  p.printAttributeWithoutType(op.getOperation()->getAttr(fir::GlobalOp::symbolAttrName()));
   if (auto val = op.getValueOrNull())
     p << '(' << val << ')';
-  if (op.getOperation()->getAttr(fir::GlobalOp::getConstantAttrName()))
+  if (op.getOperation()->getAttr(fir::GlobalOp::constantAttrName()))
     p << " constant";
   p << " : ";
   p.printType(op.getType());
   if (op.hasInitializationBody())
-    p.printRegion(op.getOperation()->getRegion(0),
-                  /*printEntryBlockArgs=*/false,
+    p.printRegion(op.getOperation()->getRegion(0), 
+                  /*printEntryBlockArgs=*/false, 
                   /*printBlockTerminators=*/true);
 }
 
@@ -1280,6 +1278,40 @@ mlir::ParseResult fir::GlobalOp::verifyValidLinkage(StringRef linkage) {
   static const char *validNames[] = {"common", "internal", "linkonce", "weak"};
   return mlir::success(llvm::is_contained(validNames, linkage));
 }
+
+//===----------------------------------------------------------------------===//
+// GlobalLenOp
+//===----------------------------------------------------------------------===//
+
+static mlir::ParseResult parseGlobalLenOp(mlir::OpAsmParser &parser,
+                                          mlir::OperationState &result) {
+  llvm::StringRef fieldName;
+  if (failed(parser.parseOptionalKeyword(&fieldName))) {
+    mlir::StringAttr fieldAttr;
+    if (parser.parseAttribute(fieldAttr, fir::GlobalLenOp::lenParamAttrName(),
+                              result.attributes))
+      return mlir::failure();
+  } else {
+    result.addAttribute(fir::GlobalLenOp::lenParamAttrName(),
+                        parser.getBuilder().getStringAttr(fieldName));
+  }
+  mlir::IntegerAttr constant;
+  if (parser.parseComma() ||
+      parser.parseAttribute(constant, fir::GlobalLenOp::intAttrName(),
+                            result.attributes))
+    return mlir::failure();
+  return mlir::success();
+}
+
+static void print(mlir::OpAsmPrinter &p, fir::GlobalLenOp &op) {
+  p << op.getOperationName() << ' '
+    << op.getOperation()->getAttr(fir::GlobalLenOp::lenParamAttrName()) << ", "
+    << op.getOperation()->getAttr(fir::GlobalLenOp::intAttrName());
+}
+
+//===----------------------------------------------------------------------===//
+// ExtractValueOp
+//===----------------------------------------------------------------------===//
 
 template <bool AllowFields>
 static void appendAsAttribute(llvm::SmallVectorImpl<mlir::Attribute> &attrs,
@@ -1389,7 +1421,7 @@ static mlir::ParseResult parseFieldIndexOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::FieldIndexOp &op) {
-  p << ' '
+  p << op.getOperationName() << ' '
     << op.getOperation()
            ->getAttrOfType<mlir::StringAttr>(fir::FieldIndexOp::fieldAttrName())
            .getValue()
@@ -1397,7 +1429,7 @@ static void print(mlir::OpAsmPrinter &p, fir::FieldIndexOp &op) {
   if (op.getNumOperands()) {
     p << '(';
     p.printOperands(op.typeparams());
-    const auto *sep = ") : ";
+    auto sep = ") : ";
     for (auto op : op.typeparams()) {
       p << sep;
       if (op)
@@ -1781,7 +1813,7 @@ static mlir::ParseResult parseLenParamIndexOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::LenParamIndexOp &op) {
-  p << ' '
+  p << op.getOperationName() << ' '
     << op.getOperation()
            ->getAttrOfType<mlir::StringAttr>(
                fir::LenParamIndexOp::fieldAttrName())
@@ -1839,7 +1871,7 @@ static mlir::ParseResult parseLoadOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::LoadOp &op) {
-  p << ' ';
+  p << op.getOperationName() << ' ';
   p.printOperand(op.memref());
   p.printOptionalAttrDict(op.getOperation()->getAttrs(), {});
   p << " : " << op.memref().getType();
@@ -2090,8 +2122,9 @@ static mlir::ParseResult parseDTEntryOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DTEntryOp &op) {
-  p << ' ' << op.getOperation()->getAttr(fir::DTEntryOp::getMethodAttrName())
-    << ", " << op.getOperation()->getAttr(fir::DTEntryOp::getProcAttrName());
+  p << op.getOperationName() << ' ' 
+    << op.getOperation()->getAttr(fir::DTEntryOp::methodAttrName()) << ", "
+    << op.getOperation()->getAttr(fir::DTEntryOp::procAttrName());
 }
 
 //===----------------------------------------------------------------------===//
@@ -2267,7 +2300,7 @@ static constexpr llvm::StringRef getTargetOffsetAttr() {
 template <typename A, typename... AdditionalArgs>
 static A getSubOperands(unsigned pos, A allArgs,
                         mlir::DenseIntElementsAttr ranges,
-                        AdditionalArgs &&... additionalArgs) {
+                        AdditionalArgs &&...additionalArgs) {
   unsigned start = 0;
   for (unsigned i = 0; i < pos; ++i)
     start += (*(ranges.begin() + i)).getZExtValue();
@@ -2432,12 +2465,10 @@ static mlir::ParseResult parseSelectCase(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::SelectCaseOp &op) {
-  p << ' ';
+  p << op.getOperationName() << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
-  auto cases = op.getOperation()
-                   ->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr())
-                   .getValue();
+  auto cases = op.getOperation()->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr()).getValue();
   auto count = op.getNumConditions();
   for (decltype(count) i = 0; i != count; ++i) {
     if (i)
@@ -2694,12 +2725,10 @@ unsigned fir::SelectTypeOp::targetOffsetSize() {
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::SelectTypeOp &op) {
-  p << ' ';
+  p << op.getOperationName() << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
-  auto cases = op.getOperation()
-                   ->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr())
-                   .getValue();
+  auto cases = op.getOperation()->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr()).getValue();
   auto count = op.getNumConditions();
   for (decltype(count) i = 0; i != count; ++i) {
     if (i)
@@ -2867,7 +2896,7 @@ static mlir::ParseResult parseStoreOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::StoreOp &op) {
-  p << ' ';
+  p << op.getOperationName() << ' ';
   p.printOperand(op.value());
   p << " to ";
   p.printOperand(op.memref());
@@ -2990,7 +3019,7 @@ static mlir::ParseResult parseStringLitOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::StringLitOp &op) {
-  p << ' ' << op.getValue() << '(';
+  p << op.getOperationName() << ' ' << op.getValue() << '(';
   p << op.getSize().cast<mlir::IntegerAttr>().getValue() << ") : ";
   p.printType(op.getType());
 }
