@@ -1710,9 +1710,9 @@ public:
   }
 
   /// Helper to package a Value and its properties into an ExtendedValue.
-  ExtValue toExtendedValue(mlir::Value base,
-                           llvm::ArrayRef<mlir::Value> extents,
-                           llvm::ArrayRef<mlir::Value> lengths) {
+  static ExtValue toExtendedValue(mlir::Location loc, mlir::Value base,
+                                  llvm::ArrayRef<mlir::Value> extents,
+                                  llvm::ArrayRef<mlir::Value> lengths) {
     auto type = base.getType();
     if (type.isa<fir::BoxType>())
       return fir::BoxValue(base, /*lbounds=*/{}, lengths, extents);
@@ -1722,10 +1722,10 @@ public:
       return fir::MutableBoxValue(base, lengths, /*mutableProperties*/ {});
     if (auto seqTy = type.dyn_cast<fir::SequenceType>()) {
       if (seqTy.getDimension() != extents.size())
-        fir::emitFatalError(getLoc(), "incorrect number of extents for array");
+        fir::emitFatalError(loc, "incorrect number of extents for array");
       if (seqTy.getEleTy().isa<fir::CharacterType>()) {
         if (lengths.empty())
-          fir::emitFatalError(getLoc(), "missing length for character");
+          fir::emitFatalError(loc, "missing length for character");
         assert(lengths.size() == 1);
         return fir::CharArrayBoxValue(base, lengths[0], extents);
       }
@@ -1733,7 +1733,7 @@ public:
     }
     if (type.isa<fir::CharacterType>()) {
       if (lengths.empty())
-        fir::emitFatalError(getLoc(), "missing length for character");
+        fir::emitFatalError(loc, "missing length for character");
       assert(lengths.size() == 1);
       return fir::CharBoxValue(base, lengths[0]);
     }
@@ -1766,7 +1766,8 @@ public:
                                                        typeParams, extents);
     auto *bldr = &converter.getFirOpBuilder();
     // TODO: call finalizer if needed.
-    stmtCtx.attachCleanup([=]() { bldr->create<fir::FreeMemOp>(loc, temp); });
+    stmtCtx.attachCleanup(
+        [bldr, loc, temp]() { bldr->create<fir::FreeMemOp>(loc, temp); });
     if (fir::unwrapSequenceType(type).isa<fir::CharacterType>()) {
       auto len = typeParams.empty()
                      ? fir::factory::readCharLen(builder, loc, mold)
@@ -1839,7 +1840,7 @@ public:
         resultLengths = lengths;
       auto temp =
           builder.createTemporary(loc, type, ".result", extents, resultLengths);
-      return toExtendedValue(temp, extents, lengths);
+      return toExtendedValue(loc, temp, extents, lengths);
     }();
 
     if (mustPopSymMap)
@@ -1961,8 +1962,9 @@ public:
             if (box.isAllocatable()) {
               // 9.7.3.2 point 4. Finalize allocatables.
               auto *bldr = &converter.getFirOpBuilder();
-              stmtCtx.attachCleanup(
-                  [=]() { fir::factory::genFinalization(*bldr, loc, box); });
+              stmtCtx.attachCleanup([bldr, loc, box]() {
+                fir::factory::genFinalization(*bldr, loc, box);
+              });
             }
           },
           [](const auto &) {});
@@ -2817,7 +2819,11 @@ private:
   }
   template <typename A>
   ExtValue gen(const Fortran::evaluate::Constant<A> &x) {
-    return asScalar(x);
+    auto insPt = builder.saveInsertionPoint();
+    builder.setInsertionPoint(expSpace.getOuterLoop());
+    auto result = asScalar(x);
+    builder.restoreInsertionPoint(insPt);
+    return result;
   }
   ExtValue gen(const Fortran::evaluate::ProcedureDesignator &x) {
     return asScalar(x);
@@ -3301,7 +3307,9 @@ public:
     return fir::ArrayBoxValue(tempRes, dest.getExtents());
   }
 
-  static ExtValue lowerLazyArrayExpression(
+  static std::pair<ExtValue, std::function<std::pair<ExtValue, mlir::Value>(
+                                 fir::FirOpBuilder &)>>
+  lowerLazyArrayExpression(
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
@@ -3313,7 +3321,9 @@ public:
   /// Lower the expression \p expr into a buffer that is created on demand. The
   /// variable containing the pointer to the buffer is \p var and the variable
   /// containing the shape of the buffer is \p shapeBuffer.
-  ExtValue lowerLazyArrayExpression(
+  std::pair<ExtValue, std::function<std::pair<ExtValue, mlir::Value>(
+                          fir::FirOpBuilder &)>>
+  lowerLazyArrayExpression(
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
       mlir::Value var, mlir::Value shapeBuffer) {
     auto loc = getLoc();
@@ -3396,12 +3406,44 @@ public:
     // Lower the array expression now.
     auto loopRes = lowerArrayExpression(expr);
     auto unknown = fir::SequenceType::getUnknownExtent();
-    fir::SequenceType::Shape extents(genIterationShape().size(), unknown);
-    auto load = builder.create<fir::LoadOp>(loc, var);
-    auto eleTy = fir::unwrapRefType(load.getType());
-    auto seqTy = fir::SequenceType::get(extents, eleTy);
-    auto toTy = fir::HeapType::get(seqTy);
-    auto tempRes = builder.createConvert(loc, toTy, load);
+    auto shapeDims = genIterationShape().size();
+    // Load the lazy buffer and cast it to the proper rank.
+    auto loadLazyBuffer = [loc, shapeDims, unknown,
+                           var](fir::FirOpBuilder &builder) -> mlir::Value {
+      fir::SequenceType::Shape extents(shapeDims, unknown);
+      auto load = builder.create<fir::LoadOp>(loc, var);
+      auto eleTy = fir::unwrapRefType(load.getType());
+      auto seqTy = fir::SequenceType::get(extents, eleTy);
+      auto toTy = fir::HeapType::get(seqTy);
+      return builder.createConvert(loc, toTy, load);
+    };
+    // Create a load of the lazy buffer along with the shape op. Both the buffer
+    // and its shape are loaded from variables.
+    auto loadLazyBufferAndShape = [=](fir::FirOpBuilder &builder) {
+      auto castedBuffer = loadLazyBuffer(builder);
+      auto shLoad = builder.create<fir::LoadOp>(loc, shapeBuffer);
+      auto shEleTy = fir::unwrapRefType(shLoad.getType());
+      fir::SequenceType::Shape extents(shapeDims, unknown);
+      auto shSeqTy = fir::SequenceType::get(extents, shEleTy);
+      auto shToTy = fir::HeapType::get(shSeqTy);
+      auto castedShBuff = builder.createConvert(loc, shToTy, shLoad);
+      auto idxTy = builder.getIndexType();
+      auto shRefEleTy = builder.getRefType(shEleTy);
+      llvm::SmallVector<mlir::Value> dimSizes;
+      for (std::remove_const_t<decltype(shapeDims)> i = 0; i < shapeDims; ++i) {
+        auto off = builder.createIntegerConstant(loc, idxTy, i);
+        auto coor = builder.create<fir::CoordinateOp>(loc, shRefEleTy,
+                                                      castedShBuff, off);
+        auto extent = builder.create<fir::LoadOp>(loc, coor);
+        dimSizes.push_back(extent);
+      }
+      auto shapeOp = genShapeOp(loc, builder, dimSizes);
+      assert(!fir::isa_char(
+          fir::unwrapSequenceType(fir::unwrapRefType(castedBuffer.getType()))));
+      ExtValue exv = fir::ArrayBoxValue(castedBuffer, dimSizes);
+      return std::pair<ExtValue, mlir::Value>{exv, shapeOp};
+    };
+    auto tempRes = loadLazyBuffer(builder);
     builder.create<fir::ArrayMergeStoreOp>(
         loc, destination, fir::getBase(loopRes), tempRes, destination.slice(),
         destination.typeparams());
@@ -3414,9 +3456,11 @@ public:
         TODO(loc, "CHARACTER does not have constant LEN");
       auto len = builder.createIntegerConstant(
           loc, builder.getCharacterLengthType(), charTy.getLen());
-      return fir::CharArrayBoxValue(tempRes, len, destination.getExtents());
+      return {fir::CharArrayBoxValue(tempRes, len, destination.getExtents()),
+              loadLazyBufferAndShape};
     }
-    return fir::ArrayBoxValue(tempRes, destination.getExtents());
+    return {fir::ArrayBoxValue(tempRes, destination.getExtents()),
+            loadLazyBufferAndShape};
   }
 
   void determineShapeOfDest(const fir::ExtendedValue &lhs) {
@@ -3611,7 +3655,6 @@ public:
     auto triples = slOp.triples();
     auto idxTy = builder.getIndexType();
     auto loc = getLoc();
-    auto zero = builder.createIntegerConstant(loc, idxTy, 0);
     for (unsigned i = 0, end = triples.size(); i < end; i += 3) {
       if (!mlir::isa_and_nonnull<fir::UndefOp>(
               triples[i + 1].getDefiningOp())) {
@@ -3720,14 +3763,28 @@ public:
         if (e && !implicitSpace->isLowered(e)) {
           if (auto var = implicitSpace->lookupMaskVariable(e)) {
             // Allocate the mask buffer lazily.
-            auto tmp = Fortran::lower::createLazyArrayTempValue(
+            auto [tmp, lazyLoad] = Fortran::lower::createLazyArrayTempValue(
                 converter, *e, var, implicitSpace->lookupMaskShapeBuffer(e),
                 symMap, stmtCtx);
-            auto shape = builder.createShape(loc, tmp);
-            implicitSpace->bind(e, fir::getBase(tmp), shape);
-            if (explicitSpaceIsActive())
-              addMaskRebind(e, var, implicitSpace->lookupMaskShapeBuffer(e),
-                            tmp);
+            if (explicitSpaceIsActive()) {
+              // close the explicit loops
+              builder.create<fir::ResultOp>(loc, explicitSpace->getInnerArgs());
+              // create a dominating load of the lazy buffer
+              builder.setInsertionPointAfter(explicitSpace->getOuterLoop());
+              auto [outerTmp, shape] = lazyLoad(builder);
+              implicitSpace->bind(e, fir::getBase(outerTmp), shape);
+              auto shBuf = implicitSpace->lookupMaskShapeBuffer(e);
+              addMaskRebind(e, var, shBuf, outerTmp);
+              auto shOp = mlir::cast<fir::ShapeOp>(shape.getDefiningOp());
+              auto exts = shOp.getExtents();
+              assert(destShape.size() == exts.size());
+              destShape.assign(exts.begin(), exts.end());
+              // open a new copy of the explicit loop nest
+              explicitSpace->genLoopNest();
+            } else {
+              auto shape = builder.createShape(loc, tmp);
+              implicitSpace->bind(e, fir::getBase(tmp), shape);
+            }
             continue;
           }
           auto tmp = Fortran::lower::createSomeArrayTempValue(converter, *e,
@@ -3738,6 +3795,7 @@ public:
     }
   }
 
+  // FIXME: should take multiple inner arguments.
   std::pair<IterationSpace, mlir::OpBuilder::InsertPoint>
   genImplicitLoops(mlir::ValueRange shape, mlir::Value innerArg) {
     auto loc = getLoc();
@@ -3770,6 +3828,8 @@ public:
             loc, zero, i.value(), one, getUnordered(),
             /*finalCount=*/false, mlir::ValueRange{innerArg});
         innerArg = loop.getRegionIterArgs().front();
+        if (explicitSpaceIsActive())
+          explicitSpace->setInnerArg(0, innerArg);
       } else {
         loop = builder.create<fir::DoLoopOp>(loc, zero, i.value(), one,
                                              getUnordered(),
@@ -3822,8 +3882,9 @@ public:
       ccPrelude.getValue()(shape);
 
     // Now handle the implicit loops.
-    auto [iters, afterLoopNest] =
-        genImplicitLoops(shape, destination.getResult());
+    auto inner = explicitSpaceIsActive() ? explicitSpace->getInnerArgs().front()
+                                         : destination.getResult();
+    auto [iters, afterLoopNest] = genImplicitLoops(shape, inner);
     auto innerArg = iters.innerArgument();
 
     // Generate the mask conditional structure, if there are masks. Unlike the
@@ -3910,20 +3971,25 @@ public:
                            : builder.create<fir::AllocMemOp>(
                                  loc, type, ".array.expr", llvm::None, shape);
     auto *bldr = &converter.getFirOpBuilder();
-    stmtCtx.attachCleanup([=]() { bldr->create<fir::FreeMemOp>(loc, temp); });
+    stmtCtx.attachCleanup(
+        [bldr, loc, temp]() { bldr->create<fir::FreeMemOp>(loc, temp); });
     auto shapeOp = genShapeOp(shape);
     return builder.create<fir::ArrayLoadOp>(
         loc, seqTy, temp, shapeOp, /*slice=*/mlir::Value{}, llvm::None);
   }
 
-  fir::ShapeOp genShapeOp(llvm::ArrayRef<mlir::Value> shape) {
-    auto loc = getLoc();
+  static fir::ShapeOp genShapeOp(mlir::Location loc, fir::FirOpBuilder &builder,
+                                 llvm::ArrayRef<mlir::Value> shape) {
     auto idxTy = builder.getIndexType();
     llvm::SmallVector<mlir::Value> idxShape;
     for (auto s : shape)
       idxShape.push_back(builder.createConvert(loc, idxTy, s));
     auto shapeTy = fir::ShapeType::get(builder.getContext(), idxShape.size());
     return builder.create<fir::ShapeOp>(loc, shapeTy, idxShape);
+  }
+
+  fir::ShapeOp genShapeOp(llvm::ArrayRef<mlir::Value> shape) {
+    return genShapeOp(getLoc(), builder, shape);
   }
 
   //===--------------------------------------------------------------------===//
@@ -4172,26 +4238,30 @@ public:
     // Transformational call.
     // The procedure is called once and produces a value of rank > 0.
     if (const auto *intrinsic = procRef.proc().GetSpecificIntrinsic()) {
-      auto resultBox =
-          ScalarExprLowering{loc, converter, symMap, stmtCtx}.genIntrinsicRef(
-              procRef, *intrinsic, retTy);
       if (explicitSpaceIsActive() && procRef.Rank() == 0) {
         // Elide any implicit loop iters.
-        return [=](IterSpace) { return resultBox; };
+        return [=, &procRef](IterSpace) {
+          return ScalarExprLowering{loc, converter, symMap, stmtCtx}
+              .genIntrinsicRef(procRef, *intrinsic, retTy);
+        };
       }
-      return genarr(resultBox);
+      return genarr(
+          ScalarExprLowering{loc, converter, symMap, stmtCtx}.genIntrinsicRef(
+              procRef, *intrinsic, retTy));
     }
 
-    // In the default case, the call can be hoisted out of the loop nest. Apply
-    // the iterations to the result, which may be an array value.
-    auto resultBox =
-        ScalarExprLowering{loc, converter, symMap, stmtCtx}.genProcedureRef(
-            procRef, retTy);
     if (explicitSpaceIsActive() && procRef.Rank() == 0) {
       // Elide any implicit loop iters.
-      return [=](IterSpace) { return resultBox; };
+      return [=, &procRef](IterSpace) {
+        return ScalarExprLowering{loc, converter, symMap, stmtCtx}
+            .genProcedureRef(procRef, retTy);
+      };
     }
-    return genarr(resultBox);
+    // In the default case, the call can be hoisted out of the loop nest. Apply
+    // the iterations to the result, which may be an array value.
+    return genarr(
+        ScalarExprLowering{loc, converter, symMap, stmtCtx}.genProcedureRef(
+            procRef, retTy));
   }
 
   CC genarr(const Fortran::evaluate::ProcedureDesignator &) {
@@ -4210,8 +4280,7 @@ public:
   }
   template <typename A>
   CC gensclarr(const A &x) {
-    auto result = asScalarArray(x);
-    return [=](IterSpace) { return result; };
+    return [=, &x](IterSpace) { return asScalarArray(x); };
   }
   template <typename A, typename = std::enable_if_t<Fortran::common::HasMember<
                             A, Fortran::evaluate::TypelessExpression>>>
@@ -5706,8 +5775,8 @@ public:
     auto revPath = reversePath; // Force a copy to be made.
     if (semant == ConstituentSemantics::ProjectedCopyInCopyOut) {
       destination = load;
-      auto innerArg = explicitSpace->findArgumentOfLoad(load);
-      return [=](IterSpace iters) mutable {
+      return [=, esp = this->explicitSpace](IterSpace iters) mutable {
+        auto innerArg = esp->findArgumentOfLoad(load);
         auto [path, eleTy] = lowerPath(loc, revPath, load.getType(), iters);
         auto toTy = adjustedArrayElementType(eleTy);
         auto castedElement =
@@ -6001,7 +6070,10 @@ fir::ExtendedValue Fortran::lower::createSomeArrayTempValue(
                                                     expr);
 }
 
-fir::ExtendedValue Fortran::lower::createLazyArrayTempValue(
+std::pair<fir::ExtendedValue,
+          std::function<
+              std::pair<fir::ExtendedValue, mlir::Value>(fir::FirOpBuilder &)>>
+Fortran::lower::createLazyArrayTempValue(
     Fortran::lower::AbstractConverter &converter,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
     mlir::Value var, mlir::Value shapeBuffer, Fortran::lower::SymMap &symMap,
@@ -6098,7 +6170,8 @@ void Fortran::lower::createArrayLoads(
   if (esp.lhsBases[counter].hasValue()) {
     auto &base = esp.lhsBases[counter].getValue();
     auto load = std::visit(genLoad, base);
-    esp.innerArgs.push_back(load);
+    esp.initialArgs.push_back(load);
+    esp.resetInnerArgs();
     esp.bindLoad(base, load);
   }
   for (auto &base : esp.rhsBases[counter])
@@ -6122,6 +6195,7 @@ void Fortran::lower::createArrayMergeStores(
     esp.loopCleanup.getValue()(builder);
     esp.loopCleanup = llvm::None;
   }
+  esp.initialArgs.clear();
   esp.innerArgs.clear();
   esp.outerLoop = llvm::None;
   esp.resetBindings();

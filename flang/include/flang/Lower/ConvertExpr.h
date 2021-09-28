@@ -17,7 +17,7 @@
 #ifndef FORTRAN_LOWER_CONVERTEXPR_H
 #define FORTRAN_LOWER_CONVERTEXPR_H
 
-#include "flang/Evaluate/shape.h"
+#include "flang/Evaluate/expression.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 
@@ -172,7 +172,9 @@ createSomeArrayTempValue(AbstractConverter &converter,
 /// Like createSomeArrayTempValue, but the temporary buffer is allocated lazily
 /// (inside the loops instead of before the loops). This can be useful if a
 /// loop's bounds are functions of other loop indices, for example.
-fir::ExtendedValue
+std::pair<fir::ExtendedValue,
+          std::function<
+              std::pair<fir::ExtendedValue, mlir::Value>(fir::FirOpBuilder &)>>
 createLazyArrayTempValue(AbstractConverter &converter,
                          const evaluate::Expr<evaluate::SomeType> &expr,
                          mlir::Value var, mlir::Value shapeBuffer,

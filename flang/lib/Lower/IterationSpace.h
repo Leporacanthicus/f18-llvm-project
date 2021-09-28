@@ -255,11 +255,13 @@ public:
       innerArgs.push_back(arg);
   }
 
-  void setOuterLoop(fir::DoLoopOp loop) {
-    if (!outerLoop.hasValue())
-      outerLoop = loop;
-  }
+  /// Reset the outermost `array_load` arguments to the loop nest.
+  void resetInnerArgs() { innerArgs = initialArgs; }
 
+  /// Capture the current outermost loop.
+  void setOuterLoop(fir::DoLoopOp loop) { outerLoop = loop; }
+
+  /// Sets the inner loop argument at position \p offset to \p val.
   void setInnerArg(size_t offset, mlir::Value val) {
     assert(offset < innerArgs.size());
     innerArgs[offset] = val;
@@ -385,6 +387,7 @@ private:
   // Assignment statement context (inside the loop nest).
   StatementContext stmtCtx;
   llvm::SmallVector<mlir::Value> innerArgs;
+  llvm::SmallVector<mlir::Value> initialArgs;
   llvm::Optional<fir::DoLoopOp> outerLoop;
   llvm::Optional<std::function<void(fir::FirOpBuilder &)>> loopCleanup;
   std::size_t forallContextOpen = 0;

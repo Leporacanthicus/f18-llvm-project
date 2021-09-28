@@ -1235,6 +1235,8 @@ private:
         mlir::Value by;
         if (outermost) {
           assert(headerIndex < lows.size());
+          if (headerIndex == 0)
+            explicitIterSpace.resetInnerArgs();
           lb = lows[headerIndex];
           ub = highs[headerIndex];
           by = steps[headerIndex++];
@@ -1261,7 +1263,8 @@ private:
         forceControlVariableBinding(ctrlVar, lp.getInductionVar());
         loops.push_back(lp);
       }
-      explicitIterSpace.setOuterLoop(loops[0]);
+      if (outermost)
+         explicitIterSpace.setOuterLoop(loops[0]);
       if (const auto &mask =
               std::get<std::optional<Fortran::parser::ScalarLogicalExpr>>(
                   header.t);
@@ -2746,13 +2749,14 @@ private:
     auto nilSh = builder->createNullConstant(loc, shTy);
     builder->create<fir::StoreOp>(loc, nilSh, shape);
     implicitIterSpace.addMaskVariable(exp, var, shape);
-    explicitIterSpace.outermostContext().attachCleanup([=]() {
-      auto load = builder->create<fir::LoadOp>(loc, var);
-      auto cmp = builder->genIsNotNull(loc, load);
-      builder->genIfThen(loc, cmp)
-          .genThen([&]() { builder->create<fir::FreeMemOp>(loc, load); })
-          .end();
-    });
+    explicitIterSpace.outermostContext().attachCleanup(
+        [builder = this->builder, loc, var]() {
+          auto load = builder->create<fir::LoadOp>(loc, var);
+          auto cmp = builder->genIsNotNull(loc, load);
+          builder->genIfThen(loc, cmp)
+              .genThen([&]() { builder->create<fir::FreeMemOp>(loc, load); })
+              .end();
+        });
   }
 
   //===--------------------------------------------------------------------===//
