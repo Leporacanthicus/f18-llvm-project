@@ -80,39 +80,39 @@ subroutine slice_with_explicit_iters
   ! CHECK:         %[[VAL_8:.*]] = constant 1 : index
   ! CHECK:         %[[VAL_9:.*]] = fir.shape %[[VAL_1]], %[[VAL_2]] : (index, index) -> !fir.shape<2>
   ! CHECK:         %[[VAL_10:.*]] = fir.array_load %[[VAL_3]](%[[VAL_9]]) : (!fir.ref<!fir.array<10x10xi32>>, !fir.shape<2>) -> !fir.array<10x10xi32>
-  ! CHECK:         %[[VAL_11:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_12:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_13:.*]] = fir.do_loop %[[VAL_14:.*]] = %[[VAL_5]] to %[[VAL_7]] step %[[VAL_8]] unordered iter_args(%[[VAL_15:.*]] = %[[VAL_10]]) -> (!fir.array<10x10xi32>) {
-  ! CHECK:           %[[VAL_16:.*]] = fir.convert %[[VAL_14]] : (index) -> i32
-  ! CHECK:           fir.store %[[VAL_16]] to %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_17:.*]] = constant 1 : i64
-  ! CHECK:           %[[VAL_18:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (i32) -> i64
-  ! CHECK:           %[[VAL_20:.*]] = constant 1 : i64
-  ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i64) -> index
-  ! CHECK:           %[[VAL_22:.*]] = constant 0 : index
-  ! CHECK:           %[[VAL_23:.*]] = fir.convert %[[VAL_17]] : (i64) -> index
-  ! CHECK:           %[[VAL_24:.*]] = fir.convert %[[VAL_19]] : (i64) -> index
-  ! CHECK:           %[[VAL_25:.*]] = subi %[[VAL_24]], %[[VAL_23]] : index
-  ! CHECK:           %[[VAL_26:.*]] = addi %[[VAL_25]], %[[VAL_21]] : index
-  ! CHECK:           %[[VAL_27:.*]] = divi_signed %[[VAL_26]], %[[VAL_21]] : index
-  ! CHECK:           %[[VAL_28:.*]] = cmpi sgt, %[[VAL_27]], %[[VAL_22]] : index
-  ! CHECK:           %[[VAL_29:.*]] = select %[[VAL_28]], %[[VAL_27]], %[[VAL_22]] : index
-  ! CHECK:           %[[VAL_30:.*]] = constant 1 : index
-  ! CHECK:           %[[VAL_31:.*]] = constant 0 : index
-  ! CHECK:           %[[VAL_32:.*]] = subi %[[VAL_29]], %[[VAL_30]] : index
-  ! CHECK:           %[[VAL_33:.*]] = fir.do_loop %[[VAL_34:.*]] = %[[VAL_31]] to %[[VAL_32]] step %[[VAL_30]] unordered iter_args(%[[VAL_35:.*]] = %[[VAL_15]]) -> (!fir.array<10x10xi32>) {
-  ! CHECK:             %[[VAL_36:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_37:.*]] = constant 0 : i32
-  ! CHECK:             %[[VAL_38:.*]] = subi %[[VAL_37]], %[[VAL_36]] : i32
-  ! CHECK:             %[[VAL_39:.*]] = fir.convert %[[VAL_11]] : (i64) -> index
-  ! CHECK:             %[[VAL_40:.*]] = fir.convert %[[VAL_12]] : (i64) -> index
-  ! CHECK:             %[[VAL_41:.*]] = muli %[[VAL_34]], %[[VAL_40]] : index
-  ! CHECK:             %[[VAL_42:.*]] = addi %[[VAL_39]], %[[VAL_41]] : index
+  ! CHECK:         %[[VAL_11:.*]] = fir.do_loop %[[VAL_12:.*]] = %[[VAL_5]] to %[[VAL_7]] step %[[VAL_8]] unordered iter_args(%[[VAL_13:.*]] = %[[VAL_10]]) -> (!fir.array<10x10xi32>) {
+  ! CHECK:           %[[VAL_14:.*]] = fir.convert %[[VAL_12]] : (index) -> i32
+  ! CHECK:           fir.store %[[VAL_14]] to %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_15:.*]] = constant 1 : i64
+  ! CHECK:           %[[VAL_16:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_17:.*]] = fir.convert %[[VAL_16]] : (i32) -> i64
+  ! CHECK:           %[[VAL_18:.*]] = constant 1 : i64
+  ! CHECK:           %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (i64) -> index
+  ! CHECK:           %[[VAL_20:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_15]] : (i64) -> index
+  ! CHECK:           %[[VAL_22:.*]] = fir.convert %[[VAL_17]] : (i64) -> index
+  ! CHECK:           %[[VAL_23:.*]] = subi %[[VAL_22]], %[[VAL_21]] : index
+  ! CHECK:           %[[VAL_24:.*]] = addi %[[VAL_23]], %[[VAL_19]] : index
+  ! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_19]] : index
+  ! CHECK:           %[[VAL_26:.*]] = cmpi sgt, %[[VAL_25]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_28:.*]] = constant 1 : index
+  ! CHECK:           %[[VAL_29:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_30:.*]] = subi %[[VAL_27]], %[[VAL_28]] : index
+  ! CHECK:           %[[VAL_31:.*]] = fir.do_loop %[[VAL_32:.*]] = %[[VAL_29]] to %[[VAL_30]] step %[[VAL_28]] unordered iter_args(%[[VAL_33:.*]] = %[[VAL_13]]) -> (!fir.array<10x10xi32>) {
+  ! CHECK:             %[[VAL_34:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
+  ! CHECK:             %[[VAL_35:.*]] = constant 0 : i32
+  ! CHECK:             %[[VAL_36:.*]] = subi %[[VAL_35]], %[[VAL_34]] : i32
+  ! CHECK:             %[[VAL_37:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_38:.*]] = fir.convert %[[VAL_37]] : (i64) -> index
+  ! CHECK:             %[[VAL_39:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (i64) -> index
+  ! CHECK:             %[[VAL_41:.*]] = muli %[[VAL_32]], %[[VAL_40]] : index
+  ! CHECK:             %[[VAL_42:.*]] = addi %[[VAL_38]], %[[VAL_41]] : index
   ! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
   ! CHECK:             %[[VAL_44:.*]] = fir.convert %[[VAL_43]] : (i32) -> i64
   ! CHECK:             %[[VAL_45:.*]] = fir.convert %[[VAL_44]] : (i64) -> index
-  ! CHECK:             %[[VAL_46:.*]] = fir.array_update %[[VAL_35]], %[[VAL_38]], %[[VAL_42]], %[[VAL_45]] {Fortran.offsets} : (!fir.array<10x10xi32>, i32, index, index) -> !fir.array<10x10xi32>
+  ! CHECK:             %[[VAL_46:.*]] = fir.array_update %[[VAL_33]], %[[VAL_36]], %[[VAL_42]], %[[VAL_45]] {Fortran.offsets} : (!fir.array<10x10xi32>, i32, index, index) -> !fir.array<10x10xi32>
   ! CHECK:             fir.result %[[VAL_46]] : !fir.array<10x10xi32>
   ! CHECK:           }
   ! CHECK:           fir.result %[[VAL_47:.*]] : !fir.array<10x10xi32>

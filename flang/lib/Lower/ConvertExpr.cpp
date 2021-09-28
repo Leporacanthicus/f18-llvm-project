@@ -2817,11 +2817,7 @@ private:
   }
   template <typename A>
   ExtValue gen(const Fortran::evaluate::Constant<A> &x) {
-    auto insPt = builder.saveInsertionPoint();
-    builder.setInsertionPoint(expSpace.getOuterLoop());
-    auto result = asScalar(x);
-    builder.restoreInsertionPoint(insPt);
-    return result;
+    return asScalar(x);
   }
   ExtValue gen(const Fortran::evaluate::ProcedureDesignator &x) {
     return asScalar(x);
@@ -3305,9 +3301,7 @@ public:
     return fir::ArrayBoxValue(tempRes, dest.getExtents());
   }
 
-  static std::pair<ExtValue, std::function<std::pair<ExtValue, mlir::Value>(
-                                 fir::FirOpBuilder &)>>
-  lowerLazyArrayExpression(
+  static Fortran::lower::CreateLazyArrayResult lowerLazyArrayExpression(
       Fortran::lower::AbstractConverter &converter,
       Fortran::lower::SymMap &symMap, Fortran::lower::StatementContext &stmtCtx,
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
@@ -3319,9 +3313,7 @@ public:
   /// Lower the expression \p expr into a buffer that is created on demand. The
   /// variable containing the pointer to the buffer is \p var and the variable
   /// containing the shape of the buffer is \p shapeBuffer.
-  std::pair<ExtValue, std::function<std::pair<ExtValue, mlir::Value>(
-                          fir::FirOpBuilder &)>>
-  lowerLazyArrayExpression(
+  Fortran::lower::CreateLazyArrayResult lowerLazyArrayExpression(
       const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
       mlir::Value var, mlir::Value shapeBuffer) {
     auto loc = getLoc();
@@ -6066,10 +6058,7 @@ fir::ExtendedValue Fortran::lower::createSomeArrayTempValue(
                                                     expr);
 }
 
-std::pair<fir::ExtendedValue,
-          std::function<
-              std::pair<fir::ExtendedValue, mlir::Value>(fir::FirOpBuilder &)>>
-Fortran::lower::createLazyArrayTempValue(
+Fortran::lower::CreateLazyArrayResult Fortran::lower::createLazyArrayTempValue(
     Fortran::lower::AbstractConverter &converter,
     const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &expr,
     mlir::Value var, mlir::Value shapeBuffer, Fortran::lower::SymMap &symMap,
