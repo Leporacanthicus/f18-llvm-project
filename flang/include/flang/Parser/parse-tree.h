@@ -3590,7 +3590,6 @@ struct OpenMPDeclarativeConstruct {
       u;
 };
 
-// 2.13.2 CRITICAL [Name] <block> END CRITICAL [Name]
 struct OmpCriticalDirective {
   TUPLE_CLASS_BOILERPLATE(OmpCriticalDirective);
   CharBlock source;
@@ -3601,6 +3600,9 @@ struct OmpEndCriticalDirective {
   CharBlock source;
   std::tuple<Verbatim, std::optional<Name>> t;
 };
+// [OMP-5.0] 2.17.1 CRITICAL [(Name) [[,] hint(hint-expression)]]
+//                  <block>
+//                  END CRITICAL [Name]
 struct OpenMPCriticalConstruct {
   TUPLE_CLASS_BOILERPLATE(OpenMPCriticalConstruct);
   std::tuple<OmpCriticalDirective, Block, OmpEndCriticalDirective> t;
