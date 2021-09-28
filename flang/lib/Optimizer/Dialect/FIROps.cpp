@@ -617,9 +617,22 @@ static mlir::ParseResult parseCallOp(mlir::OpAsmParser &parser,
 void fir::CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &result,
                         mlir::FuncOp callee, mlir::ValueRange operands) {
   result.addOperands(operands);
-  result.addAttribute(getCalleeAttrName(), SymbolRefAttr::get(callee));
+  result.addAttribute(calleeAttrName(), builder.getSymbolRefAttr(callee));
   result.addTypes(callee.getType().getResults());
 }
+
+void fir::CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &result,
+                        mlir::SymbolRefAttr callee,
+                        llvm::ArrayRef<mlir::Type> results,
+                        mlir::ValueRange operands) {
+  result.addOperands(operands);
+  result.addAttribute(calleeAttrName(), callee);
+  result.addTypes(results);
+}
+
+//===----------------------------------------------------------------------===//
+// CharConvertOp
+//===----------------------------------------------------------------------===//
 
 void fir::CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &result,
                         mlir::SymbolRefAttr callee,
@@ -754,7 +767,7 @@ static mlir::ParseResult parseConstcOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::ConstcOp &op) {
-  p << " (0x";
+  p << op.getOperationName() << " (0x";
   auto f1 = op.getOperation()
                 ->getAttr(fir::ConstcOp::realAttrName())
                 .cast<mlir::FloatAttr>();
@@ -982,8 +995,10 @@ static mlir::ParseResult parseDispatchTableOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DispatchTableOp &op) {
-  auto tableName = op.getOperation()->getAttrOfType<StringAttr>(
-    mlir::SymbolTable::getSymbolAttrName()).getValue();
+  auto tableName =
+      op.getOperation()
+          ->getAttrOfType<StringAttr>(mlir::SymbolTable::getSymbolAttrName())
+          .getValue();
   p << op.getOperationName() << " @" << tableName;
 
   Region &body = op.getOperation()->getRegion(0);
@@ -1207,7 +1222,8 @@ static void print(mlir::OpAsmPrinter &p, fir::GlobalOp &op) {
   if (op.linkName().hasValue())
     p << ' ' << op.linkName().getValue();
   p << ' ';
-  p.printAttributeWithoutType(op.getOperation()->getAttr(fir::GlobalOp::symbolAttrName()));
+  p.printAttributeWithoutType(
+      op.getOperation()->getAttr(fir::GlobalOp::symbolAttrName()));
   if (auto val = op.getValueOrNull())
     p << '(' << val << ')';
   if (op.getOperation()->getAttr(fir::GlobalOp::constantAttrName()))
@@ -1215,8 +1231,8 @@ static void print(mlir::OpAsmPrinter &p, fir::GlobalOp &op) {
   p << " : ";
   p.printType(op.getType());
   if (op.hasInitializationBody())
-    p.printRegion(op.getOperation()->getRegion(0), 
-                  /*printEntryBlockArgs=*/false, 
+    p.printRegion(op.getOperation()->getRegion(0),
+                  /*printEntryBlockArgs=*/false,
                   /*printBlockTerminators=*/true);
 }
 
@@ -2110,19 +2126,19 @@ static mlir::ParseResult parseDTEntryOp(mlir::OpAsmParser &parser,
                               result.attributes))
       return mlir::failure();
   } else {
-    result.addAttribute(fir::DTEntryOp::getMethodAttrName(),
+    result.addAttribute(fir::DTEntryOp::methodAttrName(),
                         parser.getBuilder().getStringAttr(methodName));
   }
   mlir::SymbolRefAttr calleeAttr;
   if (parser.parseComma() ||
-      parser.parseAttribute(calleeAttr, fir::DTEntryOp::getProcAttrName(),
+      parser.parseAttribute(calleeAttr, fir::DTEntryOp::procAttrName(),
                             result.attributes))
     return mlir::failure();
   return mlir::success();
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DTEntryOp &op) {
-  p << op.getOperationName() << ' ' 
+  p << op.getOperationName() << ' '
     << op.getOperation()->getAttr(fir::DTEntryOp::methodAttrName()) << ", "
     << op.getOperation()->getAttr(fir::DTEntryOp::procAttrName());
 }
@@ -2468,7 +2484,9 @@ static void print(mlir::OpAsmPrinter &p, fir::SelectCaseOp &op) {
   p << op.getOperationName() << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
-  auto cases = op.getOperation()->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr()).getValue();
+  auto cases = op.getOperation()
+                   ->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr())
+                   .getValue();
   auto count = op.getNumConditions();
   for (decltype(count) i = 0; i != count; ++i) {
     if (i)
@@ -2728,7 +2746,9 @@ static void print(mlir::OpAsmPrinter &p, fir::SelectTypeOp &op) {
   p << op.getOperationName() << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
-  auto cases = op.getOperation()->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr()).getValue();
+  auto cases = op.getOperation()
+                   ->getAttrOfType<mlir::ArrayAttr>(op.getCasesAttr())
+                   .getValue();
   auto count = op.getNumConditions();
   for (decltype(count) i = 0; i != count; ++i) {
     if (i)
@@ -2775,8 +2795,8 @@ void fir::SelectTypeOp::build(mlir::OpBuilder &builder,
   result.addOperands(selector);
   result.addAttribute(getCasesAttr(), builder.getArrayAttr(typeOperands));
   const auto count = destinations.size();
-  for (mlir::Block *dest : destinations)
-    result.addSuccessors(dest);
+  for (auto d : destinations)
+    result.addSuccessors(d);
   const auto opCount = destOperands.size();
   llvm::SmallVector<int32_t> argOffs;
   int32_t sumArgs = 0;
