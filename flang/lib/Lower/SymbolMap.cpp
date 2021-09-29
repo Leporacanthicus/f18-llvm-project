@@ -71,8 +71,8 @@ Fortran::lower::operator<<(llvm::raw_ostream &os,
   for (auto i : llvm::enumerate(symMap.symbolMapStack)) {
     os << " level " << i.index() << "<{\n";
     for (auto iter : i.value())
-      os << "  symbol @" << (void *)iter.first << " [" << *iter.first
-         << "] ->\n    " << iter.second;
+      os << "  symbol @" << static_cast<const void *>(iter.first) << " ["
+         << *iter.first << "] ->\n    " << iter.second;
     os << " }>\n";
   }
   return os;
