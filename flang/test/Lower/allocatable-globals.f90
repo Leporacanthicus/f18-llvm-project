@@ -3,7 +3,7 @@
 
 ! Test global allocatable definition lowering
 
-! CHECK-LABEL: fir.global linkonce @_QMmod_allocatablesEc : !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>> {
+! CHECK-LABEL: fir.global @_QMmod_allocatablesEc : !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>> {
   ! CHECK-DAG: %[[modcNullAddr:.*]] = fir.zero_bits !fir.heap<!fir.array<?x!fir.char<1,10>>>
   ! CHECK-DAG: %[[modcShape:.*]] = fir.shape %c0{{.*}} : (index) -> !fir.shape<1>
   ! CHECK: %[[modcInitBox:.*]] = fir.embox %[[modcNullAddr]](%[[modcShape]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>

@@ -190,7 +190,7 @@ end module
 
 ! Test globals
 
-! CHECK-DAG: fir.global linkonce @_QMdata_modEsome_c2 : !fir.type<_QMdTc2{ch_array:!fir.array<20x30x!fir.char<1,10>>}>
-! CHECK-DAG: fir.global linkonce @_QMdata_modEsome_r : !fir.type<_QMdTr{x:f32}>
+! CHECK-DAG: fir.global @_QMdata_modEsome_c2 : !fir.type<_QMdTc2{ch_array:!fir.array<20x30x!fir.char<1,10>>}>
+! CHECK-DAG: fir.global @_QMdata_modEsome_r : !fir.type<_QMdTr{x:f32}>
 ! CHECK-DAG: fir.global internal @_QMdFsaved_derivedEsome_c2 : !fir.type<_QMdTc2{ch_array:!fir.array<20x30x!fir.char<1,10>>}>
 ! CHECK-DAG: fir.global internal @_QMdFsaved_derivedEsome_r : !fir.type<_QMdTr{x:f32}>

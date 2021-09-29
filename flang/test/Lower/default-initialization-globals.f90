@@ -57,7 +57,7 @@ module tinit
 
   ! Test scalar with default init
   type(t0) :: at0
-! CHECK-LABEL: fir.global linkonce @_QMtinitEat0 : !fir.type<_QMtinitTt0{k:i32}> {
+! CHECK-LABEL: fir.global @_QMtinitEat0 : !fir.type<_QMtinitTt0{k:i32}> {
   ! CHECK: %[[VAL_0:.*]] = constant 66 : i32
   ! CHECK: %[[VAL_1:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_2:.*]] = fir.insert_value %[[VAL_1]], %[[VAL_0]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
@@ -65,7 +65,7 @@ module tinit
 
   ! Test array with default init
   type(t0) :: bt0(100)
-! CHECK-LABEL: linkonce @_QMtinitEbt0 : !fir.array<100x!fir.type<_QMtinitTt0{k:i32}>> {
+! CHECK-LABEL: @_QMtinitEbt0 : !fir.array<100x!fir.type<_QMtinitTt0{k:i32}>> {
   ! CHECK: %[[VAL_3:.*]] = constant 66 : i32
   ! CHECK: %[[VAL_4:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_5:.*]] = fir.insert_value %[[VAL_4]], %[[VAL_3]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
@@ -75,7 +75,7 @@ module tinit
 
   ! Test default init overridden by explicit init
   type(t0) :: ct0 = t0(42)
-! CHECK-LABEL: fir.global linkonce @_QMtinitEct0 : !fir.type<_QMtinitTt0{k:i32}> {
+! CHECK-LABEL: fir.global @_QMtinitEct0 : !fir.type<_QMtinitTt0{k:i32}> {
   ! CHECK: %[[VAL_8:.*]] = constant 42 : i32
   ! CHECK: %[[VAL_9:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_10:.*]] = fir.insert_value %[[VAL_9]], %[[VAL_8]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
@@ -83,7 +83,7 @@ module tinit
 
   ! Test a non trivial derived type mixing all sorts of default initialization
   type(t1) :: dt1
-! CHECK-LABEL: linkonce @_QMtinitEdt1 : !fir.type<_QMtinitTt1{{.*}}> {
+! CHECK-LABEL: @_QMtinitEdt1 : !fir.type<_QMtinitTt1{{.*}}> {
   ! CHECK-DAG: %[[VAL_11:.*]] = constant 42 : i32
   ! CHECK-DAG: %[[VAL_12:.*]] = constant 100 : index
   ! CHECK-DAG: %[[VAL_13:.*]] = constant 0 : index
@@ -118,7 +118,7 @@ module tinit
 
   ! Test a type extending other type with a default init
   type(textendst0) :: etextendst0
-! CHECK-LABEL: linkonce @_QMtinitEetextendst0 : !fir.type<_QMtinitTtextendst0{k:i32,l:i32}> {
+! CHECK-LABEL: @_QMtinitEetextendst0 : !fir.type<_QMtinitTtextendst0{k:i32,l:i32}> {
   ! CHECK: %[[VAL_42:.*]] = constant 66 : i32
   ! CHECK: %[[VAL_43:.*]] = fir.undefined !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>
   ! CHECK: %[[VAL_44:.*]] = fir.insert_value %[[VAL_43]], %[[VAL_42]], ["k", !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>] : (!fir.type<_QMtinitTtextendst0{k:i32,l:i32}>, i32) -> !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>

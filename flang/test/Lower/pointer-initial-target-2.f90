@@ -9,7 +9,7 @@
 module some_mod
   real, target :: x(100)
   real, pointer :: p(:) => x
-! CHECK-LABEL: fir.global linkonce @_QMsome_modEp : !fir.box<!fir.ptr<!fir.array<?xf32>>> {
+! CHECK-LABEL: fir.global @_QMsome_modEp : !fir.box<!fir.ptr<!fir.array<?xf32>>> {
   ! CHECK: %[[x:.*]] = fir.address_of(@_QMsome_modEx) : !fir.ref<!fir.array<100xf32>>
   ! CHECK: %[[shape:.*]] = fir.shape %c100{{.*}} : (index) -> !fir.shape<1>
   ! CHECK: %[[box:.*]] = fir.embox %[[x]](%[[shape]]) : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>) -> !fir.box<!fir.ptr<!fir.array<?xf32>>>
@@ -22,7 +22,7 @@ module some_mod_2
   common /com/ x, y
   save :: /com/
   real, pointer :: p(:) => y
-! CHECK-LABEL: fir.global linkonce @_QMsome_mod_2Ep : !fir.box<!fir.ptr<!fir.array<?xf32>>> {
+! CHECK-LABEL: fir.global @_QMsome_mod_2Ep : !fir.box<!fir.ptr<!fir.array<?xf32>>> {
   ! CHECK: %[[c:.*]] = fir.address_of(@_QBcom) : !fir.ref<!fir.array<1200xi8>>
   ! CHECK: %[[com:.*]] = fir.convert %[[c]] : (!fir.ref<!fir.array<1200xi8>>) -> !fir.ref<!fir.array<?xi8>>
   ! CHECK: %[[yRaw:.*]] = fir.coordinate_of %[[com]], %c400{{.*}} : (!fir.ref<!fir.array<?xi8>>, index) -> !fir.ref<i8>

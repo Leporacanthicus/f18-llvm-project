@@ -1650,14 +1650,9 @@ void Fortran::lower::mapSymbolAttributes(
 
 void Fortran::lower::defineModuleVariable(
     AbstractConverter &converter, const Fortran::lower::pft::Variable &var) {
-  // linkOnce linkage allows the definition to be kept by LLVM
-  // even if it is unused and there is not init (other than undef).
-  // Emitting llvm :'@glob = global type undef' would also work, but mlir
-  // always insert "external" and removes the undef init when lowering a
-  // global without explicit linkage. This ends-up in llvm removing the
-  // symbol if unsued potentially creating linking issues. Hence the use
-  // of linkOnce.
-  auto linkOnce = converter.getFirOpBuilder().createLinkOnceLinkage();
+  // Use empty linkage for module variables, which makes them available
+  // for use in another unit.
+  mlir::StringAttr externalLinkage;
   // Only define variable owned by this module
   if (var.isDeclaration())
     return;
@@ -1668,7 +1663,7 @@ void Fortran::lower::defineModuleVariable(
   if (var.isAggregateStore()) {
     auto &aggregate = var.getAggregateStore();
     auto aggName = mangleGlobalAggregateStore(aggregate);
-    defineGlobalAggregateStore(converter, aggregate, aggName, linkOnce);
+    defineGlobalAggregateStore(converter, aggregate, aggName, externalLinkage);
     return;
   }
   const auto &sym = var.getSymbol();
@@ -1680,7 +1675,7 @@ void Fortran::lower::defineModuleVariable(
     // Do nothing. Mapping will be done on user side.
   } else {
     auto globalName = Fortran::lower::mangle::mangleName(sym);
-    defineGlobal(converter, var, globalName, linkOnce);
+    defineGlobal(converter, var, globalName, externalLinkage);
   }
 }
 
