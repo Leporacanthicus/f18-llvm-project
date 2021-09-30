@@ -6,6 +6,7 @@
 ! RUN: bbc -fopenmp %s -o - | \
 ! RUN:   tco --disable-llvm --print-ir-after=fir-to-llvm-ir 2>&1 | \
 ! RUN:   FileCheck %s --check-prefix=LLVMIRDialect
+! XFAIL: *
 
 !FIRDialect: func @_QPcopyin_clause(%[[ARG1:.*]]: !fir.ref<i32>, %[[ARG2:.*]]: !fir.ref<!fir.array<10xi32>>) {
 !FIRDialect-DAG: %[[ALPHA:.*]] = fir.alloca i32 {{{.*}}uniq_name = "{{.*}}Ealpha"}
