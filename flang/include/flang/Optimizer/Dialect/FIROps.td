@@ -2550,20 +2550,6 @@ def fir_StringLitOp : fir_Op<"string_lit", [NoSideEffect]> {
       CArg<"llvm::Optional<int64_t>", "{}">:$len)>];
 
   let verifier = "return ::verify(*this);";
-    OpBuilder<(ins "fir::CharacterType":$in_type,
-      "llvm::StringRef":$value,
-      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
-    OpBuilder<(ins "fir::CharacterType":$in_type,
-      "llvm::ArrayRef<char>":$xlist,
-      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
-    OpBuilder<(ins "fir::CharacterType":$in_type,
-      "llvm::ArrayRef<char16_t>":$xlist,
-      CArg<"llvm::Optional<int64_t>", "{}">:$len)>,
-    OpBuilder<(ins "fir::CharacterType":$in_type,
-      "llvm::ArrayRef<char32_t>":$xlist,
-      CArg<"llvm::Optional<int64_t>", "{}">:$len)>];
-
-  let verifier = "return ::verify(*this);";
 
   let extraClassDeclaration = [{
     static constexpr const char *size() { return "size"; }
