@@ -32,6 +32,7 @@
 #include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/Runtime/Character.h"
+#include "flang/Optimizer/Builder/Runtime/Ragged.h"
 #include "flang/Optimizer/Dialect/FIRAttr.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/Dialect/FIROps.h"
@@ -1263,8 +1264,9 @@ private:
         forceControlVariableBinding(ctrlVar, lp.getInductionVar());
         loops.push_back(lp);
       }
-      if (outermost)
-         explicitIterSpace.setOuterLoop(loops[0]);
+      if (outermost) 
+        explicitIterSpace.setOuterLoop(loops[0]);
+      explicitIterSpace.appendLoops(loops);
       if (const auto &mask =
               std::get<std::optional<Fortran::parser::ScalarLogicalExpr>>(
                   header.t);
@@ -2749,23 +2751,36 @@ private:
     // with sequences of i1. That is, an array of i1 will be truncated in size
     // and be too small. For example, a buffer of type fir.array<7xi1> will have
     // 0 size.
-    auto ty = fir::HeapType::get(builder->getIntegerType(8));
+    auto i64Ty = builder->getIntegerType(64);
+    auto ty = fir::factory::getRaggedArrayHeaderType(*builder);
+    auto buffTy = ty.getType(1);
+    auto shTy = ty.getType(2);
     auto loc = toLocation();
-    auto var = builder->createTemporary(loc, ty);
-    auto nil = builder->createNullConstant(loc, ty);
-    builder->create<fir::StoreOp>(loc, nil, var);
-    auto shTy = fir::HeapType::get(builder->getIndexType());
-    auto shape = builder->createTemporary(loc, shTy);
-    auto nilSh = builder->createNullConstant(loc, shTy);
-    builder->create<fir::StoreOp>(loc, nilSh, shape);
-    implicitIterSpace.addMaskVariable(exp, var, shape);
+    auto hdr = builder->createTemporary(loc, ty);
+    // FIXME: Is there a way to create a `zeroinitializer` in LLVM-IR dialect?
+    // For now, explicitly set lazy ragged header to all zeros.
+    // auto nilTup = builder->createNullConstant(loc, ty);
+    // builder->create<fir::StoreOp>(loc, nilTup, hdr);
+    auto i32Ty = builder->getIntegerType(32);
+    auto zero = builder->createIntegerConstant(loc, i32Ty, 0);
+    auto zero64 = builder->createIntegerConstant(loc, i64Ty, 0);
+    mlir::Value flags = builder->create<fir::CoordinateOp>(
+        loc, builder->getRefType(i64Ty), hdr, zero);
+    builder->create<fir::StoreOp>(loc, zero64, flags);
+    auto one = builder->createIntegerConstant(loc, i32Ty, 1);
+    auto nullPtr1 = builder->createNullConstant(loc, buffTy);
+    mlir::Value var = builder->create<fir::CoordinateOp>(
+        loc, builder->getRefType(buffTy), hdr, one);
+    builder->create<fir::StoreOp>(loc, nullPtr1, var);
+    auto two = builder->createIntegerConstant(loc, i32Ty, 2);
+    auto nullPtr2 = builder->createNullConstant(loc, shTy);
+    mlir::Value shape = builder->create<fir::CoordinateOp>(
+        loc, builder->getRefType(shTy), hdr, two);
+    builder->create<fir::StoreOp>(loc, nullPtr2, shape);
+    implicitIterSpace.addMaskVariable(exp, var, shape, hdr);
     explicitIterSpace.outermostContext().attachCleanup(
-        [builder = this->builder, loc, var]() {
-          auto load = builder->create<fir::LoadOp>(loc, var);
-          auto cmp = builder->genIsNotNull(loc, load);
-          builder->genIfThen(loc, cmp)
-              .genThen([&]() { builder->create<fir::FreeMemOp>(loc, load); })
-              .end();
+        [builder = this->builder, hdr, loc]() {
+          fir::runtime::genRaggedArrayDeallocate(loc, *builder, hdr);
         });
   }
 

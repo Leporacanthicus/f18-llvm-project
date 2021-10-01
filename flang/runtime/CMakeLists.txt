@@ -57,6 +57,7 @@ add_flang_library(FortranRuntime PARTIAL_SOURCES_INTENDED
   misc-intrinsic.cpp
   namelist.cpp
   numeric.cpp
+  ragged.cpp
   random.cpp
   reduction.cpp
   pointer.cpp

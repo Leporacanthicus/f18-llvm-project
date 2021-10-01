@@ -134,20 +134,25 @@ public:
 
   /// Add a variable binding, `var`, along with its shape for the mask
   /// expression `exp`.
-  void addMaskVariable(FrontEndExpr exp, mlir::Value var, mlir::Value shape) {
-    maskVarMap.try_emplace(exp, std::make_pair(var, shape));
+  void addMaskVariable(FrontEndExpr exp, mlir::Value var, mlir::Value shape,
+                       mlir::Value header) {
+    maskVarMap.try_emplace(exp, std::make_tuple(var, shape, header));
   }
 
   /// Lookup the variable corresponding to the temporary buffer that contains
   /// the mask array expression results.
   mlir::Value lookupMaskVariable(FrontEndExpr exp) {
-    return maskVarMap.lookup(exp).first;
+    return std::get<0>(maskVarMap.lookup(exp));
   }
 
   /// Lookup the variable containing the shape vector for the mask array
   /// expression results.
   mlir::Value lookupMaskShapeBuffer(FrontEndExpr exp) {
-    return maskVarMap.lookup(exp).second;
+    return std::get<1>(maskVarMap.lookup(exp));
+  }
+
+  mlir::Value lookupMaskHeader(FrontEndExpr exp) {
+    return std::get<2>(maskVarMap.lookup(exp));
   }
 
   // Stack of WHERE constructs, each building a list of mask expressions.
@@ -160,7 +165,9 @@ public:
   }
 
 private:
-  llvm::DenseMap<FrontEndExpr, std::pair<mlir::Value, mlir::Value>> maskVarMap;
+  llvm::DenseMap<FrontEndExpr,
+                 std::tuple<mlir::Value, mlir::Value, mlir::Value>>
+      maskVarMap;
 };
 
 class ExplicitIterSpace;
@@ -259,7 +266,10 @@ public:
   void resetInnerArgs() { innerArgs = initialArgs; }
 
   /// Capture the current outermost loop.
-  void setOuterLoop(fir::DoLoopOp loop) { outerLoop = loop; }
+  void setOuterLoop(fir::DoLoopOp loop) {
+    clearLoops();
+    outerLoop = loop;
+  }
 
   /// Sets the inner loop argument at position \p offset to \p val.
   void setInnerArg(size_t offset, mlir::Value val) {
@@ -369,6 +379,16 @@ public:
     stmtCtx.reset();
   }
 
+  void appendLoops(const llvm::SmallVector<fir::DoLoopOp> &loops) {
+    loopStack.push_back(loops);
+  }
+
+  void clearLoops() { loopStack.clear(); }
+
+  llvm::SmallVector<llvm::SmallVector<fir::DoLoopOp>> getLoopStack() const {
+    return loopStack;
+  }
+
 private:
   /// Cleanup the analysis results.
   void conditionalCleanup();
@@ -389,6 +409,7 @@ private:
   llvm::SmallVector<mlir::Value> innerArgs;
   llvm::SmallVector<mlir::Value> initialArgs;
   llvm::Optional<fir::DoLoopOp> outerLoop;
+  llvm::SmallVector<llvm::SmallVector<fir::DoLoopOp>> loopStack;
   llvm::Optional<std::function<void(fir::FirOpBuilder &)>> loopCleanup;
   std::size_t forallContextOpen = 0;
   std::size_t counter = 0;

@@ -831,8 +831,9 @@ bool fir::ConvertOp::isFloatCompatible(mlir::Type ty) {
 
 bool fir::ConvertOp::isPointerCompatible(mlir::Type ty) {
   return ty.isa<fir::ReferenceType>() || ty.isa<fir::PointerType>() ||
-         ty.isa<fir::HeapType>() || ty.isa<mlir::MemRefType>() ||
-         ty.isa<mlir::FunctionType>() || ty.isa<fir::TypeDescType>();
+         ty.isa<fir::HeapType>() || ty.isa<fir::LLVMPointerType>() ||
+         ty.isa<mlir::MemRefType>() || ty.isa<mlir::FunctionType>() ||
+         ty.isa<fir::TypeDescType>();
 }
 
 static mlir::LogicalResult verify(fir::ConvertOp &op) {
@@ -2316,7 +2317,7 @@ static constexpr llvm::StringRef getTargetOffsetAttr() {
 template <typename A, typename... AdditionalArgs>
 static A getSubOperands(unsigned pos, A allArgs,
                         mlir::DenseIntElementsAttr ranges,
-                        AdditionalArgs &&...additionalArgs) {
+                        AdditionalArgs &&... additionalArgs) {
   unsigned start = 0;
   for (unsigned i = 0; i < pos; ++i)
     start += (*(ranges.begin() + i)).getZExtValue();

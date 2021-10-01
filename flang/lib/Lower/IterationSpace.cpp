@@ -267,6 +267,7 @@ void Fortran::lower::ExplicitIterSpace::conditionalCleanup() {
     stmtCtx.reset();
     innerArgs.clear();
     outerLoop = llvm::None;
+    clearLoops();
     counter = 0;
   }
 }

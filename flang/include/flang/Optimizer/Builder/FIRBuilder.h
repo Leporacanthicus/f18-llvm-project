@@ -465,6 +465,8 @@ void genRecordAssignment(fir::FirOpBuilder &builder, mlir::Location loc,
                          const fir::ExtendedValue &lhs,
                          const fir::ExtendedValue &rhs);
 
+mlir::TupleType getRaggedArrayHeaderType(fir::FirOpBuilder &builder);
+
 } // namespace fir::factory
 
 #endif // FORTRAN_OPTIMIZER_BUILDER_FIRBUILDER_H

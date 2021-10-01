@@ -221,8 +221,9 @@ fir::FirOpBuilder::createTemporary(mlir::Location loc, mlir::Type type,
   const bool pinned =
       getRegion().getParentOfType<mlir::omp::OutlineableOpenMPOpInterface>();
   assert(!type.isa<fir::ReferenceType>() && "cannot be a reference");
-  auto ae = create<fir::AllocaOp>(loc, type, /*unique_name=*/llvm::StringRef{},
-                                  name, pinned, dynamicLength, dynamicShape, attrs);
+  auto ae =
+      create<fir::AllocaOp>(loc, type, /*unique_name=*/llvm::StringRef{}, name,
+                            pinned, dynamicLength, dynamicShape, attrs);
   if (hoistAlloc)
     restoreInsertionPoint(insPt);
   return ae;
@@ -870,4 +871,14 @@ void fir::factory::genRecordAssignment(fir::FirOpBuilder &builder,
   // the component by component assignment can be replaced by a memory copy.
   auto load = builder.create<fir::LoadOp>(loc, fir::getBase(rhs));
   builder.create<fir::StoreOp>(loc, load, fir::getBase(lhs));
+}
+
+mlir::TupleType
+fir::factory::getRaggedArrayHeaderType(fir::FirOpBuilder &builder) {
+  auto i64Ty = builder.getIntegerType(64);
+  auto arrTy = fir::SequenceType::get(builder.getIntegerType(8), 1);
+  auto buffTy = fir::HeapType::get(arrTy);
+  auto extTy = fir::SequenceType::get(i64Ty, 1);
+  auto shTy = fir::HeapType::get(extTy);
+  return mlir::TupleType::get(builder.getContext(), {i64Ty, buffTy, shTy});
 }
