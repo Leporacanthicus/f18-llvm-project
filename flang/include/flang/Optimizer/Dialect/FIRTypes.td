@@ -592,5 +592,4 @@ def ArrayOrBoxOrRecord : TypeConstraint<Or<[fir_SequenceType.predicate,
     fir_BoxType.predicate, fir_RecordType.predicate]>,
     "fir.box, fir.array or fir.type">;
 
-
 #endif // FIR_DIALECT_FIR_TYPES
