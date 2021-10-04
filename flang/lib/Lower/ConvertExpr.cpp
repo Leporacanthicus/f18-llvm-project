@@ -6034,7 +6034,7 @@ public:
     if (auto load = explicitSpace->findBinding(&x))
       return applyPathToArrayLoad(load);
     if (pathIsEmpty())
-      return [=](IterSpace) { return asScalar(x); };
+      return [=, &x](IterSpace) { return asScalar(x); };
     auto loc = getLoc();
     return [=](IterSpace) {
       fir::emitFatalError(loc, "QQ reached symbol with path");
