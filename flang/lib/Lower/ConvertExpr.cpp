@@ -2394,7 +2394,7 @@ private:
   Fortran::lower::StatementContext &stmtCtx;
   Fortran::lower::SymMap &symMap;
   bool inInitializer;
-  bool useBoxArg{false}; // expression lowered as argument
+  bool useBoxArg = false; // expression lowered as argument
 };
 } // namespace
 
@@ -6193,7 +6193,7 @@ private:
   bool unordered = true;
 
   llvm::SmallVector<PathComponent> reversePath;
-}; // namespace
+};
 } // namespace
 
 fir::ExtendedValue Fortran::lower::createSomeExtendedExpression(
