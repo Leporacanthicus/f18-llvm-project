@@ -1264,7 +1264,7 @@ private:
         forceControlVariableBinding(ctrlVar, lp.getInductionVar());
         loops.push_back(lp);
       }
-      if (outermost) 
+      if (outermost)
         explicitIterSpace.setOuterLoop(loops[0]);
       explicitIterSpace.appendLoops(loops);
       if (const auto &mask =
@@ -1882,9 +1882,10 @@ private:
               if (lhsType->IsPolymorphic() && isWholeAllocatable(assign.lhs))
                 TODO(loc, "assignment to polymorphic allocatable");
 
-              // Note: no ad-hoc handling for pointers is require here, the
+              // Note: No ad-hoc handling for pointers is required here. The
               // target will be assigned as per 2018 10.2.1.3 p2. genExprAddr
-              // on a pointer returns the target address.
+              // on a pointer returns the target address and not the address of
+              // the pointer variable.
 
               if (assign.lhs.Rank() > 0 || explicitIterationSpace()) {
                 // Array assignment
