@@ -7,15 +7,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "flang/Lower/EvExprDumper.h"
+#include <iostream>
 
-static constexpr char white[] =
+static constexpr char whiteSpacePadding[] =
     ">>                                               ";
+static constexpr auto whiteSize = sizeof(whiteSpacePadding) - 1;
 
-inline llvm::StringRef
-Fortran::lower::DumpEvaluateExpr::getIndentString() const {
-  static constexpr auto SIZE = sizeof(white);
-  auto count = (level * 2 > SIZE) ? SIZE : level * 2;
-  return white + SIZE - count;
+inline const char *Fortran::lower::DumpEvaluateExpr::getIndentString() const {
+  auto count = (level * 2 >= whiteSize) ? whiteSize : level * 2;
+  return whiteSpacePadding + whiteSize - count;
 }
 
 void Fortran::lower::DumpEvaluateExpr::show(
@@ -225,6 +225,34 @@ void Fortran::lower::DumpEvaluateExpr::indent(llvm::StringRef s) {
 }
 
 void Fortran::lower::DumpEvaluateExpr::outdent() {
-  level--;
+  if (level)
+    level--;
   print("}");
+}
+
+//===----------------------------------------------------------------------===//
+// Boilerplate entry points that the debugger can find.
+//===----------------------------------------------------------------------===//
+
+void Fortran::lower::dumpEvExpr(
+    const Fortran::evaluate::Expr<Fortran::evaluate::SomeType> &x) {
+  DumpEvaluateExpr::dump(x);
+}
+
+void Fortran::lower::dumpEvExpr(
+    const Fortran::evaluate::Expr<
+        Fortran::evaluate::Type<Fortran::common::TypeCategory::Integer, 4>>
+        &x) {
+  DumpEvaluateExpr::dump(x);
+}
+
+void Fortran::lower::dumpEvExpr(
+    const Fortran::evaluate::Expr<
+        Fortran::evaluate::Type<Fortran::common::TypeCategory::Integer, 8>>
+        &x) {
+  DumpEvaluateExpr::dump(x);
+}
+
+void Fortran::lower::dumpEvExpr(const Fortran::evaluate::ArrayRef &x) {
+  DumpEvaluateExpr::dump(x);
 }
