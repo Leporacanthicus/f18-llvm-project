@@ -3849,7 +3849,8 @@ public:
     auto loopStack = explicitSpace->getLoopStack();
     const auto depth = loopStack.size();
     auto i64Ty = builder.getIntegerType(64);
-    auto byteSize = builder.createIntegerConstant(loc, i64Ty, 1);
+    [[maybe_unused]] auto byteSize =
+        builder.createIntegerConstant(loc, i64Ty, 1);
     auto header = implicitSpace->lookupMaskHeader(expr);
     for (std::remove_const_t<decltype(depth)> i = 0; i < depth; ++i) {
       auto insPt = builder.saveInsertionPoint();
