@@ -102,7 +102,6 @@ private:
 } // namespace
 
 namespace {
-
 /// Helper class to collect all array operations that produced an array value.
 class ReachCollector {
 public:
@@ -110,65 +109,79 @@ public:
                  mlir::Region *loopRegion)
       : reach{reach}, loopRegion{loopRegion} {}
 
-  // Recursively trace operands to find all array operations relating to the
-  // values merged.
-  void collectArrayAccessFrom(mlir::Value val) {
-    if (!val || visited.contains(val))
+  void collectArrayAccessFrom(mlir::Operation *op, mlir::ValueRange range) {
+    if (range.empty()) {
+      collectArrayAccessFrom(op, mlir::Value{});
       return;
-    visited.insert(val);
+    }
+    for (auto v : range)
+      collectArrayAccessFrom(v);
+  }
 
-    if (auto *op = val.getDefiningOp()) {
-      // `val` is defined by an Op, process the defining Op.
-      // If `val` is defined by a region containing Op, we want to drill down
-      // and through that Op's region(s).
-      LLVM_DEBUG(llvm::dbgs() << "popset: " << val << '\n');
-      auto popFn = [&](auto rop) {
-        auto resNum = val.cast<mlir::OpResult>().getResultNumber();
-        llvm::SmallVector<mlir::Value> results;
-        rop.resultToSourceOps(results, resNum);
-        for (auto u : results)
-          collectArrayAccessFrom(u);
-      };
-      if (auto rop = mlir::dyn_cast<DoLoopOp>(op)) {
-        popFn(rop);
-        return;
-      }
-      if (auto rop = mlir::dyn_cast<IterWhileOp>(op)) {
-        popFn(rop);
-        return;
-      }
-      if (auto rop = mlir::dyn_cast<fir::IfOp>(op)) {
-        popFn(rop);
-        return;
-      }
-
-      if (mlir::isa<fir::AllocaOp, fir::AllocMemOp>(op))
-        // Look for any stores inside the loops, and collect an array operation
-        // that produced the value being stored to it.
-        for (auto user : op->getUsers())
-          if (auto store = mlir::dyn_cast<fir::StoreOp>(user))
-            if (opIsInsideLoops(store))
-              collectArrayAccessFrom(store.value());
-
-      // Otherwise, Op does not contain a region so just chase its operands.
-      if (mlir::isa<ArrayLoadOp, ArrayUpdateOp, ArrayModifyOp, ArrayFetchOp>(
-              op)) {
-        LLVM_DEBUG(llvm::dbgs() << "add " << *op << " to reachable set\n");
-        reach.emplace_back(op);
-      }
-      // Array modify assignment is performed on the result. So the analysis
-      // must look at the what is done with the result.
-      if (mlir::isa<ArrayModifyOp>(op))
-        for (auto user : op->getResult(0).getUsers())
-          followUsers(user);
-
-      for (auto u : op->getOperands())
+  void collectArrayAccessFrom(mlir::Operation *op, mlir::Value val) {
+    // `val` is defined by an Op, process the defining Op.
+    // If `val` is defined by a region containing Op, we want to drill down
+    // and through that Op's region(s).
+    LLVM_DEBUG(llvm::dbgs() << "popset: " << *op << '\n');
+    auto popFn = [&](auto rop) {
+      assert(val && "op must have a result value");
+      auto resNum = val.cast<mlir::OpResult>().getResultNumber();
+      llvm::SmallVector<mlir::Value> results;
+      rop.resultToSourceOps(results, resNum);
+      for (auto u : results)
         collectArrayAccessFrom(u);
+    };
+    if (auto rop = mlir::dyn_cast<DoLoopOp>(op)) {
+      popFn(rop);
+      return;
+    }
+    if (auto rop = mlir::dyn_cast<IterWhileOp>(op)) {
+      popFn(rop);
+      return;
+    }
+    if (auto rop = mlir::dyn_cast<fir::IfOp>(op)) {
+      popFn(rop);
+      return;
+    }
+    if (auto box = mlir::dyn_cast<EmboxOp>(op)) {
+      for (auto *user : box.memref().getUsers())
+        if (user != op)
+          collectArrayAccessFrom(user, user->getResults());
+      return;
+    }
+    if (auto mergeStore = mlir::dyn_cast<ArrayMergeStoreOp>(op)) {
+      if (opIsInsideLoops(mergeStore))
+        collectArrayAccessFrom(mergeStore.sequence());
       return;
     }
 
-    // Process a block argument.
-    auto ba = val.cast<mlir::BlockArgument>();
+    if (mlir::isa<AllocaOp, AllocMemOp>(op)) {
+      // Look for any stores inside the loops, and collect an array operation
+      // that produced the value being stored to it.
+      for (auto *user : op->getUsers())
+        if (auto store = mlir::dyn_cast<fir::StoreOp>(user))
+          if (opIsInsideLoops(store))
+            collectArrayAccessFrom(store.value());
+      return;
+    }
+
+    // Otherwise, Op does not contain a region so just chase its operands.
+    if (mlir::isa<ArrayLoadOp, ArrayUpdateOp, ArrayModifyOp, ArrayFetchOp>(
+            op)) {
+      LLVM_DEBUG(llvm::dbgs() << "add " << *op << " to reachable set\n");
+      reach.emplace_back(op);
+    }
+    // Array modify assignment is performed on the result. So the analysis
+    // must look at the what is done with the result.
+    if (mlir::isa<ArrayModifyOp>(op))
+      for (auto *user : op->getResult(0).getUsers())
+        followUsers(user);
+
+    for (auto u : op->getOperands())
+      collectArrayAccessFrom(u);
+  }
+
+  void collectArrayAccessFrom(mlir::BlockArgument ba) {
     auto *parent = ba.getOwner()->getParentOp();
     // If inside an Op holding a region, the block argument corresponds to an
     // argument passed to the containing Op.
@@ -190,8 +203,44 @@ public:
     }
   }
 
+  // Recursively trace operands to find all array operations relating to the
+  // values merged.
+  void collectArrayAccessFrom(mlir::Value val) {
+    if (!val || visited.contains(val))
+      return;
+    visited.insert(val);
+
+    // Process a block argument.
+    if (auto ba = val.dyn_cast<mlir::BlockArgument>()) {
+      collectArrayAccessFrom(ba);
+      return;
+    }
+
+    // Process an Op.
+    if (auto *op = val.getDefiningOp()) {
+      collectArrayAccessFrom(op, val);
+      return;
+    }
+
+    fir::emitFatalError(val.getLoc(), "unhandled value");
+  }
+
+  /// Return all ops that produce the array value that is stored into the
+  /// `array_merge_store`.
+  static void reachingValues(llvm::SmallVectorImpl<mlir::Operation *> &reach,
+                             mlir::Value seq) {
+    reach.clear();
+    mlir::Region *loopRegion = nullptr;
+    if (auto doLoop =
+            mlir::dyn_cast_or_null<fir::DoLoopOp>(seq.getDefiningOp()))
+      loopRegion = &doLoop->getRegion(0);
+    ReachCollector collector(reach, loopRegion);
+    collector.collectArrayAccessFrom(seq);
+  }
+
 private:
   /// Is \op inside the loop nest region ?
+  /// FIXME: replace this structural dependence with graph properties.
   bool opIsInsideLoops(mlir::Operation *op) const {
     auto *region = op->getParentRegion();
     while (region) {
@@ -218,18 +267,6 @@ private:
   mlir::Region *loopRegion;
 };
 } // namespace
-
-/// Return all ops that produce the array value that is stored into the
-/// `array_merge_store`.
-static void reachingValues(llvm::SmallVectorImpl<mlir::Operation *> &reach,
-                           mlir::Value seq) {
-  reach.clear();
-  mlir::Region *loopRegion = nullptr;
-  if (auto doLoop = mlir::dyn_cast_or_null<fir::DoLoopOp>(seq.getDefiningOp()))
-    loopRegion = &doLoop->getRegion(0);
-  ReachCollector collector(reach, loopRegion);
-  collector.collectArrayAccessFrom(seq);
-}
 
 /// Find all the array operations that access the array value that is loaded by
 /// the array load operation, `load`.
@@ -406,7 +443,7 @@ void ArrayCopyAnalysis::construct(mlir::MutableArrayRef<mlir::Region> regions) {
           construct(op.getRegions());
         if (auto st = mlir::dyn_cast<fir::ArrayMergeStoreOp>(op)) {
           llvm::SmallVector<Operation *> values;
-          reachingValues(values, st.sequence());
+          ReachCollector::reachingValues(values, st.sequence());
           llvm::SmallVector<Operation *> accesses;
           arrayAccesses(accesses,
                         mlir::cast<ArrayLoadOp>(st.original().getDefiningOp()));
@@ -728,9 +765,9 @@ public:
           if (!update.typeparams().empty()) {
             auto boxTy = fir::BoxType::get(inEleTy);
             mlir::Value emptyShape, emptySlice;
-            auto lhs = rewriter.create<fir::EmboxOp>(
+            auto lhs = rewriter.create<EmboxOp>(
                 loc, boxTy, coor, emptyShape, emptySlice, update.typeparams());
-            auto rhs = rewriter.create<fir::EmboxOp>(
+            auto rhs = rewriter.create<EmboxOp>(
                 loc, boxTy, input, emptyShape, emptySlice, update.typeparams());
             fir::factory::genRecordAssignment(builder, loc, fir::BoxValue(lhs),
                                               fir::BoxValue(rhs));
