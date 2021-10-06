@@ -1987,6 +1987,14 @@ private:
                     fir::getBase(genExprValue(toEvExpr(lbExpr), stmtCtx)));
               Fortran::lower::associateMutableBox(*this, loc, lhs, assign.rhs,
                                                   lbounds, stmtCtx);
+              if (explicitIterationSpace()) {
+                auto inners = explicitIterSpace.getInnerArgs();
+                if (!inners.empty()) {
+                  // TODO: should force a copy-in/copy-out here.
+                  // e.g., obj%ptr(i+1) => obj%ptr(i)
+                  builder->create<fir::ResultOp>(loc, inners);
+                }
+              }
             },
 
             // [4] Pointer assignment with bounds-remapping. R1036: a
@@ -2023,6 +2031,14 @@ private:
                              : genExprAddr(assign.rhs, stmtCtx);
               fir::factory::associateMutableBoxWithRemap(*builder, loc, lhs,
                                                          rhs, lbounds, ubounds);
+              if (explicitIterationSpace()) {
+                auto inners = explicitIterSpace.getInnerArgs();
+                if (!inners.empty()) {
+                  // TODO: should force a copy-in/copy-out here.
+                  // e.g., obj%ptr(i+1) => obj%ptr(i)
+                  builder->create<fir::ResultOp>(loc, inners);
+                }
+              }
             },
         },
         assign.u);
