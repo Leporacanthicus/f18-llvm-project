@@ -214,10 +214,9 @@ genDotProd(FN func, mlir::Type resultType, fir::FirOpBuilder &builder,
   assert(args.size() == 2);
 
   // Handle required vector arguments
-  fir::BoxValue vecTmpA = builder.createBox(loc, args[0]);
-  mlir::Value vectorA = fir::getBase(vecTmpA);
-  fir::BoxValue vecTmpB = builder.createBox(loc, args[1]);
-  mlir::Value vectorB = fir::getBase(vecTmpB);
+  mlir::Value vectorA = fir::getBase(args[0]);
+  mlir::Value vectorB = fir::getBase(args[1]);
+
 
   auto eleTy = fir::dyn_cast_ptrOrBoxEleTy(vectorA.getType())
                    .cast<fir::SequenceType>()
@@ -679,7 +678,7 @@ static constexpr IntrinsicHandler handlers[]{
     {"dim", &I::genDim},
     {"dot_product",
      &I::genDotProduct,
-     {{{"vector_a", asAddr}, {"vector_b", asAddr}}},
+     {{{"vector_a", asBox}, {"vector_b", asBox}}},
      /*isElemental=*/false},
     {"dprod", &I::genDprod},
     {"eoshift",
@@ -768,7 +767,7 @@ static constexpr IntrinsicHandler handlers[]{
      /*isElemental=*/false},
     {"product",
      &I::genProduct,
-     {{{"array", asAddr}, {"dim", asValue}, {"mask", asAddr}}},
+     {{{"array", asBox}, {"dim", asValue}, {"mask", asBox}}},
      /*isElemental=*/false},
     {"random_init",
      &I::genRandomInit,
@@ -818,7 +817,7 @@ static constexpr IntrinsicHandler handlers[]{
      /*isElemental=*/false},
     {"sum",
      &I::genSum,
-     {{{"array", asAddr}, {"dim", asValue}, {"mask", asAddr}}},
+     {{{"array", asBox}, {"dim", asValue}, {"mask", asBox}}},
      /*isElemental=*/false},
     {"system_clock",
      &I::genSystemClock,
