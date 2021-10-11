@@ -24,6 +24,7 @@
 #include "flang/Optimizer/Support/InitFIR.h"
 #include "flang/Optimizer/Support/InternalNames.h"
 #include "flang/Optimizer/Support/KindMapping.h"
+#include "flang/Optimizer/Support/Utils.h"
 #include "flang/Optimizer/Transforms/Passes.h"
 #include "flang/Parser/characters.h"
 #include "flang/Parser/dump-parse-tree.h"
@@ -141,22 +142,6 @@ static void printModule(mlir::ModuleOp mlirModule, llvm::raw_ostream &out) {
   out << '\n';
 }
 
-// Translate front-end KINDs for use in the IR and code gen.
-static std::vector<fir::KindTy>
-fromDefaultKinds(const Fortran::common::IntrinsicTypeDefaultKinds &defKinds) {
-  return {static_cast<fir::KindTy>(defKinds.GetDefaultKind(
-              Fortran::common::TypeCategory::Character)),
-          static_cast<fir::KindTy>(
-              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Complex)),
-          static_cast<fir::KindTy>(defKinds.doublePrecisionKind()),
-          static_cast<fir::KindTy>(
-              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Integer)),
-          static_cast<fir::KindTy>(
-              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Logical)),
-          static_cast<fir::KindTy>(
-              defKinds.GetDefaultKind(Fortran::common::TypeCategory::Real))};
-}
-
 static void registerAllPasses() {
   fir::support::registerMLIRPassesForFortranTools();
   fir::registerOptTransformPasses();
@@ -241,7 +226,7 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
   fir::support::loadNonCodegenDialects(ctx);
   auto &defKinds = semanticsContext.defaultKinds();
   fir::KindMapping kindMap(
-      &ctx, llvm::ArrayRef<fir::KindTy>{fromDefaultKinds(defKinds)});
+      &ctx, llvm::ArrayRef<fir::KindTy>{fir::fromDefaultKinds(defKinds)});
   auto burnside = Fortran::lower::LoweringBridge::create(
       ctx, defKinds, semanticsContext.intrinsics(), parsing.allCooked(),
       targetTriple, kindMap);
