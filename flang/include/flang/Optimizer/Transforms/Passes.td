@@ -147,7 +147,8 @@ def ArrayValueCopy : FunctionPass<"array-value-copy"> {
 def AbstractResultOpt : Pass<"abstract-result-opt", "mlir::FuncOp"> {
   let summary = "Convert fir.array, fir.box and fir.rec function result to function argument";
   let description = [{
-    This passed is required before code gen to the LLVM IR dialect, including the pre-cg rewrite pass.
+    This pass is required before code gen to the LLVM IR dialect,
+    including the pre-cg rewrite pass.
   }];
   let constructor = "::fir::createAbstractResultOptPass()";
   let dependentDialects = [
