@@ -606,3 +606,25 @@ func @test_misc_ops(%arr1 : !fir.ref<!fir.array<?x?xf32>>, %m : index, %n : inde
   fir.array_merge_store %av2, %av2 to %arr1 : !fir.array<?x?xf32>, !fir.array<?x?xf32>, !fir.ref<!fir.array<?x?xf32>>
   return
 }
+
+// -----
+
+func @slice_must_be_integral() {
+  %0 = constant 42 : i32
+  %1 = fir.field_index field, !fir.type<t(param:i32){field:i32}> (%0 : i32)
+  // expected-error@+1 {{'fir.slice' op operand #0 must be any integer, but got '!fir.field'}}
+  %2 = fir.slice %1, %1, %1 : (!fir.field, !fir.field, !fir.field) -> !fir.slice<1>
+  return
+}
+
+// -----
+
+func @slice_must_not_be_substring() {
+  %0 = constant 42 : index
+  %1 = fir.slice %0, %0, %0 substr %0, %0: (index, index, index, index, index) -> !fir.slice<1>
+  %2 = fir.shape %0 : (index) -> !fir.shape<1>
+  %3 = fir.alloca !fir.array<10xi32>
+  // expected-error@+1 {{'fir.array_load' op array_load cannot take a slice with substring}}
+  %4 = fir.array_load %3(%2) [%1] : (!fir.ref<!fir.array<10xi32>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<10xi32>
+  return
+}

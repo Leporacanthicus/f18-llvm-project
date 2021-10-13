@@ -256,3 +256,18 @@ void Fortran::lower::dumpEvExpr(
 void Fortran::lower::dumpEvExpr(const Fortran::evaluate::ArrayRef &x) {
   DumpEvaluateExpr::dump(x);
 }
+
+void Fortran::lower::dumpEvExpr(const Fortran::evaluate::DataRef &x) {
+  DumpEvaluateExpr::dump(x);
+}
+
+void Fortran::lower::dumpEvExpr(const Fortran::evaluate::Substring &x) {
+  DumpEvaluateExpr::dump(x);
+}
+
+void Fortran::lower::dumpEvExpr(
+    const Fortran::evaluate::Designator<
+        Fortran::evaluate::Type<Fortran::common::TypeCategory::Integer, 4>>
+        &x) {
+  DumpEvaluateExpr::dump(x);
+}

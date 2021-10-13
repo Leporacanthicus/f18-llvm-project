@@ -213,58 +213,54 @@ elemental function elem_return_char(c)
 end function
 
 ! CHECK-LABEL: func @_QMchar_elemPfoo6(
-! CHECK-SAME: %[[VAL_49:.*]]: !fir.boxchar<1>) {
+! CHECK-SAME:                          %[[VAL_0:.*]]: !fir.boxchar<1>) {
 subroutine foo6(c)
- implicit none
- character(*) :: c(10)
-
-! CHECK-DAG:   %[[VAL_45:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_46:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_47:.*]] = constant 1 : index
-! CHECK:   %[[VAL_48:.*]]:2 = fir.unboxchar %[[VAL_49]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-! CHECK:   %[[VAL_50:.*]] = fir.convert %[[VAL_48]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
-! CHECK:   %[[VAL_51:.*]] = fir.shape %[[VAL_45]] : (index) -> !fir.shape<1>
-! CHECK:   br ^bb1(%[[VAL_46]], %[[VAL_45]] : index, index)
-! CHECK: ^bb1(%[[VAL_52:.*]]: index, %[[VAL_53:.*]]: index):
-! CHECK:   %[[VAL_54:.*]] = cmpi sgt, %[[VAL_53]], %[[VAL_46]] : index
-! CHECK:   cond_br %[[VAL_54]], ^bb2, ^bb9
-! CHECK: ^bb2:
-! CHECK:   %[[VAL_55:.*]] = addi %[[VAL_52]], %[[VAL_47]] : index
-! CHECK:   %[[VAL_56:.*]] = fir.array_coor %[[VAL_50]](%[[VAL_51]]) %[[VAL_55]] typeparams %[[VAL_48]]#1 : (!fir.ref<!fir.array<10x!fir.char<1,?>>>, !fir.shape<1>, index, index) -> !fir.ref<!fir.char<1,?>>
-! CHECK:   %[[VAL_57:.*]] = fir.emboxchar %[[VAL_56]], %[[VAL_48]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-! CHECK:   %[[VAL_58:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_48]]#1 : index) {bindc_name = ".result"}
-! CHECK:   %[[VAL_59:.*]] = fir.call @_QMchar_elemPelem_return_char(%[[VAL_58]], %[[VAL_48]]#1, %[[VAL_57]]) : (!fir.ref<!fir.char<1,?>>, index, !fir.boxchar<1>) -> !fir.boxchar<1>
-! CHECK:   br ^bb3(%[[VAL_46]], %[[VAL_48]]#1 : index, index)
-! CHECK: ^bb3(%[[VAL_60:.*]]: index, %[[VAL_61:.*]]: index):
-! CHECK:   %[[VAL_62:.*]] = cmpi sgt, %[[VAL_61]], %[[VAL_46]] : index
-! CHECK:   cond_br %[[VAL_62]], ^bb4, ^bb8
-! CHECK: ^bb4:
-! CHECK:   %[[VAL_63:.*]] = cmpi slt, %[[VAL_60]], %[[VAL_48]]#1 : index
-! CHECK:   cond_br %[[VAL_63]], ^bb5, ^bb6
-! CHECK: ^bb5:
-! CHECK:   %[[VAL_64:.*]] = fir.convert %[[VAL_58]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
-! CHECK:   %[[VAL_65:.*]] = fir.coordinate_of %[[VAL_64]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
-! CHECK:   %[[VAL_66:.*]] = fir.load %[[VAL_65]] : !fir.ref<!fir.char<1>>
-! CHECK:   %[[VAL_67:.*]] = fir.convert %[[VAL_56]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
-! CHECK:   %[[VAL_68:.*]] = fir.coordinate_of %[[VAL_67]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
-! CHECK:   fir.store %[[VAL_66]] to %[[VAL_68]] : !fir.ref<!fir.char<1>>
-! CHECK:   br ^bb7
-! CHECK: ^bb6:
-! CHECK:   %[[VAL_69:.*]] = fir.string_lit [32 : i8](1) : !fir.char<1>
-! CHECK:   %[[VAL_70:.*]] = fir.convert %[[VAL_56]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
-! CHECK:   %[[VAL_71:.*]] = fir.coordinate_of %[[VAL_70]], %[[VAL_60]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
-! CHECK:   fir.store %[[VAL_69]] to %[[VAL_71]] : !fir.ref<!fir.char<1>>
-! CHECK:   br ^bb7
-! CHECK: ^bb7:
-! CHECK:   %[[VAL_72:.*]] = addi %[[VAL_60]], %[[VAL_47]] : index
-! CHECK:   %[[VAL_73:.*]] = subi %[[VAL_61]], %[[VAL_47]] : index
-! CHECK:   br ^bb3(%[[VAL_72]], %[[VAL_73]] : index, index)
-! CHECK: ^bb8:
-! CHECK:   %[[VAL_74:.*]] = subi %[[VAL_53]], %[[VAL_47]] : index
-! CHECK:   br ^bb1(%[[VAL_55]], %[[VAL_74]] : index, index)
-! CHECK: ^bb9:
-! CHECK:   return
- c = elem_return_char(c)
+  ! CHECK:         %[[VAL_1:.*]] = constant false
+  ! CHECK:         %[[VAL_2:.*]] = constant 32 : i8
+  ! CHECK:         %[[VAL_3:.*]] = constant 10 : index
+  ! CHECK:         %[[VAL_4:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_5:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+  ! CHECK:         %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
+  ! CHECK:         %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
+  ! CHECK:         br ^bb1(%[[VAL_4]], %[[VAL_3]] : index, index)
+  ! CHECK:       ^bb1(%[[VAL_9:.*]]: index, %[[VAL_10:.*]]: index):
+  ! CHECK:         %[[VAL_11:.*]] = cmpi sgt, %[[VAL_10]], %[[VAL_4]] : index
+  ! CHECK:         cond_br %[[VAL_11]], ^bb2, ^bb6
+  ! CHECK:       ^bb2:
+  ! CHECK:         %[[VAL_12:.*]] = addi %[[VAL_9]], %[[VAL_5]] : index
+  ! CHECK:         %[[VAL_13:.*]] = fir.array_coor %[[VAL_7]](%[[VAL_8]]) %[[VAL_12]] typeparams %[[VAL_6]]#1 : (!fir.ref<!fir.array<10x!fir.char<1,?>>>, !fir.shape<1>, index, index) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK:         %[[VAL_14:.*]] = fir.emboxchar %[[VAL_13]], %[[VAL_6]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK:         %[[VAL_15:.*]] = fir.convert %[[VAL_6]]#1 : (index) -> i64
+  ! CHECK:         %[[VAL_16:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_6]]#1 : index) {bindc_name = ".result"}
+  ! CHECK:         %[[VAL_17:.*]] = fir.call @_QMchar_elemPelem_return_char(%[[VAL_16]], %[[VAL_6]]#1, %[[VAL_14]]) : (!fir.ref<!fir.char<1,?>>, index, !fir.boxchar<1>) -> !fir.boxchar<1>
+  ! CHECK:         %[[VAL_18:.*]] = fir.convert %[[VAL_13]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
+  ! CHECK:         %[[VAL_19:.*]] = fir.convert %[[VAL_16]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
+  ! CHECK:         fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_18]], %[[VAL_19]], %[[VAL_15]], %[[VAL_1]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+  ! CHECK:         %[[VAL_20:.*]] = subi %[[VAL_6]]#1, %[[VAL_5]] : index
+  ! CHECK:         %[[VAL_21:.*]] = fir.undefined !fir.char<1>
+  ! CHECK:         %[[VAL_22:.*]] = fir.insert_value %[[VAL_21]], %[[VAL_2]], [0 : index] : (!fir.char<1>, i8) -> !fir.char<1>
+  ! CHECK:         %[[VAL_23:.*]] = subi %[[VAL_20]], %[[VAL_6]]#1 : index
+  ! CHECK:         %[[VAL_24:.*]] = addi %[[VAL_23]], %[[VAL_5]] : index
+  ! CHECK:         br ^bb3(%[[VAL_6]]#1, %[[VAL_24]] : index, index)
+  ! CHECK:       ^bb3(%[[VAL_25:.*]]: index, %[[VAL_26:.*]]: index):
+  ! CHECK:         %[[VAL_27:.*]] = cmpi sgt, %[[VAL_26]], %[[VAL_4]] : index
+  ! CHECK:         cond_br %[[VAL_27]], ^bb4, ^bb5
+  ! CHECK:       ^bb4:
+  ! CHECK:         %[[VAL_28:.*]] = fir.convert %[[VAL_13]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1>>>
+  ! CHECK:         %[[VAL_29:.*]] = fir.coordinate_of %[[VAL_28]], %[[VAL_25]] : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
+  ! CHECK:         fir.store %[[VAL_22]] to %[[VAL_29]] : !fir.ref<!fir.char<1>>
+  ! CHECK:         %[[VAL_30:.*]] = addi %[[VAL_25]], %[[VAL_5]] : index
+  ! CHECK:         %[[VAL_31:.*]] = subi %[[VAL_26]], %[[VAL_5]] : index
+  ! CHECK:         br ^bb3(%[[VAL_30]], %[[VAL_31]] : index, index)
+  ! CHECK:       ^bb5:
+  ! CHECK:         %[[VAL_32:.*]] = subi %[[VAL_10]], %[[VAL_5]] : index
+  ! CHECK:         br ^bb1(%[[VAL_12]], %[[VAL_32]] : index, index)
+  implicit none
+  character(*) :: c(10)
+  c = elem_return_char(c)
+  ! CHECK: return
+  ! CHECK: }
 end subroutine
 
 end module

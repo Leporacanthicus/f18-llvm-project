@@ -21,8 +21,8 @@
 // CharacterExprHelper implementation
 //===----------------------------------------------------------------------===//
 
-/// Unwrap base fir.char<kind,len> type.
-static fir::CharacterType recoverCharacterType(mlir::Type type) {
+/// Unwrap all the ref and box types and return the inner element type.
+static mlir::Type unwrapBoxAndRef(mlir::Type type) {
   if (auto boxType = type.dyn_cast<fir::BoxCharType>())
     return boxType.getEleTy();
   while (true) {
@@ -32,13 +32,37 @@ static fir::CharacterType recoverCharacterType(mlir::Type type) {
     else
       break;
   }
-  return fir::unwrapSequenceType(type).cast<fir::CharacterType>();
+  return type;
 }
 
-/// Get fir.char<kind> type with the same kind as inside str.
+/// Unwrap base fir.char<kind,len> type.
+static fir::CharacterType recoverCharacterType(mlir::Type type) {
+  type = fir::unwrapSequenceType(unwrapBoxAndRef(type));
+  if (auto charTy = type.dyn_cast<fir::CharacterType>())
+    return charTy;
+  llvm::report_fatal_error("expected a character type");
+}
+
+bool fir::factory::CharacterExprHelper::isCharacterScalar(mlir::Type type) {
+  type = unwrapBoxAndRef(type);
+  return !type.isa<fir::SequenceType>() && fir::isa_char(type);
+}
+
+bool fir::factory::CharacterExprHelper::isArray(mlir::Type type) {
+  type = unwrapBoxAndRef(type);
+  if (auto seqTy = type.dyn_cast<fir::SequenceType>())
+    return fir::isa_char(seqTy.getEleTy());
+  return false;
+}
+
 fir::CharacterType
 fir::factory::CharacterExprHelper::getCharacterType(mlir::Type type) {
   assert(isCharacterScalar(type) && "expected scalar character");
+  return recoverCharacterType(type);
+}
+
+fir::CharacterType
+fir::factory::CharacterExprHelper::getCharType(mlir::Type type) {
   return recoverCharacterType(type);
 }
 
@@ -639,16 +663,6 @@ bool fir::factory::CharacterExprHelper::isCharacterLiteral(mlir::Type type) {
   return false;
 }
 
-bool fir::factory::CharacterExprHelper::isCharacterScalar(mlir::Type type) {
-  if (type.isa<fir::BoxCharType>())
-    return true;
-  type = fir::unwrapRefType(type);
-  if (auto boxTy = type.dyn_cast<fir::BoxType>())
-    type = boxTy.getEleTy();
-  type = fir::unwrapRefType(type);
-  return !type.isa<fir::SequenceType>() && fir::isa_char(type);
-}
-
 fir::KindTy
 fir::factory::CharacterExprHelper::getCharacterKind(mlir::Type type) {
   assert(isCharacterScalar(type) && "expected scalar character");
@@ -658,10 +672,6 @@ fir::factory::CharacterExprHelper::getCharacterKind(mlir::Type type) {
 fir::KindTy
 fir::factory::CharacterExprHelper::getCharacterOrSequenceKind(mlir::Type type) {
   return recoverCharacterType(type).getFKind();
-}
-
-bool fir::factory::CharacterExprHelper::isArray(mlir::Type type) {
-  return !isCharacterScalar(type);
 }
 
 bool fir::factory::CharacterExprHelper::hasConstantLengthInType(

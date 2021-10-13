@@ -346,10 +346,14 @@ static mlir::LogicalResult verify(fir::ArrayCoorOp op) {
       return op.emitOpError("number of indices do not match dim rank");
   }
 
-  if (auto sliceOp = op.slice())
+  if (auto sliceOp = op.slice()) {
+    if (auto sl = mlir::dyn_cast_or_null<fir::SliceOp>(sliceOp.getDefiningOp()))
+      if (!sl.substr().empty())
+        return op.emitOpError("array_coor cannot take a slice with substring");
     if (auto sliceTy = sliceOp.getType().dyn_cast<fir::SliceType>())
       if (sliceTy.getRank() != arrDim)
         return op.emitOpError("rank of dimension in slice mismatched");
+  }
 
   return mlir::success();
 }
@@ -407,10 +411,14 @@ static mlir::LogicalResult verify(fir::ArrayLoadOp op) {
       return op.emitOpError("rank of dimension mismatched");
   }
 
-  if (auto sliceOp = op.slice())
+  if (auto sliceOp = op.slice()) {
+    if (auto sl = mlir::dyn_cast_or_null<fir::SliceOp>(sliceOp.getDefiningOp()))
+      if (!sl.substr().empty())
+        return op.emitOpError("array_load cannot take a slice with substring");
     if (auto sliceTy = sliceOp.getType().dyn_cast<fir::SliceType>())
       if (sliceTy.getRank() != arrDim)
         return op.emitOpError("rank of dimension in slice mismatched");
+  }
 
   return mlir::success();
 }
@@ -420,11 +428,14 @@ static mlir::LogicalResult verify(fir::ArrayLoadOp op) {
 //===----------------------------------------------------------------------===//
 
 static mlir::LogicalResult verify(fir::ArrayMergeStoreOp op) {
-  if (!isa<ArrayLoadOp>(op.original().getDefiningOp()))
+  if (!isa<fir::ArrayLoadOp>(op.original().getDefiningOp()))
     return op.emitOpError("operand #0 must be result of a fir.array_load op");
   if (auto sl = op.slice()) {
-    if (auto *slOp = sl.getDefiningOp()) {
-      auto sliceOp = mlir::cast<fir::SliceOp>(slOp);
+    if (auto sliceOp =
+            mlir::dyn_cast_or_null<fir::SliceOp>(sl.getDefiningOp())) {
+      if (!sliceOp.substr().empty())
+        return op.emitOpError(
+            "array_merge_store cannot take a slice with substring");
       if (!sliceOp.fields().empty()) {
         // This is an intra-object merge, where the slice is projecting the
         // subfields that are to be overwritten by the merge operation.
@@ -468,6 +479,7 @@ mlir::Type validArraySubobject(A op) {
 static mlir::LogicalResult verify(fir::ArrayFetchOp op) {
   auto arrTy = op.sequence().getType().cast<fir::SequenceType>();
   auto indSize = op.indices().size();
+  // indSize >= number of dimensions is ok
   if (indSize < arrTy.getDimension())
     return op.emitOpError("number of indices != dimension of array");
   if (indSize == arrTy.getDimension() &&
@@ -476,8 +488,26 @@ static mlir::LogicalResult verify(fir::ArrayFetchOp op) {
   auto ty = validArraySubobject(op);
   if (!ty || ty != ::adjustedElementType(op.getType()))
     return op.emitOpError("return type and/or indices do not type check");
-  if (!isa<fir::ArrayLoadOp>(op.sequence().getDefiningOp()))
+  if (!llvm::isa_and_nonnull<fir::ArrayLoadOp>(op.sequence().getDefiningOp()))
     return op.emitOpError("argument #0 must be result of fir.array_load");
+  return mlir::success();
+}
+
+//===----------------------------------------------------------------------===//
+// ArrayAccessOp
+//===----------------------------------------------------------------------===//
+
+static mlir::LogicalResult verify(fir::ArrayAccessOp op) {
+  auto arrTy = op.sequence().getType().cast<fir::SequenceType>();
+  auto indSize = op.indices().size();
+  if (indSize < arrTy.getDimension())
+    return op.emitOpError("number of indices != dimension of array");
+  if (indSize == arrTy.getDimension() &&
+      op.element().getType() != fir::ReferenceType::get(arrTy.getEleTy()))
+    return op.emitOpError("return type does not match array");
+  auto ty = validArraySubobject(op);
+  if (!ty || fir::ReferenceType::get(ty) != op.getType())
+    return op.emitOpError("return type and/or indices do not type check");
   return mlir::success();
 }
 
@@ -2806,6 +2836,14 @@ static mlir::LogicalResult verify(fir::ShiftOp &op) {
 //===----------------------------------------------------------------------===//
 // SliceOp
 //===----------------------------------------------------------------------===//
+
+void fir::SliceOp::build(mlir::OpBuilder &builder, mlir::OperationState &result,
+                         mlir::ValueRange trips, mlir::ValueRange path,
+                         mlir::ValueRange substr) {
+  const auto rank = trips.size() / 3;
+  auto sliceTy = fir::SliceType::get(builder.getContext(), rank);
+  build(builder, result, sliceTy, trips, path, substr);
+}
 
 /// Return the output rank of a slice op. The output rank must be between 1 and
 /// the rank of the array being sliced (inclusive).

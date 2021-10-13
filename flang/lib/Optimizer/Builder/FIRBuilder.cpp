@@ -372,14 +372,13 @@ mlir::Value fir::FirOpBuilder::createSlice(mlir::Location loc,
       llvm::SmallVector<mlir::Value> trips;
       auto idxTy = getIndexType();
       auto one = createIntegerConstant(loc, idxTy, 1);
-      auto sliceTy = fir::SliceType::get(getContext(), extents.size());
       if (lbounds.empty()) {
         for (auto v : extents) {
           trips.push_back(one);
           trips.push_back(v);
           trips.push_back(one);
         }
-        return create<fir::SliceOp>(loc, sliceTy, trips, path);
+        return create<fir::SliceOp>(loc, trips, path);
       }
       for (auto [lbnd, ext] : llvm::zip(lbounds, extents)) {
         auto lb = createConvert(loc, idxTy, lbnd);
@@ -387,7 +386,7 @@ mlir::Value fir::FirOpBuilder::createSlice(mlir::Location loc,
         trips.push_back(ext);
         trips.push_back(one);
       }
-      return create<fir::SliceOp>(loc, sliceTy, trips, path);
+      return create<fir::SliceOp>(loc, trips, path);
     };
     return exv.match(
         [&](const fir::ArrayBoxValue &box) {
@@ -407,9 +406,7 @@ mlir::Value fir::FirOpBuilder::createSlice(mlir::Location loc,
         },
         [&](auto) -> mlir::Value { fir::emitFatalError(loc, "not an array"); });
   }
-  auto rank = exv.rank();
-  auto sliceTy = fir::SliceType::get(getContext(), rank);
-  return create<fir::SliceOp>(loc, sliceTy, triples, path);
+  return create<fir::SliceOp>(loc, triples, path);
 }
 
 mlir::Value fir::FirOpBuilder::createBox(mlir::Location loc,
@@ -869,8 +866,10 @@ void fir::factory::genRecordAssignment(fir::FirOpBuilder &builder,
   }
   // Otherwise, the derived type has compile time constant size and for which
   // the component by component assignment can be replaced by a memory copy.
-  auto load = builder.create<fir::LoadOp>(loc, fir::getBase(rhs));
-  builder.create<fir::StoreOp>(loc, load, fir::getBase(lhs));
+  auto rhsVal = fir::getBase(rhs);
+  if (fir::isa_ref_type(rhsVal.getType()))
+    rhsVal = builder.create<fir::LoadOp>(loc, rhsVal);
+  builder.create<fir::StoreOp>(loc, rhsVal, fir::getBase(lhs));
 }
 
 mlir::TupleType

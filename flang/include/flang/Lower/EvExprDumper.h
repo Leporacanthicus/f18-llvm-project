@@ -201,6 +201,11 @@ LLVM_DUMP_METHOD void dumpEvExpr(
     const Fortran::evaluate::Expr<
         Fortran::evaluate::Type<Fortran::common::TypeCategory::Integer, 8>> &x);
 LLVM_DUMP_METHOD void dumpEvExpr(const Fortran::evaluate::ArrayRef &x);
+LLVM_DUMP_METHOD void dumpEvExpr(const Fortran::evaluate::DataRef &x);
+LLVM_DUMP_METHOD void dumpEvExpr(const Fortran::evaluate::Substring &x);
+LLVM_DUMP_METHOD void dumpEvExpr(
+    const Fortran::evaluate::Designator<
+        Fortran::evaluate::Type<Fortran::common::TypeCategory::Integer, 4>> &x);
 
 } // namespace Fortran::lower
 

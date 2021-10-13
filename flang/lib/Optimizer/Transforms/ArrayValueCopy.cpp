@@ -166,8 +166,8 @@ public:
     }
 
     // Otherwise, Op does not contain a region so just chase its operands.
-    if (mlir::isa<ArrayLoadOp, ArrayUpdateOp, ArrayModifyOp, ArrayFetchOp>(
-            op)) {
+    if (mlir::isa<ArrayAccessOp, ArrayAmendOp, ArrayLoadOp, ArrayUpdateOp,
+                  ArrayModifyOp, ArrayFetchOp>(op)) {
       LLVM_DEBUG(llvm::dbgs() << "add " << *op << " to reachable set\n");
       reach.emplace_back(op);
     }
@@ -347,6 +347,11 @@ void ArrayCopyAnalysis::arrayAccesses(
                  << "add modify {" << *owner << "} to array value set\n");
       accesses.push_back(owner);
       appendToQueue(update.getResult(1));
+    } else if (auto access = mlir::dyn_cast<ArrayAccessOp>(owner)) {
+      accesses.push_back(owner);
+    } else if (auto amend = mlir::dyn_cast<ArrayAmendOp>(owner)) {
+      accesses.push_back(owner);
+      appendToQueue(amend.getResult());
     } else if (auto br = mlir::dyn_cast<mlir::BranchOp>(owner)) {
       branchOp(br.getDest(), br.destOperands());
     } else if (auto br = mlir::dyn_cast<mlir::CondBranchOp>(owner)) {
@@ -387,6 +392,7 @@ static bool conflictOnLoad(llvm::ArrayRef<mlir::Operation *> reach,
   return false;
 }
 
+/// Is there a conflict on the array being merged into?
 static bool conflictOnMerge(llvm::ArrayRef<mlir::Operation *> accesses) {
   if (accesses.size() < 2)
     return false;
@@ -426,11 +432,23 @@ static bool conflictOnMerge(llvm::ArrayRef<mlir::Operation *> accesses) {
   return false;
 }
 
+/// With element-by-reference semantics, an amended array with more than once
+/// access to the same loaded array are conservatively considered a conflict.
+/// Note: the array copy can still be eliminated in subsequent optimizations.
+static bool conflictOnReference(llvm::ArrayRef<mlir::Operation *> ops) {
+  // FIXME: should actually check that there is a conflict here.
+  for (auto *op : ops)
+    if (mlir::isa<ArrayAmendOp>(op))
+      return true;
+  return false;
+}
+
 // Are either of types of conflicts present?
 inline bool conflictDetected(llvm::ArrayRef<mlir::Operation *> reach,
                              llvm::ArrayRef<mlir::Operation *> accesses,
                              ArrayMergeStoreOp st) {
-  return conflictOnLoad(reach, st) || conflictOnMerge(accesses);
+  return conflictOnLoad(reach, st) || conflictOnMerge(accesses) ||
+         conflictOnReference(reach);
 }
 
 /// Constructor of the array copy analysis.
@@ -466,7 +484,8 @@ void ArrayCopyAnalysis::construct(mlir::MutableArrayRef<mlir::Region> regions) {
                                   << ", accesses: " << accesses.size() << '\n');
           for (auto *acc : accesses) {
             LLVM_DEBUG(llvm::dbgs() << " access: " << *acc << '\n');
-            if (mlir::isa<ArrayFetchOp, ArrayUpdateOp, ArrayModifyOp>(acc)) {
+            if (mlir::isa<ArrayFetchOp, ArrayUpdateOp, ArrayModifyOp,
+                          ArrayAccessOp>(acc)) {
               if (useMap.count(acc)) {
                 mlir::emitError(
                     load.getLoc(),
@@ -620,6 +639,8 @@ public:
       return recoverTypeParams(co.value());
     if (auto ao = mlir::dyn_cast<fir::ArrayFetchOp>(op))
       return {ao.typeparams().begin(), ao.typeparams().end()};
+    if (auto ao = mlir::dyn_cast<fir::ArrayAccessOp>(op))
+      return {ao.typeparams().begin(), ao.typeparams().end()};
     if (auto ao = mlir::dyn_cast<fir::ArrayUpdateOp>(op))
       return {ao.typeparams().begin(), ao.typeparams().end()};
     if (auto ao = mlir::dyn_cast<fir::ArrayModifyOp>(op))
@@ -752,6 +773,8 @@ public:
     auto assignElement = [&](mlir::Value coor) {
       auto input = update.merge();
       if (auto inEleTy = fir::dyn_cast_ptrEleTy(input.getType())) {
+        // FIXME: This should no longer be needed. Need to hunt down the cases
+        // that are creating array_update with references.
         [[maybe_unused]] auto outEleTy =
             fir::unwrapSequenceType(update.getType());
         if (auto inChrTy = inEleTy.dyn_cast<fir::CharacterType>()) {
@@ -841,6 +864,55 @@ public:
 private:
   const OperationUseMapT &useMap;
 };
+
+/// As array_access op is like an array_fetch op, except that it does not imply
+/// a load op. (It operates in the reference domain.)
+class ArrayAccessConversion : public mlir::OpRewritePattern<ArrayAccessOp> {
+public:
+  explicit ArrayAccessConversion(mlir::MLIRContext *ctx,
+                                 const OperationUseMapT &m)
+      : OpRewritePattern{ctx}, useMap{m} {}
+
+  mlir::LogicalResult
+  matchAndRewrite(ArrayAccessOp access,
+                  mlir::PatternRewriter &rewriter) const override {
+    auto *op = access.getOperation();
+    rewriter.setInsertionPoint(op);
+    auto load = mlir::cast<ArrayLoadOp>(useMap.lookup(op));
+    auto loc = access.getLoc();
+    auto coor =
+        genCoorOp(rewriter, loc, getEleTy(load.getType()),
+                  toRefType(access.getType()), load.memref(), load.shape(),
+                  load.slice(), access.indices(), load.typeparams(),
+                  access->hasAttr(fir::factory::attrFortranArrayOffsets()));
+    rewriter.replaceOp(access, coor);
+    return mlir::success();
+  }
+
+private:
+  const OperationUseMapT &useMap;
+};
+
+/// An array_amend op is a marker to record which array access is being used to
+/// update an array value. After this pass runs, an array_amend has no
+/// semantics. We rewrite these to undefined values here to remove them while
+/// preserving SSA form.
+class ArrayAmendConversion : public mlir::OpRewritePattern<ArrayAmendOp> {
+public:
+  explicit ArrayAmendConversion(mlir::MLIRContext *ctx)
+      : OpRewritePattern{ctx} {}
+
+  mlir::LogicalResult
+  matchAndRewrite(ArrayAmendOp amend,
+                  mlir::PatternRewriter &rewriter) const override {
+    auto *op = amend.getOperation();
+    rewriter.setInsertionPoint(op);
+    auto loc = amend.getLoc();
+    auto undef = rewriter.create<fir::UndefOp>(loc, amend.getType());
+    rewriter.replaceOp(amend, undef.getResult());
+    return mlir::success();
+  }
+};
 } // namespace
 
 namespace {
@@ -861,10 +933,13 @@ public:
     patterns1.insert<ArrayFetchConversion>(context, useMap);
     patterns1.insert<ArrayUpdateConversion>(context, analysis, useMap);
     patterns1.insert<ArrayModifyConversion>(context, analysis, useMap);
+    patterns1.insert<ArrayAccessConversion>(context, useMap);
+    patterns1.insert<ArrayAmendConversion>(context);
     mlir::ConversionTarget target(*context);
     target.addLegalDialect<FIROpsDialect, mlir::scf::SCFDialect,
                            mlir::StandardOpsDialect>();
-    target.addIllegalOp<ArrayFetchOp, ArrayUpdateOp, ArrayModifyOp>();
+    target.addIllegalOp<ArrayFetchOp, ArrayUpdateOp, ArrayModifyOp,
+                        ArrayAccessOp, ArrayAmendOp>();
     // Rewrite the array fetch and array update ops.
     if (mlir::failed(
             mlir::applyPartialConversion(func, target, std::move(patterns1)))) {

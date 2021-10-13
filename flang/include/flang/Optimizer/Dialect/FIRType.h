@@ -193,6 +193,22 @@ inline mlir::Type unwrapPassByRefType(mlir::Type t) {
   return t;
 }
 
+/// Unwrap all pointer and box types and return the element type if it is a
+/// sequence type, otherwise return null.
+inline fir::SequenceType unwrapUntilSeqType(mlir::Type t) {
+  while (true) {
+    if (!t)
+      return {};
+    if (auto ty = dyn_cast_ptrOrBoxEleTy(t)) {
+      t = ty;
+      continue;
+    }
+    if (auto seqTy = t.dyn_cast<fir::SequenceType>())
+      return seqTy;
+    return {};
+  }
+}
+
 #ifndef NDEBUG
 // !fir.ptr<X> and !fir.heap<X> where X is !fir.ptr, !fir.heap, or !fir.ref
 // is undefined and disallowed.

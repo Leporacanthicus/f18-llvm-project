@@ -344,9 +344,7 @@ Fortran::lower::VectorSubscriptBox::createSlice(fir::FirOpBuilder &builder,
                    },
                },
                subscript);
-  auto sliceTy =
-      fir::SliceType::get(builder.getContext(), loweredSubscripts.size());
-  return builder.create<fir::SliceOp>(loc, sliceTy, triples, componentPath);
+  return builder.create<fir::SliceOp>(loc, triples, componentPath);
 }
 
 llvm::SmallVector<std::tuple<mlir::Value, mlir::Value, mlir::Value>>

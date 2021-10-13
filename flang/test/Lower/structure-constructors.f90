@@ -86,27 +86,51 @@ contains
 
   end subroutine
 
-  ! CHECK-LABEL: func @_QMm_struct_ctorPtest_char_array(
-  ! CHECK-SAME: %[[x:.*]]: !fir.ref<f32>, %[[c1:.*]]: !fir.boxchar<1>) {
+! CHECK-LABEL: func @_QMm_struct_ctorPtest_char_array(
+! CHECK-SAME:               %[[VAL_0:.*]]: !fir.ref<f32>,
+! CHECK-SAME:               %[[VAL_1:.*]]: !fir.boxchar<1>) {
   subroutine test_char_array(x, c1)
     real :: x
     character(3) :: c1(5)
-    ! CHECK: %1 = fir.alloca !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
-    ! CHECK: %[[unbox:.*]]:2 = fir.unboxchar %[[c1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-    ! CHECK: %[[c1addr:.*]] = fir.convert %[[unbox]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<5x!fir.char<1,3>>>
-    ! CHECK: fir.field_index x, !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
-
-    ! CHECK: %[[cfield:.*]] = fir.field_index c, !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
-    ! CHECK: %[[ccoor:.*]] = fir.coordinate_of %[[tmp]], %[[cfield]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>, !fir.field) -> !fir.ref<!fir.array<5x!fir.char<1,3>>>
-    ! CHECK: %[[cload:.*]] = fir.array_load %[[ccoor]](%{{.*}}) : (!fir.ref<!fir.array<5x!fir.char<1,3>>>, !fir.shape<1>) -> !fir.array<5x!fir.char<1,3>>
-    ! CHECK: %[[c1load:.*]] = fir.array_load %[[c1addr]](%{{.*}}) : (!fir.ref<!fir.array<5x!fir.char<1,3>>>, !fir.shape<1>) -> !fir.array<5x!fir.char<1,3>>
-    ! CHECK: %[[loop:.*]] = fir.do_loop %[[idx:.*]] = %c0{{.*}} to %{{.*}} step %c1{{.*}} iter_args(%[[res:.*]] = %[[cload]]) -> (!fir.array<5x!fir.char<1,3>>) {
-    ! CHECK:   %[[fetch:.*]] = fir.array_fetch %[[c1load]], %[[idx]] : (!fir.array<5x!fir.char<1,3>>, index) -> !fir.ref<!fir.char<1,3>>
-    ! CHECK:   %[[update:.*]] = fir.array_update %[[res]], %[[fetch]], %[[idx]] : (!fir.array<5x!fir.char<1,3>>, !fir.ref<!fir.char<1,3>>, index) -> !fir.array<5x!fir.char<1,3>>
-    ! CHECK:   fir.result %[[update]] : !fir.array<5x!fir.char<1,3>>
-    ! CHECK: fir.array_merge_store %[[cload]], %[[loop]] to %[[ccoor]] : !fir.array<5x!fir.char<1,3>>, !fir.array<5x!fir.char<1,3>>, !fir.ref<!fir.array<5x!fir.char<1,3>>>
-
     call print_char_array(t_char_array(x=x, c=c1))
+    ! CHECK:         %[[VAL_2:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
+    ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
+    ! CHECK:         %[[VAL_4:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+    ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<5x!fir.char<1,3>>>
+    ! CHECK:         %[[VAL_6:.*]] = constant 5 : index
+    ! CHECK:         %[[VAL_7:.*]] = fir.field_index x, !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
+    ! CHECK:         %[[VAL_8:.*]] = fir.coordinate_of %[[VAL_3]], %[[VAL_7]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>, !fir.field) -> !fir.ref<f32>
+    ! CHECK:         %[[VAL_9:.*]] = fir.load %[[VAL_0]] : !fir.ref<f32>
+    ! CHECK:         fir.store %[[VAL_9]] to %[[VAL_8]] : !fir.ref<f32>
+    ! CHECK:         %[[VAL_10:.*]] = fir.field_index c, !fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>
+    ! CHECK:         %[[VAL_11:.*]] = fir.coordinate_of %[[VAL_3]], %[[VAL_10]] : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>, !fir.field) -> !fir.ref<!fir.array<5x!fir.char<1,3>>>
+    ! CHECK:         %[[VAL_12:.*]] = constant 5 : index
+    ! CHECK:         %[[VAL_13:.*]] = fir.shape %[[VAL_12]] : (index) -> !fir.shape<1>
+    ! CHECK:         %[[VAL_14:.*]] = fir.array_load %[[VAL_11]](%[[VAL_13]]) : (!fir.ref<!fir.array<5x!fir.char<1,3>>>, !fir.shape<1>) -> !fir.array<5x!fir.char<1,3>>
+    ! CHECK:         %[[VAL_15:.*]] = fir.shape %[[VAL_6]] : (index) -> !fir.shape<1>
+    ! CHECK:         %[[VAL_16:.*]] = fir.array_load %[[VAL_5]](%[[VAL_15]]) : (!fir.ref<!fir.array<5x!fir.char<1,3>>>, !fir.shape<1>) -> !fir.array<5x!fir.char<1,3>>
+    ! CHECK:         %[[VAL_17:.*]] = constant 3 : i64
+    ! CHECK:         %[[VAL_18:.*]] = constant 1 : index
+    ! CHECK:         %[[VAL_19:.*]] = constant 0 : index
+    ! CHECK:         %[[VAL_20:.*]] = subi %[[VAL_12]], %[[VAL_18]] : index
+    ! CHECK:         %[[VAL_21:.*]] = fir.do_loop %[[VAL_22:.*]] = %[[VAL_19]] to %[[VAL_20]] step %[[VAL_18]] unordered iter_args(%[[VAL_23:.*]] = %[[VAL_14]]) -> (!fir.array<5x!fir.char<1,3>>) {
+    ! CHECK:           %[[VAL_24:.*]] = fir.array_access %[[VAL_16]], %[[VAL_22]] : (!fir.array<5x!fir.char<1,3>>, index) -> !fir.ref<!fir.char<1,3>>
+    ! CHECK:           %[[VAL_25:.*]] = fir.array_access %[[VAL_23]], %[[VAL_22]] : (!fir.array<5x!fir.char<1,3>>, index) -> !fir.ref<!fir.char<1,3>>
+    ! CHECK:           %[[VAL_26:.*]] = constant 1 : i64
+    ! CHECK:           %[[VAL_27:.*]] = muli %[[VAL_26]], %[[VAL_17]] : i64
+    ! CHECK:           %[[VAL_28:.*]] = constant false
+    ! CHECK:           %[[VAL_29:.*]] = fir.convert %[[VAL_25]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
+    ! CHECK:           %[[VAL_30:.*]] = fir.convert %[[VAL_24]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
+    ! CHECK:           fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_29]], %[[VAL_30]], %[[VAL_27]], %[[VAL_28]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+    ! CHECK:           %[[VAL_31:.*]] = fir.array_amend %[[VAL_23]], %[[VAL_25]] : (!fir.array<5x!fir.char<1,3>>, !fir.ref<!fir.char<1,3>>) -> !fir.array<5x!fir.char<1,3>>
+    ! CHECK:           fir.result %[[VAL_31]] : !fir.array<5x!fir.char<1,3>>
+    ! CHECK:         }
+    ! CHECK:         fir.array_merge_store %[[VAL_14]], %[[VAL_32:.*]] to %[[VAL_11]] : !fir.array<5x!fir.char<1,3>>, !fir.array<5x!fir.char<1,3>>, !fir.ref<!fir.array<5x!fir.char<1,3>>>
+    ! CHECK:         %[[VAL_33:.*]] = fir.load %[[VAL_3]] : !fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>
+    ! CHECK:         fir.store %[[VAL_33]] to %[[VAL_2]] : !fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>
+    ! CHECK:         fir.call @_QMm_struct_ctorPprint_char_array(%[[VAL_2]]) : (!fir.ref<!fir.type<_QMm_struct_ctorTt_char_array{x:f32,c:!fir.array<5x!fir.char<1,3>>}>>) -> ()
+    ! CHECK:         return
+    ! CHECK:       }
   end subroutine
 
   ! CHECK-LABEL: func @_QMm_struct_ctorPtest_ptr(

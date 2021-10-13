@@ -826,9 +826,9 @@ def fir_HasValueOp : fir_Op<"has_value", [Terminator, HasParent<"GlobalOp">]> {
   let assemblyFormat = "$resval attr-dict `:` type($resval)";
 }
 
-//===------------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 // Operations on !fir.box<T> type objects
-//===------------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
 
 def fir_EmboxOp : fir_Op<"embox", [NoSideEffect, AttrSizedOperandSegments]> {
   let summary = "boxes a given reference and (optional) dimension information";
@@ -891,26 +891,27 @@ def fir_EmboxOp : fir_Op<"embox", [NoSideEffect, AttrSizedOperandSegments]> {
 }
 
 def fir_ReboxOp : fir_Op<"rebox", [NoSideEffect, AttrSizedOperandSegments]> {
-  let summary = "create a box given another box and (optional) dimension information";
+  let summary =
+    "create a box given another box and (optional) dimension information";
 
   let description = [{
-    Create a new boxed reference value from another box. This is meant to be used
-    when the taking a reference to part of a boxed value, or to an entire boxed value with
-    new shape or type information.
+    Create a new boxed reference value from another box. This is meant to be
+    used when the taking a reference to part of a boxed value, or to an entire
+    boxed value with new shape or type information.
 
     The new extra information can be:
       - new shape information (new lower bounds, new rank, or new extents.
         New rank/extents can only be provided if the original fir.box is
-        contiguous in all dimension but maybe the first one). The shape
+        contiguous in all dimension but maybe the first row). The shape
         operand must be provided to set new shape information.
-      - new type (only for derived types). It is possible to set the dynamic type
-        of the new box to one of the parent types of the input box dynamic type.
-        Type parameters cannot be changed. This change is reflected in the requested
-        result type of the new box.
+      - new type (only for derived types). It is possible to set the dynamic
+        type of the new box to one of the parent types of the input box dynamic
+        type. Type parameters cannot be changed. This change is reflected in
+        the requested result type of the new box.
 
-    A slice argument can be provided to build a reference to part of a boxed value.
-    In this case, the shape operand must be absent or be a fir.shift that can be
-    used to provide a non default origin for the slice.
+    A slice argument can be provided to build a reference to part of a boxed
+    value. In this case, the shape operand must be absent or be a fir.shift
+    that can be used to provide a non default origin for the slice.
 
     The following example illustrates creating a fir.box for x(10:33:2)
     where x is described by a fir.box and has non default lower bounds,
@@ -1540,6 +1541,81 @@ def fir_ArrayModifyOp : fir_Op<"array_modify", [AttrSizedOperandSegments,
   let verifier = [{ return ::verify(*this); }];
 }
 
+def fir_ArrayAccessOp : fir_Op<"array_access", [AttrSizedOperandSegments,
+    NoSideEffect]> {
+  let summary = "Fetch the reference of an element of an array value";
+
+  let description = [{
+    Fetch the memory reference of an element in an array value.
+
+    ```fortran
+      real :: a(n,m)
+      ...
+      ... a ...
+      ... a(r,s+1) ...
+    ```
+
+    One can use `fir.array_access` to recover the implied memory reference to
+    the element `a(i,j)` in an array expression `a` as shown above. It can also
+    be used to recover the reference element `a(r,s+1)` in the second
+    expression.
+
+    ```mlir
+      %s = fir.shape %n, %m : (index, index) -> !fir.shape<2>
+      // load the entire array 'a'
+      %v = fir.array_load %a(%s) : (!fir.ref<!fir.array<?x?xf32>>, !fir.shape<2>) -> !fir.array<?x?xf32>
+      // fetch the value of one of the array value's elements
+      %1 = fir.array_access %v, %i, %j : (!fir.array<?x?xf32>, index, index) -> !fir.ref<f32>
+    ```
+
+    It is only possible to use `array_access` on an `array_load` result value.
+  }];
+
+  let arguments = (ins
+    fir_SequenceType:$sequence,
+    Variadic<AnyCoordinateType>:$indices,
+    Variadic<AnyIntegerType>:$typeparams
+  );
+
+  let results = (outs fir_ReferenceType:$element);
+
+  let assemblyFormat = [{
+    $sequence `,` $indices (`typeparams` $typeparams^)? attr-dict `:`
+      functional-type(operands, results)
+  }];
+
+  let verifier = "return ::verify(*this);";
+}
+
+def fir_ArrayAmendOp : fir_Op<"array_amend", [NoSideEffect]> {
+  let summary = "Mark an array value as having been changed by reference.";
+
+  let description = [{
+    Marks an array value as having been changed via a reference. The reference
+    into the array value is obtained via an fir.array_access op.
+
+    ```mlir
+      // fetch the value of one of the array value's elements
+      %1 = fir.array_access %v, %i, %j : (!fir.array<?x?xT>, index, index) -> !fir.ref<T>
+      // modify the element by storing data using %1 as a reference
+      %2 = ... %1 ...
+      // mark the array value
+      %new_v = fir.array_amend %v, %2 : (!fir.array<?x?xT>, !fir.ref<T>) -> !fir.array<?x?xT>
+    ```
+  }];
+
+  let arguments = (ins
+    fir_SequenceType:$sequence,
+    fir_ReferenceType:$memref
+  );
+
+  let results = (outs fir_SequenceType);
+
+  let assemblyFormat = [{
+    $sequence `,` $memref attr-dict `:` functional-type(operands, results)
+  }];
+}
+
 def fir_ArrayMergeStoreOp : fir_Op<"array_merge_store",
     [AttrSizedOperandSegments]> {
   let summary = "Store merged array value to memory.";
@@ -1893,18 +1969,33 @@ def fir_SliceOp : fir_Op<"slice", [NoSideEffect, AttrSizedOperandSegments]> {
       %fld = fir.field_index component, !fir.type<t{...component:ct...}>
       %d = fir.slice %lo, %hi, %step path %fld : (index, index, index, !fir.field) -> !fir.slice<1>
     ```
+
+    Projections of `!fir.char` type can be further narrowed to invariant
+    substrings.
+
+    ```mlir
+      %d = fir.slice %lo, %hi, %step substr %from, %to : (index, index, index, index, index) -> !fir.slice<1>
+    ```
   }];
 
   let arguments = (ins
-    Variadic<AnyCoordinateType>:$triples,
-    Variadic<AnyComponentType>:$fields
+    Variadic<AnyIntegerType>:$triples,
+    Variadic<AnyComponentType>:$fields,
+    Variadic<AnyIntegerType>:$substr
   );
 
   let results = (outs fir_SliceType);
 
   let assemblyFormat = [{
-    $triples (`path` $fields^)? attr-dict `:` functional-type(operands, results)
+    $triples (`path` $fields^)? (`substr` $substr^)? attr-dict `:`
+      functional-type(operands, results)
   }];
+
+  let builders = [
+    OpBuilder<(ins "mlir::ValueRange":$triples,
+      CArg<"mlir::ValueRange", "llvm::None">:$fields,
+      CArg<"mlir::ValueRange", "llvm::None">:$substr)>
+  ];
 
   let verifier = "return ::verify(*this);";
 

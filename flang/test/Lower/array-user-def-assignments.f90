@@ -27,32 +27,32 @@ module defined_assignments
 end module
 
 ! CHECK-LABEL: func @_QPtest_derived(
-! CHECK-SAME:                        %[[VAL_0:.*]]: !fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>) {
+! CHECK-SAME:  %[[VAL_0:.*]]: !fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>) {
 subroutine test_derived(x)
+  ! CHECK:         %[[VAL_1:.*]] = constant 100 : index
+  ! CHECK:         %[[VAL_2:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
+  ! CHECK:         %[[VAL_3:.*]] = fir.array_load %[[VAL_0]](%[[VAL_2]]) : (!fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>, !fir.shape<1>) -> !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
+  ! CHECK:         %[[VAL_4:.*]] = constant 100 : i64
+  ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i64) -> index
+  ! CHECK:         %[[VAL_6:.*]] = constant 100 : i64
+  ! CHECK:         %[[VAL_7:.*]] = constant 1 : i64
+  ! CHECK:         %[[VAL_8:.*]] = constant -1 : i64
+  ! CHECK:         %[[VAL_9:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
+  ! CHECK:         %[[VAL_10:.*]] = fir.slice %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : (i64, i64, i64) -> !fir.slice<1>
+  ! CHECK:         %[[VAL_11:.*]] = fir.array_load %[[VAL_0]](%[[VAL_9]]) {{\[}}%[[VAL_10]]] : (!fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
+  ! CHECK:         %[[VAL_12:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_13:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_14:.*]] = subi %[[VAL_5]], %[[VAL_12]] : index
+  ! CHECK:         %[[VAL_15:.*]] = fir.do_loop %[[VAL_16:.*]] = %[[VAL_13]] to %[[VAL_14]] step %[[VAL_12]] unordered iter_args(%[[VAL_17:.*]] = %[[VAL_3]]) -> (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>) {
+  ! CHECK:           %[[VAL_18:.*]] = fir.array_access %[[VAL_11]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> !fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>
+  ! CHECK:           %[[VAL_19:.*]]:2 = fir.array_modify %[[VAL_17]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> (!fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>)
+  ! CHECK:           fir.call @_QPassign_t(%[[VAL_19]]#0, %[[VAL_18]]) : (!fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>) -> ()
+  ! CHECK:           fir.result %[[VAL_19]]#1 : !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
+  ! CHECK:         }
+  ! CHECK:         fir.array_merge_store %[[VAL_3]], %[[VAL_20:.*]] to %[[VAL_0]] : !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>
   use defined_assignments
   type(t) :: x(100)
   x = x(100:1:-1)
-! CHECK:         %[[VAL_1:.*]] = constant 100 : index
-! CHECK:         %[[VAL_2:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
-! CHECK:         %[[VAL_3:.*]] = fir.array_load %[[VAL_0]](%[[VAL_2]]) : (!fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>, !fir.shape<1>) -> !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
-! CHECK:         %[[VAL_4:.*]] = constant 100 : i64
-! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i64) -> index
-! CHECK:         %[[VAL_6:.*]] = constant 100 : i64
-! CHECK:         %[[VAL_7:.*]] = constant 1 : i64
-! CHECK:         %[[VAL_8:.*]] = constant -1 : i64
-! CHECK:         %[[VAL_9:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
-! CHECK:         %[[VAL_10:.*]] = fir.slice %[[VAL_6]], %[[VAL_7]], %[[VAL_8]] : (i64, i64, i64) -> !fir.slice<1>
-! CHECK:         %[[VAL_11:.*]] = fir.array_load %[[VAL_0]](%[[VAL_9]]) {{\[}}%[[VAL_10]]] : (!fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
-! CHECK:         %[[VAL_12:.*]] = constant 1 : index
-! CHECK:         %[[VAL_13:.*]] = constant 0 : index
-! CHECK:         %[[VAL_14:.*]] = subi %[[VAL_5]], %[[VAL_12]] : index
-! CHECK:         %[[VAL_15:.*]] = fir.do_loop %[[VAL_16:.*]] = %[[VAL_13]] to %[[VAL_14]] step %[[VAL_12]] unordered iter_args(%[[VAL_17:.*]] = %[[VAL_3]]) -> (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>) {
-! CHECK:           %[[VAL_18:.*]] = fir.array_fetch %[[VAL_11]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> !fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>
-! CHECK:           %[[VAL_19:.*]]:2 = fir.array_modify %[[VAL_17]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> (!fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>)
-! CHECK:           fir.call @_QPassign_t(%[[VAL_19]]#0, %[[VAL_18]]) : (!fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>) -> ()
-! CHECK:           fir.result %[[VAL_19]]#1 : !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
-! CHECK:         }
-! CHECK:         fir.array_merge_store %[[VAL_3]], %[[VAL_20:.*]] to %[[VAL_0]] : !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>
 ! CHECK:         return
 ! CHECK:       }
 end subroutine
@@ -126,9 +126,25 @@ subroutine test_intrinsic_2(x, y)
 end subroutine
 
 ! CHECK-LABEL: func @_QPfrom_char(
-! CHECK-SAME:                     %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
-! CHECK-SAME:                     %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
+! CHECK-SAME:     %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
+! CHECK-SAME:     %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
 subroutine from_char(i, c)
+  ! CHECK:         %[[VAL_2:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
+  ! CHECK:         %[[VAL_3:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.array<?x!fir.char<1,?>>
+  ! CHECK:         %[[VAL_4:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_5:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_4]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
+  ! CHECK:         %[[VAL_6:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_7:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_8:.*]] = subi %[[VAL_5]]#1, %[[VAL_6]] : index
+  ! CHECK:         %[[VAL_9:.*]] = fir.do_loop %[[VAL_10:.*]] = %[[VAL_7]] to %[[VAL_8]] step %[[VAL_6]] unordered iter_args(%[[VAL_11:.*]] = %[[VAL_2]]) -> (!fir.array<?xi32>) {
+  ! CHECK:           %[[VAL_12:.*]] = fir.array_access %[[VAL_3]], %[[VAL_10]] : (!fir.array<?x!fir.char<1,?>>, index) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK:           %[[VAL_13:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
+  ! CHECK:           %[[VAL_14:.*]]:2 = fir.array_modify %[[VAL_11]], %[[VAL_10]] : (!fir.array<?xi32>, index) -> (!fir.ref<i32>, !fir.array<?xi32>)
+  ! CHECK:           %[[VAL_15:.*]] = fir.emboxchar %[[VAL_12]], %[[VAL_13]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK:           fir.call @_QPsfrom_char(%[[VAL_14]]#0, %[[VAL_15]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
+  ! CHECK:           fir.result %[[VAL_14]]#1 : !fir.array<?xi32>
+  ! CHECK:         }
+  ! CHECK:         fir.array_merge_store %[[VAL_2]], %[[VAL_16:.*]] to %[[VAL_0]] : !fir.array<?xi32>, !fir.array<?xi32>, !fir.box<!fir.array<?xi32>>
   interface assignment(=)
     elemental subroutine sfrom_char(a,b)
       integer, intent(out) :: a
@@ -138,22 +154,6 @@ subroutine from_char(i, c)
   integer :: i(:)
   character(*) :: c(:)
   i = c
-! CHECK:         %[[VAL_2:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
-! CHECK:         %[[VAL_3:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.array<?x!fir.char<1,?>>
-! CHECK:         %[[VAL_4:.*]] = constant 0 : index
-! CHECK:         %[[VAL_5:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_4]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
-! CHECK:         %[[VAL_6:.*]] = constant 1 : index
-! CHECK:         %[[VAL_7:.*]] = constant 0 : index
-! CHECK:         %[[VAL_8:.*]] = subi %[[VAL_5]]#1, %[[VAL_6]] : index
-! CHECK:         %[[VAL_9:.*]] = fir.do_loop %[[VAL_10:.*]] = %[[VAL_7]] to %[[VAL_8]] step %[[VAL_6]] unordered iter_args(%[[VAL_11:.*]] = %[[VAL_2]]) -> (!fir.array<?xi32>) {
-! CHECK:           %[[VAL_12:.*]] = fir.array_fetch %[[VAL_3]], %[[VAL_10]] : (!fir.array<?x!fir.char<1,?>>, index) -> !fir.ref<!fir.char<1,?>>
-! CHECK:           %[[VAL_13:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
-! CHECK:           %[[VAL_14:.*]]:2 = fir.array_modify %[[VAL_11]], %[[VAL_10]] : (!fir.array<?xi32>, index) -> (!fir.ref<i32>, !fir.array<?xi32>)
-! CHECK:           %[[VAL_15:.*]] = fir.emboxchar %[[VAL_12]], %[[VAL_13]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-! CHECK:           fir.call @_QPsfrom_char(%[[VAL_14]]#0, %[[VAL_15]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
-! CHECK:           fir.result %[[VAL_14]]#1 : !fir.array<?xi32>
-! CHECK:         }
-! CHECK:         fir.array_merge_store %[[VAL_2]], %[[VAL_16:.*]] to %[[VAL_0]] : !fir.array<?xi32>, !fir.array<?xi32>, !fir.box<!fir.array<?xi32>>
 ! CHECK:         return
 ! CHECK:       }
 end subroutine
@@ -575,9 +575,34 @@ subroutine test_forall_array(x, y)
 end subroutine
 
 ! CHECK-LABEL: func @_QPfrom_char_forall(
-! CHECK-SAME:                            %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
-! CHECK-SAME:                            %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
+! CHECK-SAME:       %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
+! CHECK-SAME:       %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
 subroutine from_char_forall(i, c)
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = constant 1 : i32
+  ! CHECK:         %[[VAL_4:.*]] = fir.convert %[[VAL_3]] : (i32) -> index
+  ! CHECK:         %[[VAL_5:.*]] = constant 10 : i32
+  ! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> index
+  ! CHECK:         %[[VAL_7:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_8:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
+  ! CHECK:         %[[VAL_9:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.array<?x!fir.char<1,?>>
+  ! CHECK:         %[[VAL_10:.*]] = fir.do_loop %[[VAL_11:.*]] = %[[VAL_4]] to %[[VAL_6]] step %[[VAL_7]] unordered iter_args(%[[VAL_12:.*]] = %[[VAL_8]]) -> (!fir.array<?xi32>) {
+  ! CHECK:           %[[VAL_13:.*]] = fir.convert %[[VAL_11]] : (index) -> i32
+  ! CHECK:           fir.store %[[VAL_13]] to %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_14:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_15:.*]] = fir.convert %[[VAL_14]] : (i32) -> i64
+  ! CHECK:           %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i64) -> index
+  ! CHECK:           %[[VAL_17:.*]] = fir.array_access %[[VAL_9]], %[[VAL_16]] {Fortran.offsets} : (!fir.array<?x!fir.char<1,?>>, index) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK:           %[[VAL_18:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
+  ! CHECK:           %[[VAL_19:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i32) -> i64
+  ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i64) -> index
+  ! CHECK:           %[[VAL_22:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_21]] {Fortran.offsets} : (!fir.array<?xi32>, index) -> (!fir.ref<i32>, !fir.array<?xi32>)
+  ! CHECK:           %[[VAL_23:.*]] = fir.emboxchar %[[VAL_17]], %[[VAL_18]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK:           fir.call @_QPsfrom_char(%[[VAL_22]]#0, %[[VAL_23]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
+  ! CHECK:           fir.result %[[VAL_22]]#1 : !fir.array<?xi32>
+  ! CHECK:         }
+  ! CHECK:         fir.array_merge_store %[[VAL_8]], %[[VAL_24:.*]] to %[[VAL_0]] : !fir.array<?xi32>, !fir.array<?xi32>, !fir.box<!fir.array<?xi32>>
   interface assignment(=)
     elemental subroutine sfrom_char(a,b)
       integer, intent(out) :: a
@@ -587,38 +612,13 @@ subroutine from_char_forall(i, c)
   integer :: i(:)
   character(*) :: c(:)
   forall (j=1:10) i(j) = c(j)
-! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
-! CHECK:         %[[VAL_3:.*]] = constant 1 : i32
-! CHECK:         %[[VAL_4:.*]] = fir.convert %[[VAL_3]] : (i32) -> index
-! CHECK:         %[[VAL_5:.*]] = constant 10 : i32
-! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> index
-! CHECK:         %[[VAL_7:.*]] = constant 1 : index
-! CHECK:         %[[VAL_8:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
-! CHECK:         %[[VAL_9:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.array<?x!fir.char<1,?>>
-! CHECK:         %[[VAL_10:.*]] = fir.do_loop %[[VAL_11:.*]] = %[[VAL_4]] to %[[VAL_6]] step %[[VAL_7]] unordered iter_args(%[[VAL_12:.*]] = %[[VAL_8]]) -> (!fir.array<?xi32>) {
-! CHECK:           %[[VAL_13:.*]] = fir.convert %[[VAL_11]] : (index) -> i32
-! CHECK:           fir.store %[[VAL_13]] to %[[VAL_2]] : !fir.ref<i32>
-! CHECK:           %[[VAL_14:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-! CHECK:           %[[VAL_15:.*]] = fir.convert %[[VAL_14]] : (i32) -> i64
-! CHECK:           %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (i64) -> index
-! CHECK:           %[[VAL_17:.*]] = fir.array_fetch %[[VAL_9]], %[[VAL_16]] {Fortran.offsets} : (!fir.array<?x!fir.char<1,?>>, index) -> !fir.ref<!fir.char<1,?>>
-! CHECK:           %[[VAL_18:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
-! CHECK:           %[[VAL_19:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i32) -> i64
-! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i64) -> index
-! CHECK:           %[[VAL_22:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_21]] {Fortran.offsets} : (!fir.array<?xi32>, index) -> (!fir.ref<i32>, !fir.array<?xi32>)
-! CHECK:           %[[VAL_23:.*]] = fir.emboxchar %[[VAL_17]], %[[VAL_18]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-! CHECK:           fir.call @_QPsfrom_char(%[[VAL_22]]#0, %[[VAL_23]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
-! CHECK:           fir.result %[[VAL_22]]#1 : !fir.array<?xi32>
-! CHECK:         }
-! CHECK:         fir.array_merge_store %[[VAL_8]], %[[VAL_24:.*]] to %[[VAL_0]] : !fir.array<?xi32>, !fir.array<?xi32>, !fir.box<!fir.array<?xi32>>
-! CHECK:         return
-! CHECK:       }
+  ! CHECK:         return
+  ! CHECK:       }
 end subroutine
 
 ! CHECK-LABEL: func @_QPto_char_forall(
-! CHECK-SAME:                          %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
-! CHECK-SAME:                          %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
+! CHECK-SAME:          %[[VAL_0:.*]]: !fir.box<!fir.array<?xi32>>,
+! CHECK-SAME:          %[[VAL_1:.*]]: !fir.box<!fir.array<?x!fir.char<1,?>>>) {
 subroutine to_char_forall(i, c)
   interface assignment(=)
     elemental subroutine sto_char(a,b)
@@ -664,6 +664,60 @@ end subroutine
 ! CHECK-SAME:                                  %[[VAL_0:.*]]: !fir.box<!fir.array<?x?xi32>>,
 ! CHECK-SAME:                                  %[[VAL_1:.*]]: !fir.box<!fir.array<?x?x!fir.char<1,?>>>) {
 subroutine from_char_forall_array(i, c)
+  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK:         %[[VAL_3:.*]] = constant 1 : i32
+  ! CHECK:         %[[VAL_4:.*]] = fir.convert %[[VAL_3]] : (i32) -> index
+  ! CHECK:         %[[VAL_5:.*]] = constant 10 : i32
+  ! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> index
+  ! CHECK:         %[[VAL_7:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_8:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?xi32>>) -> !fir.array<?x?xi32>
+  ! CHECK:         %[[VAL_9:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> !fir.array<?x?x!fir.char<1,?>>
+  ! CHECK:         %[[VAL_10:.*]] = fir.do_loop %[[VAL_11:.*]] = %[[VAL_4]] to %[[VAL_6]] step %[[VAL_7]] unordered iter_args(%[[VAL_12:.*]] = %[[VAL_8]]) -> (!fir.array<?x?xi32>) {
+  ! CHECK:           %[[VAL_13:.*]] = fir.convert %[[VAL_11]] : (index) -> i32
+  ! CHECK:           fir.store %[[VAL_13]] to %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:           %[[VAL_14:.*]] = constant 1 : index
+  ! CHECK:           %[[VAL_15:.*]] = constant 1 : index
+  ! CHECK:           %[[VAL_16:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_15]] : (!fir.box<!fir.array<?x?xi32>>, index) -> (index, index, index)
+  ! CHECK:           %[[VAL_17:.*]] = addi %[[VAL_14]], %[[VAL_16]]#1 : index
+  ! CHECK:           %[[VAL_18:.*]] = subi %[[VAL_17]], %[[VAL_14]] : index
+  ! CHECK:           %[[VAL_19:.*]] = constant 1 : i64
+  ! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i64) -> index
+  ! CHECK:           %[[VAL_21:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_22:.*]] = subi %[[VAL_18]], %[[VAL_14]] : index
+  ! CHECK:           %[[VAL_23:.*]] = addi %[[VAL_22]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_24:.*]] = divi_signed %[[VAL_23]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_25:.*]] = cmpi sgt, %[[VAL_24]], %[[VAL_21]] : index
+  ! CHECK:           %[[VAL_26:.*]] = select %[[VAL_25]], %[[VAL_24]], %[[VAL_21]] : index
+  ! CHECK:           %[[VAL_27:.*]] = constant 1 : index
+  ! CHECK:           %[[VAL_28:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_29:.*]] = subi %[[VAL_26]], %[[VAL_27]] : index
+  ! CHECK:           %[[VAL_30:.*]] = fir.do_loop %[[VAL_31:.*]] = %[[VAL_28]] to %[[VAL_29]] step %[[VAL_27]] unordered iter_args(%[[VAL_32:.*]] = %[[VAL_12]]) -> (!fir.array<?x?xi32>) {
+  ! CHECK:             %[[VAL_33:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:             %[[VAL_34:.*]] = fir.convert %[[VAL_33]] : (i32) -> i64
+  ! CHECK:             %[[VAL_35:.*]] = fir.convert %[[VAL_34]] : (i64) -> index
+  ! CHECK:             %[[VAL_36:.*]] = constant 1 : index
+  ! CHECK:             %[[VAL_37:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_38:.*]] = fir.convert %[[VAL_37]] : (i64) -> index
+  ! CHECK:             %[[VAL_39:.*]] = muli %[[VAL_31]], %[[VAL_38]] : index
+  ! CHECK:             %[[VAL_40:.*]] = addi %[[VAL_36]], %[[VAL_39]] : index
+  ! CHECK:             %[[VAL_41:.*]] = fir.array_access %[[VAL_9]], %[[VAL_35]], %[[VAL_40]] {Fortran.offsets} : (!fir.array<?x?x!fir.char<1,?>>, index, index) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK:             %[[VAL_42:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> index
+  ! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK:             %[[VAL_44:.*]] = fir.convert %[[VAL_43]] : (i32) -> i64
+  ! CHECK:             %[[VAL_45:.*]] = fir.convert %[[VAL_44]] : (i64) -> index
+  ! CHECK:             %[[VAL_46:.*]] = constant 1 : index
+  ! CHECK:             %[[VAL_47:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_48:.*]] = fir.convert %[[VAL_47]] : (i64) -> index
+  ! CHECK:             %[[VAL_49:.*]] = muli %[[VAL_31]], %[[VAL_48]] : index
+  ! CHECK:             %[[VAL_50:.*]] = addi %[[VAL_46]], %[[VAL_49]] : index
+  ! CHECK:             %[[VAL_51:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_45]], %[[VAL_50]] {Fortran.offsets} : (!fir.array<?x?xi32>, index, index) -> (!fir.ref<i32>, !fir.array<?x?xi32>)
+  ! CHECK:             %[[VAL_52:.*]] = fir.emboxchar %[[VAL_41]], %[[VAL_42]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK:             fir.call @_QPsfrom_char(%[[VAL_51]]#0, %[[VAL_52]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
+  ! CHECK:             fir.result %[[VAL_51]]#1 : !fir.array<?x?xi32>
+  ! CHECK:           }
+  ! CHECK:           fir.result %[[VAL_53:.*]] : !fir.array<?x?xi32>
+  ! CHECK:         }
+  ! CHECK:         fir.array_merge_store %[[VAL_8]], %[[VAL_54:.*]] to %[[VAL_0]] : !fir.array<?x?xi32>, !fir.array<?x?xi32>, !fir.box<!fir.array<?x?xi32>>
   interface assignment(=)
     elemental subroutine sfrom_char(a,b)
       integer, intent(out) :: a
@@ -673,62 +727,8 @@ subroutine from_char_forall_array(i, c)
   integer :: i(:, :)
   character(*) :: c(:, :)
   forall (j=1:10) i(j, :) = c(j, :)
-! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
-! CHECK:         %[[VAL_3:.*]] = constant 1 : i32
-! CHECK:         %[[VAL_4:.*]] = fir.convert %[[VAL_3]] : (i32) -> index
-! CHECK:         %[[VAL_5:.*]] = constant 10 : i32
-! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> index
-! CHECK:         %[[VAL_7:.*]] = constant 1 : index
-! CHECK:         %[[VAL_8:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?xi32>>) -> !fir.array<?x?xi32>
-! CHECK:         %[[VAL_9:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> !fir.array<?x?x!fir.char<1,?>>
-! CHECK:         %[[VAL_10:.*]] = fir.do_loop %[[VAL_11:.*]] = %[[VAL_4]] to %[[VAL_6]] step %[[VAL_7]] unordered iter_args(%[[VAL_12:.*]] = %[[VAL_8]]) -> (!fir.array<?x?xi32>) {
-! CHECK:           %[[VAL_13:.*]] = fir.convert %[[VAL_11]] : (index) -> i32
-! CHECK:           fir.store %[[VAL_13]] to %[[VAL_2]] : !fir.ref<i32>
-! CHECK:           %[[VAL_14:.*]] = constant 1 : index
-! CHECK:           %[[VAL_15:.*]] = constant 1 : index
-! CHECK:           %[[VAL_16:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_15]] : (!fir.box<!fir.array<?x?xi32>>, index) -> (index, index, index)
-! CHECK:           %[[VAL_17:.*]] = addi %[[VAL_14]], %[[VAL_16]]#1 : index
-! CHECK:           %[[VAL_18:.*]] = subi %[[VAL_17]], %[[VAL_14]] : index
-! CHECK:           %[[VAL_19:.*]] = constant 1 : i64
-! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i64) -> index
-! CHECK:           %[[VAL_21:.*]] = constant 0 : index
-! CHECK:           %[[VAL_22:.*]] = subi %[[VAL_18]], %[[VAL_14]] : index
-! CHECK:           %[[VAL_23:.*]] = addi %[[VAL_22]], %[[VAL_20]] : index
-! CHECK:           %[[VAL_24:.*]] = divi_signed %[[VAL_23]], %[[VAL_20]] : index
-! CHECK:           %[[VAL_25:.*]] = cmpi sgt, %[[VAL_24]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_26:.*]] = select %[[VAL_25]], %[[VAL_24]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_27:.*]] = constant 1 : index
-! CHECK:           %[[VAL_28:.*]] = constant 0 : index
-! CHECK:           %[[VAL_29:.*]] = subi %[[VAL_26]], %[[VAL_27]] : index
-! CHECK:           %[[VAL_30:.*]] = fir.do_loop %[[VAL_31:.*]] = %[[VAL_28]] to %[[VAL_29]] step %[[VAL_27]] unordered iter_args(%[[VAL_32:.*]] = %[[VAL_12]]) -> (!fir.array<?x?xi32>) {
-! CHECK:             %[[VAL_33:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-! CHECK:             %[[VAL_34:.*]] = fir.convert %[[VAL_33]] : (i32) -> i64
-! CHECK:             %[[VAL_35:.*]] = fir.convert %[[VAL_34]] : (i64) -> index
-! CHECK:             %[[VAL_36:.*]] = constant 1 : index
-! CHECK:             %[[VAL_37:.*]] = constant 1 : i64
-! CHECK:             %[[VAL_38:.*]] = fir.convert %[[VAL_37]] : (i64) -> index
-! CHECK:             %[[VAL_39:.*]] = muli %[[VAL_31]], %[[VAL_38]] : index
-! CHECK:             %[[VAL_40:.*]] = addi %[[VAL_36]], %[[VAL_39]] : index
-! CHECK:             %[[VAL_41:.*]] = fir.array_fetch %[[VAL_9]], %[[VAL_35]], %[[VAL_40]] {Fortran.offsets} : (!fir.array<?x?x!fir.char<1,?>>, index, index) -> !fir.ref<!fir.char<1,?>>
-! CHECK:             %[[VAL_42:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> index
-! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-! CHECK:             %[[VAL_44:.*]] = fir.convert %[[VAL_43]] : (i32) -> i64
-! CHECK:             %[[VAL_45:.*]] = fir.convert %[[VAL_44]] : (i64) -> index
-! CHECK:             %[[VAL_46:.*]] = constant 1 : index
-! CHECK:             %[[VAL_47:.*]] = constant 1 : i64
-! CHECK:             %[[VAL_48:.*]] = fir.convert %[[VAL_47]] : (i64) -> index
-! CHECK:             %[[VAL_49:.*]] = muli %[[VAL_31]], %[[VAL_48]] : index
-! CHECK:             %[[VAL_50:.*]] = addi %[[VAL_46]], %[[VAL_49]] : index
-! CHECK:             %[[VAL_51:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_45]], %[[VAL_50]] {Fortran.offsets} : (!fir.array<?x?xi32>, index, index) -> (!fir.ref<i32>, !fir.array<?x?xi32>)
-! CHECK:             %[[VAL_52:.*]] = fir.emboxchar %[[VAL_41]], %[[VAL_42]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-! CHECK:             fir.call @_QPsfrom_char(%[[VAL_51]]#0, %[[VAL_52]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
-! CHECK:             fir.result %[[VAL_51]]#1 : !fir.array<?x?xi32>
-! CHECK:           }
-! CHECK:           fir.result %[[VAL_53:.*]] : !fir.array<?x?xi32>
-! CHECK:         }
-! CHECK:         fir.array_merge_store %[[VAL_8]], %[[VAL_54:.*]] to %[[VAL_0]] : !fir.array<?x?xi32>, !fir.array<?x?xi32>, !fir.box<!fir.array<?x?xi32>>
-! CHECK:         return
-! CHECK:       }
+  ! CHECK:         return
+  ! CHECK:       }
 end subroutine
 
 ! CHECK-LABEL: func @_QPto_char_forall_array(
