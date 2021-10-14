@@ -1,4 +1,4 @@
-//===- DoLoopHelper.cpp -- DoLoopHelper unit tests ------------------------===//
+//===- DoLoopHelperTest.cpp -- DoLoopHelper unit tests --------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -44,8 +44,8 @@ TEST_F(DoLoopHelperTest, createLoopWithCountTest) {
   auto loop =
       helper.createLoop(c10, [&](fir::FirOpBuilder &, mlir::Value index) {});
   checkConstantValue(loop.lowerBound(), 0);
-  EXPECT_TRUE(mlir::isa<arith::SubIOp>(loop.upperBound().getDefiningOp()));
-  auto subOp = dyn_cast<arith::SubIOp>(loop.upperBound().getDefiningOp());
+  EXPECT_TRUE(mlir::isa<mlir::SubIOp>(loop.upperBound().getDefiningOp()));
+  auto subOp = dyn_cast<mlir::SubIOp>(loop.upperBound().getDefiningOp());
   EXPECT_EQ(c10, subOp.lhs());
   checkConstantValue(subOp.rhs(), 1);
   checkConstantValue(loop.step(), 1);

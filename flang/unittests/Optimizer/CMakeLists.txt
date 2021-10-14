@@ -9,9 +9,7 @@ set(LIBS
 )
 
 add_flang_unittest(FlangOptimizerTests
-  Builder/CharacterTest.cpp
   Builder/DoLoopHelperTest.cpp
-  Builder/FIRBuilderTest.cpp
   FIRContextTest.cpp
   InternalNamesTest.cpp
   KindMappingTest.cpp
