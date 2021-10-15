@@ -284,7 +284,7 @@ public:
   //===--------------------------------------------------------------------===//
 
   /// Helper class to create if-then-else in a structured way:
-  /// Usage: genIfOp().then([&](){...}).else([&](){...}).end();
+  /// Usage: genIfOp().genThen([&](){...}).genElse([&](){...}).end();
   /// Alternatively, getResults() can be used instead of end() to end the ifOp
   /// and get the ifOp results.
   class IfBuilder {
