@@ -32,23 +32,27 @@ end subroutine scalar_substring_embox
 ! CHECK-LABEL: func @_QParray_substring_embox(
 ! CHECK-SAME:                                 %[[VAL_0:.*]]: !fir.boxchar<1>) {
 subroutine array_substring_embox(arr)
-  ! CHECK:         %[[VAL_1:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-  ! CHECK:         %[[VAL_2:.*]] = fir.convert %[[VAL_1]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<4x!fir.char<1,7>>>
-  ! CHECK:         %[[VAL_3:.*]] = constant 4 : index
-  ! CHECK:         %[[VAL_4:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_5:.*]] = addi %[[VAL_4]], %[[VAL_3]] : index
-  ! CHECK:         %[[VAL_6:.*]] = subi %[[VAL_5]], %[[VAL_4]] : index
-  ! CHECK:         %[[VAL_7:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_9:.*]] = constant 5 : i64
-  ! CHECK:         %[[VAL_10:.*]] = constant 7 : i64
-  ! CHECK:         %[[VAL_11:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_12:.*]] = subi %[[VAL_9]], %[[VAL_11]] : i64
-  ! CHECK:         %[[VAL_13:.*]] = subi %[[VAL_10]], %[[VAL_12]] : i64
-  ! CHECK:         %[[VAL_14:.*]] = fir.slice %[[VAL_4]], %[[VAL_6]], %[[VAL_7]] substr %[[VAL_12]], %[[VAL_13]] : (index, index, i64, i64, i64) -> !fir.slice<1>
-  ! CHECK:         %[[VAL_15:.*]] = fir.embox %[[VAL_2]](%[[VAL_8]]) {{\[}}%[[VAL_14]]] : (!fir.ref<!fir.array<4x!fir.char<1,7>>>, !fir.shape<1>, !fir.slice<1>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
-  ! CHECK:         %[[VAL_16:.*]] = fir.convert %[[VAL_15]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.box<!fir.array<?x!fir.char<1>>>
-  ! CHECK:         fir.call @_QPs(%[[VAL_16]]) : (!fir.box<!fir.array<?x!fir.char<1>>>) -> ()
+  ! CHECK: %[[VAL_1:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+  ! CHECK: %[[VAL_2:.*]] = fir.convert %[[VAL_1]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<4x!fir.char<1,7>>>
+  ! CHECK: %[[VAL_3:.*]] = constant 4 : index
+  ! CHECK: %[[VAL_4:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_5:.*]] = addi %[[VAL_4]], %[[VAL_3]] : index
+  ! CHECK: %[[VAL_6:.*]] = subi %[[VAL_5]], %[[VAL_4]] : index
+  ! CHECK: %[[VAL_7:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_9:.*]] = constant 5 : i64
+  ! CHECK: %[[VAL_10:.*]] = constant 7 : i64
+  ! CHECK: %[[VAL_11:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_12:.*]] = subi %[[VAL_9]], %[[VAL_11]] : i64
+  ! CHECK: %[[VAL_13:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_14:.*]] = subi %[[VAL_10]], %[[VAL_12]] : i64
+  ! CHECK: %[[VAL_15:.*]] = cmpi sgt, %[[VAL_14]], %[[VAL_13]] : i64
+  ! CHECK: %[[VAL_16:.*]] = select %[[VAL_15]], %[[VAL_14]], %[[VAL_13]] : i64
+  ! CHECK: %[[VAL_17:.*]] = fir.slice %[[VAL_4]], %[[VAL_6]], %[[VAL_7]] substr %[[VAL_12]], %[[VAL_16]] : (index, index, i64, i64, i64) -> !fir.slice<1>
+  ! CHECK: %[[VAL_18:.*]] = fir.embox %[[VAL_2]](%[[VAL_8]]) {{\[}}%[[VAL_17]]] : (!fir.ref<!fir.array<4x!fir.char<1,7>>>, !fir.shape<1>, !fir.slice<1>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
+  ! CHECK: %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> !fir.box<!fir.array<?x!fir.char<1>>>
+  ! CHECK: fir.call @_QPs(%[[VAL_19]]) : (!fir.box<!fir.array<?x!fir.char<1>>>) -> ()
+
   interface
     subroutine s(a)
      character(1) :: a(:)

@@ -107,6 +107,10 @@ public:
   /// Extract the kind of a character or array of character type.
   static fir::KindTy getCharacterOrSequenceKind(mlir::Type type);
 
+  // TODO: Do we really need all these flavors of unwrapping to get the fir.char
+  // type? Or can we merge these? It would be better to merge them and eliminate
+  // the confusion.
+
   /// Determine the inner character type. Unwraps references, boxes, and
   /// sequences to find the !fir.char element type.
   static fir::CharacterType getCharType(mlir::Type type);

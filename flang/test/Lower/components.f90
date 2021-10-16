@@ -124,74 +124,75 @@ end subroutine
 ! CHECK-LABEL: func @_QPlhs_char_section(
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>>>) {
 subroutine lhs_char_section(a)
+  ! CHECK: %[[VAL_1:.*]] = constant 6 : index
+  ! CHECK: %[[VAL_2:.*]] = constant false
+  ! CHECK: %[[VAL_3:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_4:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_5:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_6:.*]] = fir.field_index c, !fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>
+  ! CHECK: %[[VAL_7:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_8:.*]] = fir.slice %[[VAL_5]], %[[VAL_3]], %[[VAL_5]] path %[[VAL_6]] : (index, index, index, !fir.field) -> !fir.slice<1>
+  ! CHECK: %[[VAL_9:.*]] = fir.address_of(@_QQcl.68656C6C6F) : !fir.ref<!fir.char<1,5>>
+  ! CHECK: br ^bb1(%[[VAL_4]], %[[VAL_3]] : index, index)
+  ! CHECK: ^bb1(%[[VAL_10:.*]]: index, %[[VAL_11:.*]]: index):
+  ! CHECK: %[[VAL_12:.*]] = cmpi sgt, %[[VAL_11]], %[[VAL_4]] : index
+  ! CHECK: cond_br %[[VAL_12]], ^bb2, ^bb3
+  ! CHECK: ^bb2:
+  ! CHECK: %[[VAL_13:.*]] = addi %[[VAL_10]], %[[VAL_5]] : index
+  ! CHECK: %[[VAL_14:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_7]]) {{\[}}%[[VAL_8]]] %[[VAL_13]] : (!fir.ref<!fir.array<10x!fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,5>>
+  ! CHECK: %[[VAL_15:.*]] = fir.convert %[[VAL_1]] : (index) -> i64
+  ! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_14]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_17:.*]] = fir.convert %[[VAL_9]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
+  ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_16]], %[[VAL_17]], %[[VAL_15]], %[[VAL_2]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+  ! CHECK: %[[VAL_18:.*]] = subi %[[VAL_11]], %[[VAL_5]] : index
+  ! CHECK: br ^bb1(%[[VAL_13]], %[[VAL_18]] : index, index)
+
   type t
    character(5) :: c
   end type
   type(t) :: a(10)
   a%c = "hello"
-    ! CHECK:         %[[VAL_1:.*]] = constant 5 : index
-    ! CHECK:         %[[VAL_2:.*]] = constant false
-    ! CHECK:         %[[VAL_3:.*]] = constant 10 : index
-    ! CHECK:         %[[VAL_4:.*]] = constant 0 : index
-    ! CHECK:         %[[VAL_5:.*]] = constant 1 : index
-    ! CHECK:         %[[VAL_6:.*]] = fir.field_index c, !fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>
-    ! CHECK:         %[[VAL_7:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
-    ! CHECK:         %[[VAL_8:.*]] = fir.slice %[[VAL_5]], %[[VAL_3]], %[[VAL_5]] path %[[VAL_6]] : (index, index, index, !fir.field) -> !fir.slice<1>
-    ! CHECK:         %[[VAL_9:.*]] = fir.address_of(@_QQcl.68656C6C6F) : !fir.ref<!fir.char<1,5>>
-    ! CHECK:         br ^bb1(%[[VAL_4]], %[[VAL_3]] : index, index)
-    ! CHECK:       ^bb1(%[[VAL_10:.*]]: index, %[[VAL_11:.*]]: index):
-    ! CHECK:         %[[VAL_12:.*]] = cmpi sgt, %[[VAL_11]], %[[VAL_4]] : index
-    ! CHECK:         cond_br %[[VAL_12]], ^bb2, ^bb3
-    ! CHECK:       ^bb2:
-    ! CHECK:         %[[VAL_13:.*]] = addi %[[VAL_10]], %[[VAL_5]] : index
-    ! CHECK:         %[[VAL_14:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_7]]) {{\[}}%[[VAL_8]]] %[[VAL_13]] : (!fir.ref<!fir.array<10x!fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,5>>
-    ! CHECK:         %[[VAL_15:.*]] = fir.convert %[[VAL_1]] : (index) -> i64
-    ! CHECK:         %[[VAL_16:.*]] = fir.convert %[[VAL_14]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
-    ! CHECK:         %[[VAL_17:.*]] = fir.convert %[[VAL_9]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
-    ! CHECK:         fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_16]], %[[VAL_17]], %[[VAL_15]], %[[VAL_2]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
-    ! CHECK:         %[[VAL_18:.*]] = subi %[[VAL_11]], %[[VAL_5]] : index
-    ! CHECK:         br ^bb1(%[[VAL_13]], %[[VAL_18]] : index, index)
-    ! CHECK:       ^bb3:
-    ! CHECK:         return
-    ! CHECK:       }
+    ! CHECK: return
+    ! CHECK: }
 end subroutine
 
 ! CHECK-LABEL: func @_QPrhs_char_section(
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>>>,
 ! CHECK-SAME:    %[[VAL_1:.*]]: !fir.boxchar<1>) {
 subroutine rhs_char_section(a, c)
+  ! CHECK: %[[VAL_2:.*]] = constant 11 : index
+  ! CHECK: %[[VAL_3:.*]] = constant false
+  ! CHECK: %[[VAL_4:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_5:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_6:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_7:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+  ! CHECK: %[[VAL_8:.*]] = fir.convert %[[VAL_7]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_9:.*]] = fir.shape %[[VAL_4]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_10:.*]] = fir.field_index c, !fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>
+  ! CHECK: %[[VAL_11:.*]] = fir.slice %[[VAL_6]], %[[VAL_4]], %[[VAL_6]] path %[[VAL_10]] : (index, index, index, !fir.field) -> !fir.slice<1>
+  ! CHECK: br ^bb1(%[[VAL_5]], %[[VAL_4]] : index, index)
+  ! CHECK: ^bb1(%[[VAL_12:.*]]: index, %[[VAL_13:.*]]: index):
+  ! CHECK: %[[VAL_14:.*]] = cmpi sgt, %[[VAL_13]], %[[VAL_5]] : index
+  ! CHECK: cond_br %[[VAL_14]], ^bb2, ^bb3
+  ! CHECK: ^bb2:
+  ! CHECK: %[[VAL_15:.*]] = addi %[[VAL_12]], %[[VAL_6]] : index
+  ! CHECK: %[[VAL_16:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_9]]) {{\[}}%[[VAL_11]]] %[[VAL_15]] : (!fir.ref<!fir.array<10x!fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_17:.*]] = fir.array_coor %[[VAL_8]](%[[VAL_9]]) %[[VAL_15]] : (!fir.ref<!fir.array<10x!fir.char<1,10>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_18:.*]] = fir.convert %[[VAL_2]] : (index) -> i64
+  ! CHECK: %[[VAL_19:.*]] = fir.convert %[[VAL_17]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_20:.*]] = fir.convert %[[VAL_16]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_19]], %[[VAL_20]], %[[VAL_18]], %[[VAL_3]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+  ! CHECK: %[[VAL_21:.*]] = subi %[[VAL_13]], %[[VAL_6]] : index
+  ! CHECK: br ^bb1(%[[VAL_15]], %[[VAL_21]] : index, index)
+
   type t
    character(10) :: c
   end type
   type(t) :: a(10)
   character(10) :: c(10)
   c = a%c
-    ! CHECK:         %[[VAL_2:.*]] = constant false
-    ! CHECK:         %[[VAL_3:.*]] = constant 10 : index
-    ! CHECK:         %[[VAL_4:.*]] = constant 0 : index
-    ! CHECK:         %[[VAL_5:.*]] = constant 1 : index
-    ! CHECK:         %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-    ! CHECK:         %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,10>>>
-    ! CHECK:         %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
-    ! CHECK:         %[[VAL_9:.*]] = fir.field_index c, !fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>
-    ! CHECK:         %[[VAL_10:.*]] = fir.slice %[[VAL_5]], %[[VAL_3]], %[[VAL_5]] path %[[VAL_9]] : (index, index, index, !fir.field) -> !fir.slice<1>
-    ! CHECK:         br ^bb1(%[[VAL_4]], %[[VAL_3]] : index, index)
-    ! CHECK:       ^bb1(%[[VAL_11:.*]]: index, %[[VAL_12:.*]]: index):
-    ! CHECK:         %[[VAL_13:.*]] = cmpi sgt, %[[VAL_12]], %[[VAL_4]] : index
-    ! CHECK:         cond_br %[[VAL_13]], ^bb2, ^bb3
-    ! CHECK:       ^bb2:
-    ! CHECK:         %[[VAL_14:.*]] = addi %[[VAL_11]], %[[VAL_5]] : index
-    ! CHECK:         %[[VAL_15:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_8]]) {{\[}}%[[VAL_10]]] %[[VAL_14]] : (!fir.ref<!fir.array<10x!fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,10>>
-    ! CHECK:         %[[VAL_16:.*]] = fir.array_coor %[[VAL_7]](%[[VAL_8]]) %[[VAL_14]] : (!fir.ref<!fir.array<10x!fir.char<1,10>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,10>>
-    ! CHECK:         %[[VAL_17:.*]] = fir.convert %[[VAL_3]] : (index) -> i64
-    ! CHECK:         %[[VAL_18:.*]] = fir.convert %[[VAL_16]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-    ! CHECK:         %[[VAL_19:.*]] = fir.convert %[[VAL_15]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-    ! CHECK:         fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_18]], %[[VAL_19]], %[[VAL_17]], %[[VAL_2]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
-    ! CHECK:         %[[VAL_20:.*]] = subi %[[VAL_12]], %[[VAL_5]] : index
-    ! CHECK:         br ^bb1(%[[VAL_14]], %[[VAL_20]] : index, index)
-    ! CHECK:       ^bb3:
-    ! CHECK:         return
-    ! CHECK:       }
+    ! CHECK: return
+    ! CHECK: }
 end subroutine
 
 ! CHECK-LABEL: func @_QPelemental_char_section(
@@ -208,26 +209,26 @@ subroutine elemental_char_section(a, i)
   ! CHECK-DAG:  %[[VAL_36:.*]] = constant 10 : index
   ! CHECK-DAG:  %[[VAL_37:.*]] = constant 0 : index
   ! CHECK-DAG:  %[[VAL_38:.*]] = constant 1 : index
-  ! CHECK:  %[[VAL_39:.*]] = fir.shape %[[VAL_36]] : (index) -> !fir.shape<1>
-  ! CHECK:  %[[VAL_40:.*]] = fir.field_index c, !fir.type<_QFelemental_char_sectionTt{c:!fir.char<1,10>}>
-  ! CHECK:  %[[VAL_41:.*]] = fir.slice %[[VAL_38]], %[[VAL_36]], %[[VAL_38]] path %[[VAL_40]] : (index, index, index, !fir.field) -> !fir.slice<1>
-  ! CHECK:  %[[VAL_42:.*]] = fir.address_of(@{{.*}}) : !fir.ref<!fir.char<1,5>>
-  ! CHECK:  br ^bb1(%[[VAL_37]], %[[VAL_36]] : index, index)
+  ! CHECK: %[[VAL_39:.*]] = fir.shape %[[VAL_36]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_40:.*]] = fir.field_index c, !fir.type<_QFelemental_char_sectionTt{c:!fir.char<1,10>}>
+  ! CHECK: %[[VAL_41:.*]] = fir.slice %[[VAL_38]], %[[VAL_36]], %[[VAL_38]] path %[[VAL_40]] : (index, index, index, !fir.field) -> !fir.slice<1>
+  ! CHECK: %[[VAL_42:.*]] = fir.address_of(@{{.*}}) : !fir.ref<!fir.char<1,5>>
+  ! CHECK: br ^bb1(%[[VAL_37]], %[[VAL_36]] : index, index)
   ! CHECK:^bb1(%[[VAL_43:.*]]: index, %[[VAL_44:.*]]: index):
-  ! CHECK:  %[[VAL_45:.*]] = cmpi sgt, %[[VAL_44]], %[[VAL_37]] : index
-  ! CHECK:  cond_br %[[VAL_45]], ^bb2, ^bb3
+  ! CHECK: %[[VAL_45:.*]] = cmpi sgt, %[[VAL_44]], %[[VAL_37]] : index
+  ! CHECK: cond_br %[[VAL_45]], ^bb2, ^bb3
   ! CHECK:^bb2:
-  ! CHECK:  %[[VAL_46:.*]] = addi %[[VAL_43]], %[[VAL_38]] : index
-  ! CHECK:  %[[VAL_47:.*]] = fir.array_coor %[[A]](%[[VAL_39]]) {{\[}}%[[VAL_41]]] %[[VAL_46]] : (!fir.ref<!fir.array<10x!fir.type<_QFelemental_char_sectionTt{c:!fir.char<1,10>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK:  %[[VAL_49:.*]] = fir.convert %[[VAL_47]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-  ! CHECK:  %[[VAL_50:.*]] = fir.convert %[[VAL_36]] : (index) -> i64
-  ! CHECK:  %[[VAL_51:.*]] = fir.convert %[[VAL_42]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
-  ! CHECK:  %[[VAL_52:.*]] = fir.convert %[[VAL_34]] : (index) -> i64
-  ! CHECK:  %[[VAL_53:.*]] = fir.call @_FortranAScan1(%[[VAL_49]], %[[VAL_50]], %[[VAL_51]], %[[VAL_52]], %[[VAL_35]]) : (!fir.ref<i8>, i64, !fir.ref<i8>, i64, i1) -> i64
-  ! CHECK:  %[[VAL_54:.*]] = fir.convert %[[VAL_53]] : (i64) -> i32
-  ! CHECK:  %[[VAL_55:.*]] = fir.array_coor %[[I]](%[[VAL_39]]) %[[VAL_46]] : (!fir.ref<!fir.array<10xi32>>, !fir.shape<1>, index) -> !fir.ref<i32>
-  ! CHECK:  fir.store %[[VAL_54]] to %[[VAL_55]] : !fir.ref<i32>
-  ! CHECK:  %[[VAL_57:.*]] = subi %[[VAL_44]], %[[VAL_38]] : index
-  ! CHECK:  br ^bb1(%[[VAL_46]], %[[VAL_57]] : index, index)
+  ! CHECK: %[[VAL_46:.*]] = addi %[[VAL_43]], %[[VAL_38]] : index
+  ! CHECK: %[[VAL_47:.*]] = fir.array_coor %[[A]](%[[VAL_39]]) {{\[}}%[[VAL_41]]] %[[VAL_46]] : (!fir.ref<!fir.array<10x!fir.type<_QFelemental_char_sectionTt{c:!fir.char<1,10>}>>>, !fir.shape<1>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_49:.*]] = fir.convert %[[VAL_47]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_50:.*]] = fir.convert %[[VAL_36]] : (index) -> i64
+  ! CHECK: %[[VAL_51:.*]] = fir.convert %[[VAL_42]] : (!fir.ref<!fir.char<1,5>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_52:.*]] = fir.convert %[[VAL_34]] : (index) -> i64
+  ! CHECK: %[[VAL_53:.*]] = fir.call @_FortranAScan1(%[[VAL_49]], %[[VAL_50]], %[[VAL_51]], %[[VAL_52]], %[[VAL_35]]) : (!fir.ref<i8>, i64, !fir.ref<i8>, i64, i1) -> i64
+  ! CHECK: %[[VAL_54:.*]] = fir.convert %[[VAL_53]] : (i64) -> i32
+  ! CHECK: %[[VAL_55:.*]] = fir.array_coor %[[I]](%[[VAL_39]]) %[[VAL_46]] : (!fir.ref<!fir.array<10xi32>>, !fir.shape<1>, index) -> !fir.ref<i32>
+  ! CHECK: fir.store %[[VAL_54]] to %[[VAL_55]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_57:.*]] = subi %[[VAL_44]], %[[VAL_38]] : index
+  ! CHECK: br ^bb1(%[[VAL_46]], %[[VAL_57]] : index, index)
   i = scan(a%c, "hello")
 end subroutine

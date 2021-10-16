@@ -1097,13 +1097,12 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
         return doCharacter(charWidth, len);
       }
       assert(!lenParams.empty());
-      return doCharacter(charWidth, lenParams[0]);
+      return doCharacter(charWidth, lenParams.back());
     }
     if (auto ty = boxEleTy.dyn_cast<fir::LogicalType>())
       return doLogical(getKindMap().getLogicalBitsize(ty.getFKind()));
-    if (auto seqTy = boxEleTy.dyn_cast<fir::SequenceType>()) {
+    if (auto seqTy = boxEleTy.dyn_cast<fir::SequenceType>())
       return getSizeAndTypeCode(loc, rewriter, seqTy.getEleTy(), lenParams);
-    }
     if (boxEleTy.isa<fir::RecordType>()) {
       auto ptrTy = mlir::LLVM::LLVMPointerType::get(
           this->lowerTy().convertType(boxEleTy));
@@ -1215,9 +1214,9 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
     mlir::Value dest = rewriter.create<mlir::LLVM::UndefOp>(loc, llvmBoxTy);
 
     llvm::SmallVector<mlir::Value> typeparams = lenParams;
-    if constexpr (std::is_same_v<BOX, fir::cg::XEmboxOp>) {
+    if constexpr (!std::is_same_v<BOX, fir::EmboxOp>) {
       if (!box.substr().empty() && fir::hasDynamicSize(boxTy.getEleTy())) {
-        // Add the substr LEN argument to typeparams.
+        // TODO: is this correct?
         typeparams.push_back(box.substr()[1]);
       }
     }

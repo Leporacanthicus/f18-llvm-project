@@ -269,6 +269,7 @@ static mlir::LogicalResult convertFortranSourceToMLIR(
     pm.addPass(std::make_unique<Fortran::lower::VerifierPass>());
 
     // simplify the IR
+    fir::addCSE(pm);
     pm.addNestedPass<mlir::FuncOp>(fir::createArrayValueCopyPass());
     pm.addNestedPass<mlir::FuncOp>(fir::createCharacterConversionPass());
     pm.addPass(mlir::createCanonicalizerPass());

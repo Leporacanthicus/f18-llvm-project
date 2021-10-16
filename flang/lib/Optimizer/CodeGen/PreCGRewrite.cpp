@@ -174,15 +174,17 @@ public:
     }
     llvm::SmallVector<mlir::Value> sliceOpers;
     llvm::SmallVector<mlir::Value> subcompOpers;
+    llvm::SmallVector<mlir::Value> substrOpers;
     if (auto s = rebox.slice())
       if (auto sliceOp = dyn_cast_or_null<SliceOp>(s.getDefiningOp())) {
         sliceOpers.append(sliceOp.triples().begin(), sliceOp.triples().end());
         subcompOpers.append(sliceOp.fields().begin(), sliceOp.fields().end());
+        substrOpers.append(sliceOp.substr().begin(), sliceOp.substr().end());
       }
 
     auto xRebox = rewriter.create<cg::XReboxOp>(
         loc, rebox.getType(), rebox.box(), shapeOpers, shiftOpers, sliceOpers,
-        subcompOpers);
+        subcompOpers, substrOpers);
     LLVM_DEBUG(llvm::dbgs()
                << "rewriting " << rebox << " to " << xRebox << '\n');
     rewriter.replaceOp(rebox, xRebox.getOperation()->getResults());
@@ -229,6 +231,9 @@ public:
       if (auto sliceOp = dyn_cast_or_null<SliceOp>(s.getDefiningOp())) {
         sliceOpers.append(sliceOp.triples().begin(), sliceOp.triples().end());
         subcompOpers.append(sliceOp.fields().begin(), sliceOp.fields().end());
+        assert(sliceOp.substr().empty() &&
+               "Don't allow substring operations on array_coor. This "
+               "restriction may be lifted in the future.");
       }
     auto xArrCoor = rewriter.create<cg::XArrayCoorOp>(
         loc, arrCoor.getType(), arrCoor.memref(), shapeOpers, shiftOpers,

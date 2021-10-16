@@ -881,3 +881,53 @@ fir::factory::getRaggedArrayHeaderType(fir::FirOpBuilder &builder) {
   auto shTy = fir::HeapType::get(extTy);
   return mlir::TupleType::get(builder.getContext(), {i64Ty, buffTy, shTy});
 }
+
+mlir::Value fir::factory::genLenOfCharacter(
+    fir::FirOpBuilder &builder, mlir::Location loc, fir::ArrayLoadOp arrLoad,
+    llvm::ArrayRef<mlir::Value> path, llvm::ArrayRef<mlir::Value> substring) {
+  auto idxTy = builder.getIndexType();
+  auto zero = builder.createIntegerConstant(loc, idxTy, 0);
+  auto saturatedDiff = [&](mlir::Value lower, mlir::Value upper) {
+    auto diff = builder.create<mlir::SubIOp>(loc, upper, lower);
+    auto one = builder.createIntegerConstant(loc, idxTy, 1);
+    auto size = builder.create<mlir::AddIOp>(loc, diff, one);
+    auto cmp =
+        builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, size, zero);
+    return builder.create<mlir::SelectOp>(loc, cmp, size, zero);
+  };
+  if (substring.size() == 2) {
+    auto upper = builder.createConvert(loc, idxTy, substring.back());
+    auto lower = builder.createConvert(loc, idxTy, substring.front());
+    return saturatedDiff(lower, upper);
+  }
+  auto lower = zero;
+  if (substring.size() == 1)
+    lower = builder.createConvert(loc, idxTy, substring.front());
+  auto arrTy = arrLoad.getType().cast<fir::SequenceType>();
+  auto eleTy = fir::applyPathToType(arrTy, path);
+  if (!fir::hasDynamicSize(eleTy)) {
+    if (auto charTy = eleTy.dyn_cast<fir::CharacterType>()) {
+      auto len = builder.createIntegerConstant(loc, idxTy, charTy.getLen());
+      return saturatedDiff(lower, len);
+    }
+    // Do we need to support !fir.array<!fir.char<k,n>>?
+    fir::emitFatalError(loc,
+                        "application of path did not result in a !fir.char");
+  }
+  auto memref = arrLoad.memref();
+  if (fir::isa_box_type(memref.getType())) {
+    if (memref.getType().isa<fir::BoxCharType>())
+      return builder.create<fir::BoxCharLenOp>(loc, idxTy, memref);
+    if (memref.getType().isa<fir::BoxType>())
+      return CharacterExprHelper(builder, loc).readLengthFromBox(memref);
+    fir::emitFatalError(loc, "memref has wrong type");
+  }
+  if (arrLoad.typeparams().empty()) {
+    fir::emitFatalError(loc, "array_load must have typeparams");
+  }
+  if (fir::isa_char(arrTy.getEleTy())) {
+    assert(arrLoad.typeparams().size() == 1 && "too many typeparams");
+    return arrLoad.typeparams().front();
+  }
+  TODO(loc, "LEN of character must be computed at runtime");
+}

@@ -29,8 +29,8 @@ program wsloop_dynamic
 !FIRDialect:     %[[WS_STEP:.*]] = constant 1 : i32
 !FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(dynamic, monotonic) nowait inclusive
 
-!LLVMIRDialect:  %[[WS_UB:.*]] = llvm.mlir.constant(9 : i32) : i32
-!LLVMIRDialect:  %[[WS_LB_STEP:.*]] = llvm.mlir.constant(1 : i32) : i32
+!LLVMIRDialect-DAG:  %[[WS_UB:.*]] = llvm.mlir.constant(9 : i32) : i32
+!LLVMIRDialect-DAG:  %[[WS_LB_STEP:.*]] = llvm.mlir.constant(1 : i32) : i32
 !LLVMIRDialect:  omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB_STEP]]) to (%[[WS_UB]]) step (%[[WS_LB_STEP]]) schedule(dynamic, monotonic) nowait inclusive
 
 !LLVMIR:  define internal void @_QQmain..omp_par

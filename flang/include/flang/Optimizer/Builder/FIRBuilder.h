@@ -465,7 +465,18 @@ void genRecordAssignment(fir::FirOpBuilder &builder, mlir::Location loc,
                          const fir::ExtendedValue &lhs,
                          const fir::ExtendedValue &rhs);
 
+/// Builds and returns the type of a ragged array header used to cache mask
+/// evaluations.
 mlir::TupleType getRaggedArrayHeaderType(fir::FirOpBuilder &builder);
+
+/// Generate the, possibly dynamic, LEN of a CHARACTER. \p arrLoad determines
+/// the base array. After applying \p path, the result must be a reference to a
+/// `!fir.char` type object. \p substring must have 0, 1, or 2 members. The
+/// first member is the starting offset. The second is the ending offset.
+mlir::Value genLenOfCharacter(fir::FirOpBuilder &builder, mlir::Location loc,
+                              fir::ArrayLoadOp arrLoad,
+                              llvm::ArrayRef<mlir::Value> path,
+                              llvm::ArrayRef<mlir::Value> substring);
 
 } // namespace fir::factory
 

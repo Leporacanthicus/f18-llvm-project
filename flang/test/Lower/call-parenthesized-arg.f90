@@ -79,43 +79,51 @@ end subroutine
 ! CHECK-LABEL: func @_QPfoo_char_array(
 ! CHECK-SAME:                          %[[VAL_0:.*]]: !fir.boxchar<1>) {
 subroutine foo_char_array(x)
-  ! CHECK:         %[[VAL_1:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-  ! CHECK:         %[[VAL_2:.*]] = constant 10 : index
-  ! CHECK:         %[[VAL_3:.*]] = fir.convert %[[VAL_1]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<100x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_4:.*]] = constant 100 : index
-  ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_3]] : (!fir.ref<!fir.array<100x!fir.char<1,10>>>) -> !fir.ref<!fir.char<1,?>>
-  ! CHECK:         %[[VAL_6:.*]] = fir.emboxchar %[[VAL_5]], %[[VAL_2]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-  ! CHECK:         fir.call @_QPbar_char_array(%[[VAL_6]]) : (!fir.boxchar<1>) -> ()
-  ! CHECK:         %[[VAL_7:.*]] = constant 100 : i64
-  ! CHECK:         %[[VAL_8:.*]] = fir.convert %[[VAL_7]] : (i64) -> index
-  ! CHECK:         %[[VAL_9:.*]] = fir.shape %[[VAL_4]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_10:.*]] = fir.array_load %[[VAL_3]](%[[VAL_9]]) : (!fir.ref<!fir.array<100x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<100x!fir.char<1,10>>
-  ! CHECK:         %[[VAL_11:.*]] = fir.allocmem !fir.array<100x!fir.char<1,10>>
-  ! CHECK:         %[[VAL_12:.*]] = fir.shape %[[VAL_8]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_13:.*]] = fir.array_load %[[VAL_11]](%[[VAL_12]]) : (!fir.heap<!fir.array<100x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<100x!fir.char<1,10>>
-  ! CHECK:         %[[VAL_14:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_15:.*]] = constant 0 : index
-  ! CHECK:         %[[VAL_16:.*]] = subi %[[VAL_8]], %[[VAL_14]] : index
-  ! CHECK:         %[[VAL_17:.*]] = fir.do_loop %[[VAL_18:.*]] = %[[VAL_15]] to %[[VAL_16]] step %[[VAL_14]] unordered iter_args(%[[VAL_19:.*]] = %[[VAL_13]]) -> (!fir.array<100x!fir.char<1,10>>) {
-  ! CHECK:           %[[VAL_20:.*]] = fir.array_access %[[VAL_10]], %[[VAL_18]] : (!fir.array<100x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_21:.*]] = fir.no_reassoc %[[VAL_20]] : !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_22:.*]] = fir.array_access %[[VAL_19]], %[[VAL_18]] : (!fir.array<100x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_23:.*]] = constant 1 : i64
-  ! CHECK:           %[[VAL_24:.*]] = fir.convert %[[VAL_2]] : (index) -> i64
-  ! CHECK:           %[[VAL_25:.*]] = muli %[[VAL_23]], %[[VAL_24]] : i64
-  ! CHECK:           %[[VAL_26:.*]] = constant false
-  ! CHECK:           %[[VAL_27:.*]] = fir.convert %[[VAL_22]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-  ! CHECK:           %[[VAL_28:.*]] = fir.convert %[[VAL_21]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-  ! CHECK:           fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_27]], %[[VAL_28]], %[[VAL_25]], %[[VAL_26]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
-  ! CHECK:           %[[VAL_29:.*]] = fir.array_amend %[[VAL_19]], %[[VAL_22]] : (!fir.array<100x!fir.char<1,10>>, !fir.ref<!fir.char<1,10>>) -> !fir.array<100x!fir.char<1,10>>
-  ! CHECK:           fir.result %[[VAL_29]] : !fir.array<100x!fir.char<1,10>>
-  ! CHECK:         }
-  ! CHECK:         fir.array_merge_store %[[VAL_13]], %[[VAL_30:.*]] to %[[VAL_11]] : !fir.array<100x!fir.char<1,10>>, !fir.array<100x!fir.char<1,10>>, !fir.heap<!fir.array<100x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_31:.*]] = constant 10 : index
-  ! CHECK:         %[[VAL_32:.*]] = fir.convert %[[VAL_11]] : (!fir.heap<!fir.array<100x!fir.char<1,10>>>) -> !fir.ref<!fir.char<1,?>>
-  ! CHECK:         %[[VAL_33:.*]] = fir.emboxchar %[[VAL_32]], %[[VAL_31]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
-  ! CHECK:         fir.call @_QPbar_char_array(%[[VAL_33]]) : (!fir.boxchar<1>) -> ()
-  ! CHECK:         fir.freemem %[[VAL_11]] : !fir.heap<!fir.array<100x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_1:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+  ! CHECK: %[[VAL_2:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_3:.*]] = fir.convert %[[VAL_1]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<100x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_4:.*]] = constant 100 : index
+  ! CHECK: %[[VAL_5:.*]] = fir.convert %[[VAL_3]] : (!fir.ref<!fir.array<100x!fir.char<1,10>>>) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK: %[[VAL_6:.*]] = fir.emboxchar %[[VAL_5]], %[[VAL_2]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK: fir.call @_QPbar_char_array(%[[VAL_6]]) : (!fir.boxchar<1>) -> ()
+  ! CHECK: %[[VAL_7:.*]] = constant 100 : i64
+  ! CHECK: %[[VAL_8:.*]] = fir.convert %[[VAL_7]] : (i64) -> index
+  ! CHECK: %[[VAL_9:.*]] = fir.shape %[[VAL_4]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_10:.*]] = fir.array_load %[[VAL_3]](%[[VAL_9]]) : (!fir.ref<!fir.array<100x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<100x!fir.char<1,10>>
+  ! CHECK: %[[VAL_11:.*]] = fir.allocmem !fir.array<100x!fir.char<1,10>>
+  ! CHECK: %[[VAL_12:.*]] = fir.shape %[[VAL_8]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_13:.*]] = fir.array_load %[[VAL_11]](%[[VAL_12]]) : (!fir.heap<!fir.array<100x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<100x!fir.char<1,10>>
+  ! CHECK: %[[VAL_14:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_15:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_16:.*]] = subi %[[VAL_8]], %[[VAL_14]] : index
+  ! CHECK: %[[VAL_17:.*]] = fir.do_loop %[[VAL_18:.*]] = %[[VAL_15]] to %[[VAL_16]] step %[[VAL_14]] unordered iter_args(%[[VAL_19:.*]] = %[[VAL_13]]) -> (!fir.array<100x!fir.char<1,10>>) {
+  ! CHECK: %[[VAL_20:.*]] = fir.array_access %[[VAL_10]], %[[VAL_18]] : (!fir.array<100x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_21:.*]] = fir.no_reassoc %[[VAL_20]] : !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_22:.*]] = fir.array_access %[[VAL_19]], %[[VAL_18]] : (!fir.array<100x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_23:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_24:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_25:.*]] = subi %[[VAL_24]], %[[VAL_23]] : index
+  ! CHECK: %[[VAL_26:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_27:.*]] = addi %[[VAL_25]], %[[VAL_26]] : index
+  ! CHECK: %[[VAL_28:.*]] = cmpi sgt, %[[VAL_27]], %[[VAL_23]] : index
+  ! CHECK: %[[VAL_29:.*]] = select %[[VAL_28]], %[[VAL_27]], %[[VAL_23]] : index
+  ! CHECK: %[[VAL_30:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_31:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
+  ! CHECK: %[[VAL_32:.*]] = muli %[[VAL_30]], %[[VAL_31]] : i64
+  ! CHECK: %[[VAL_33:.*]] = constant false
+  ! CHECK: %[[VAL_34:.*]] = fir.convert %[[VAL_22]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_35:.*]] = fir.convert %[[VAL_21]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_34]], %[[VAL_35]], %[[VAL_32]], %[[VAL_33]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+  ! CHECK: %[[VAL_36:.*]] = fir.array_amend %[[VAL_19]], %[[VAL_22]] : (!fir.array<100x!fir.char<1,10>>, !fir.ref<!fir.char<1,10>>) -> !fir.array<100x!fir.char<1,10>>
+  ! CHECK: fir.result %[[VAL_36]] : !fir.array<100x!fir.char<1,10>>
+  ! CHECK: }
+  ! CHECK: fir.array_merge_store %[[VAL_13]], %[[VAL_37:.*]] to %[[VAL_11]] : !fir.array<100x!fir.char<1,10>>, !fir.array<100x!fir.char<1,10>>, !fir.heap<!fir.array<100x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_38:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_39:.*]] = fir.convert %[[VAL_11]] : (!fir.heap<!fir.array<100x!fir.char<1,10>>>) -> !fir.ref<!fir.char<1,?>>
+  ! CHECK: %[[VAL_40:.*]] = fir.emboxchar %[[VAL_39]], %[[VAL_38]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
+  ! CHECK: fir.call @_QPbar_char_array(%[[VAL_40]]) : (!fir.boxchar<1>) -> ()
+  ! CHECK: fir.freemem %[[VAL_11]] : !fir.heap<!fir.array<100x!fir.char<1,10>>>
+
   character(10) :: x(100)
   call bar_char_array(x)
   call bar_char_array((x))
@@ -169,44 +177,51 @@ end subroutine
 ! CHECK-SAME:                              %[[VAL_0:.*]]: !fir.boxchar<1>,
 ! CHECK-SAME:                              %[[VAL_1:.*]]: !fir.ref<i32>) {
 subroutine foo_char_array_box(x, n)
-  ! CHECK:         %[[VAL_2:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
-  ! CHECK:         %[[VAL_3:.*]] = constant 10 : index
-  ! CHECK:         %[[VAL_4:.*]] = fir.convert %[[VAL_2]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_5:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
-  ! CHECK:         %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i32) -> i64
-  ! CHECK:         %[[VAL_7:.*]] = fir.convert %[[VAL_6]] : (i64) -> index
-  ! CHECK:         %[[VAL_8:.*]] = fir.shape %[[VAL_7]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_9:.*]] = fir.embox %[[VAL_4]](%[[VAL_8]]) : (!fir.ref<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.box<!fir.array<?x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_10:.*]] = fir.convert %[[VAL_9]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
-  ! CHECK:         fir.call @_QPbar_char_array_box(%[[VAL_10]]) : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> ()
-  ! CHECK:         %[[VAL_11:.*]] = fir.shape %[[VAL_7]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_12:.*]] = fir.array_load %[[VAL_4]](%[[VAL_11]]) : (!fir.ref<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK:         %[[VAL_13:.*]] = fir.allocmem !fir.array<?x!fir.char<1,10>>, %[[VAL_7]] {uniq_name = ".array.expr"}
-  ! CHECK:         %[[VAL_14:.*]] = fir.shape %[[VAL_7]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_15:.*]] = fir.array_load %[[VAL_13]](%[[VAL_14]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK:         %[[VAL_16:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_17:.*]] = constant 0 : index
-  ! CHECK:         %[[VAL_18:.*]] = subi %[[VAL_7]], %[[VAL_16]] : index
-  ! CHECK:         %[[VAL_19:.*]] = fir.do_loop %[[VAL_20:.*]] = %[[VAL_17]] to %[[VAL_18]] step %[[VAL_16]] unordered iter_args(%[[VAL_21:.*]] = %[[VAL_15]]) -> (!fir.array<?x!fir.char<1,10>>) {
-  ! CHECK:           %[[VAL_22:.*]] = fir.array_access %[[VAL_12]], %[[VAL_20]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_23:.*]] = fir.no_reassoc %[[VAL_22]] : !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_24:.*]] = fir.array_access %[[VAL_21]], %[[VAL_20]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK:           %[[VAL_25:.*]] = constant 1 : i64
-  ! CHECK:           %[[VAL_26:.*]] = fir.convert %[[VAL_3]] : (index) -> i64
-  ! CHECK:           %[[VAL_27:.*]] = muli %[[VAL_25]], %[[VAL_26]] : i64
-  ! CHECK:           %[[VAL_28:.*]] = constant false
-  ! CHECK:           %[[VAL_29:.*]] = fir.convert %[[VAL_24]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-  ! CHECK:           %[[VAL_30:.*]] = fir.convert %[[VAL_23]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
-  ! CHECK:           fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_29]], %[[VAL_30]], %[[VAL_27]], %[[VAL_28]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
-  ! CHECK:           %[[VAL_31:.*]] = fir.array_amend %[[VAL_21]], %[[VAL_24]] : (!fir.array<?x!fir.char<1,10>>, !fir.ref<!fir.char<1,10>>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK:           fir.result %[[VAL_31]] : !fir.array<?x!fir.char<1,10>>
-  ! CHECK:         }
-  ! CHECK:         fir.array_merge_store %[[VAL_15]], %[[VAL_32:.*]] to %[[VAL_13]] : !fir.array<?x!fir.char<1,10>>, !fir.array<?x!fir.char<1,10>>, !fir.heap<!fir.array<?x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_33:.*]] = fir.shape %[[VAL_7]] : (index) -> !fir.shape<1>
-  ! CHECK:         %[[VAL_34:.*]] = fir.embox %[[VAL_13]](%[[VAL_33]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.box<!fir.array<?x!fir.char<1,10>>>
-  ! CHECK:         %[[VAL_35:.*]] = fir.convert %[[VAL_34]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
-  ! CHECK:         fir.call @_QPbar_char_array_box(%[[VAL_35]]) : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> ()
-  ! CHECK:         fir.freemem %[[VAL_13]] : !fir.heap<!fir.array<?x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_2:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
+  ! CHECK: %[[VAL_3:.*]] = fir.convert %[[VAL_2]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<?x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_4:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i32) -> i64
+  ! CHECK: %[[VAL_6:.*]] = fir.convert %[[VAL_5]] : (i64) -> index
+  ! CHECK: %[[VAL_7:.*]] = fir.shape %[[VAL_6]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_8:.*]] = fir.embox %[[VAL_3]](%[[VAL_7]]) : (!fir.ref<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.box<!fir.array<?x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_9:.*]] = fir.convert %[[VAL_8]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
+  ! CHECK: fir.call @_QPbar_char_array_box(%[[VAL_9]]) : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> ()
+  ! CHECK: %[[VAL_10:.*]] = fir.shape %[[VAL_6]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_11:.*]] = fir.array_load %[[VAL_3]](%[[VAL_10]]) : (!fir.ref<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
+  ! CHECK: %[[VAL_12:.*]] = fir.allocmem !fir.array<?x!fir.char<1,10>>, %[[VAL_6]] {uniq_name = ".array.expr"}
+  ! CHECK: %[[VAL_13:.*]] = fir.shape %[[VAL_6]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_14:.*]] = fir.array_load %[[VAL_12]](%[[VAL_13]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
+  ! CHECK: %[[VAL_15:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_16:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_17:.*]] = subi %[[VAL_6]], %[[VAL_15]] : index
+  ! CHECK: %[[VAL_18:.*]] = fir.do_loop %[[VAL_19:.*]] = %[[VAL_16]] to %[[VAL_17]] step %[[VAL_15]] unordered iter_args(%[[VAL_20:.*]] = %[[VAL_14]]) -> (!fir.array<?x!fir.char<1,10>>) {
+  ! CHECK: %[[VAL_21:.*]] = fir.array_access %[[VAL_11]], %[[VAL_19]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_22:.*]] = fir.no_reassoc %[[VAL_21]] : !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_23:.*]] = fir.array_access %[[VAL_20]], %[[VAL_19]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
+  ! CHECK: %[[VAL_24:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_25:.*]] = constant 10 : index
+  ! CHECK: %[[VAL_26:.*]] = subi %[[VAL_25]], %[[VAL_24]] : index
+  ! CHECK: %[[VAL_27:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_28:.*]] = addi %[[VAL_26]], %[[VAL_27]] : index
+  ! CHECK: %[[VAL_29:.*]] = cmpi sgt, %[[VAL_28]], %[[VAL_24]] : index
+  ! CHECK: %[[VAL_30:.*]] = select %[[VAL_29]], %[[VAL_28]], %[[VAL_24]] : index
+  ! CHECK: %[[VAL_31:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_32:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
+  ! CHECK: %[[VAL_33:.*]] = muli %[[VAL_31]], %[[VAL_32]] : i64
+  ! CHECK: %[[VAL_34:.*]] = constant false
+  ! CHECK: %[[VAL_35:.*]] = fir.convert %[[VAL_23]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_36:.*]] = fir.convert %[[VAL_22]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
+  ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_35]], %[[VAL_36]], %[[VAL_33]], %[[VAL_34]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
+  ! CHECK: %[[VAL_37:.*]] = fir.array_amend %[[VAL_20]], %[[VAL_23]] : (!fir.array<?x!fir.char<1,10>>, !fir.ref<!fir.char<1,10>>) -> !fir.array<?x!fir.char<1,10>>
+  ! CHECK: fir.result %[[VAL_37]] : !fir.array<?x!fir.char<1,10>>
+  ! CHECK: }
+  ! CHECK: fir.array_merge_store %[[VAL_14]], %[[VAL_38:.*]] to %[[VAL_12]] : !fir.array<?x!fir.char<1,10>>, !fir.array<?x!fir.char<1,10>>, !fir.heap<!fir.array<?x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_39:.*]] = fir.shape %[[VAL_6]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_40:.*]] = fir.embox %[[VAL_12]](%[[VAL_39]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.box<!fir.array<?x!fir.char<1,10>>>
+  ! CHECK: %[[VAL_41:.*]] = fir.convert %[[VAL_40]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.box<!fir.array<?x!fir.char<1,?>>>
+  ! CHECK: fir.call @_QPbar_char_array_box(%[[VAL_41]]) : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> ()
+  ! CHECK: fir.freemem %[[VAL_12]] : !fir.heap<!fir.array<?x!fir.char<1,10>>>
+
   integer :: n
   character(10) :: x(n)
   interface

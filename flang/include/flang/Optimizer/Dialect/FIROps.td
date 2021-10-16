@@ -1974,7 +1974,7 @@ def fir_SliceOp : fir_Op<"slice", [NoSideEffect, AttrSizedOperandSegments]> {
     substrings.
 
     ```mlir
-      %d = fir.slice %lo, %hi, %step substr %from, %to : (index, index, index, index, index) -> !fir.slice<1>
+      %d = fir.slice %lo, %hi, %step substr %offset, %width : (index, index, index, index, index) -> !fir.slice<1>
     ```
   }];
 

@@ -61,10 +61,10 @@ subroutine test_deep_copy(t1, t2)
   ! CHECK:         %[[VAL_14:.*]] = fir.embox %[[VAL_13]] : (!fir.ref<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>
   ! CHECK:         %[[VAL_15:.*]] = fir.embox %[[VAL_12]] : (!fir.ref<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>
   ! CHECK:         fir.store %[[VAL_14]] to %[[VAL_6]] : !fir.ref<!fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>>
-  ! CHECK:         %[[VAL_16:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,86>>
+  ! CHECK:         %[[VAL_16:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,
   ! CHECK:         %[[VAL_17:.*]] = fir.convert %[[VAL_6]] : (!fir.ref<!fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>>) -> !fir.ref<!fir.box<none>>
   ! CHECK:         %[[VAL_18:.*]] = fir.convert %[[VAL_15]] : (!fir.box<!fir.type<_QMarray_derived_assignTdeep_copy{i:i32,a:!fir.box<!fir.heap<!fir.array<?xf32>>>}>>) -> !fir.box<none>
-  ! CHECK:         %[[VAL_19:.*]] = fir.convert %[[VAL_16]] : (!fir.ref<!fir.char<1,86>>) -> !fir.ref<i8>
+  ! CHECK:         %[[VAL_19:.*]] = fir.convert %[[VAL_16]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
   ! CHECK:         %[[VAL_20:.*]] = fir.call @_FortranAAssign(%[[VAL_17]], %[[VAL_18]], %[[VAL_19]], %{{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.ref<i8>, i32) -> none
   ! CHECK:         %[[VAL_21:.*]] = subi %[[VAL_9]], %[[VAL_5]] : index
   ! CHECK:         br ^bb1(%[[VAL_11]], %[[VAL_21]] : index, index)

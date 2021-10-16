@@ -15,31 +15,33 @@
 
 namespace fir {
 
-/// return true iff the Operation is a non-volatile LoadOp
+/// Return true iff the Operation is a non-volatile LoadOp or ArrayLoadOp.
 inline bool nonVolatileLoad(mlir::Operation *op) {
   if (auto load = dyn_cast<fir::LoadOp>(op))
     return !load->getAttr("volatile");
+  if (auto arrLoad = dyn_cast<fir::ArrayLoadOp>(op))
+    return !arrLoad->getAttr("volatile");
   return false;
 }
 
-/// return true iff the Operation is a call
+/// Return true iff the Operation is a call.
 inline bool isaCall(mlir::Operation *op) {
   return isa<fir::CallOp>(op) || isa<fir::DispatchOp>(op) ||
          isa<mlir::CallOp>(op) || isa<mlir::CallIndirectOp>(op);
 }
 
-/// return true iff the Operation is a fir::CallOp, fir::DispatchOp,
+/// Return true iff the Operation is a fir::CallOp, fir::DispatchOp,
 /// mlir::CallOp, or mlir::CallIndirectOp and not pure
-/// NB: this is not the same as `!pureCall(op)`
+/// NB: This is not the same as `!pureCall(op)`.
 inline bool impureCall(mlir::Operation *op) {
   // Should we also auto-detect that the called function is pure if its
   // arguments are not references?  For now, rely on a "pure" attribute.
   return op && isaCall(op) && !op->getAttr("pure");
 }
 
-/// return true iff the Operation is a fir::CallOp, fir::DispatchOp,
+/// Return true iff the Operation is a fir::CallOp, fir::DispatchOp,
 /// mlir::CallOp, or mlir::CallIndirectOp and is also pure.
-/// NB: this is not the same as `!impureCall(op)`
+/// NB: This is not the same as `!impureCall(op)`.
 inline bool pureCall(mlir::Operation *op) {
   // Should we also auto-detect that the called function is pure if its
   // arguments are not references?  For now, rely on a "pure" attribute.
