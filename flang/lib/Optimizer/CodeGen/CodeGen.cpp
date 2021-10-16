@@ -1215,10 +1215,8 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
 
     llvm::SmallVector<mlir::Value> typeparams = lenParams;
     if constexpr (!std::is_same_v<BOX, fir::EmboxOp>) {
-      if (!box.substr().empty() && fir::hasDynamicSize(boxTy.getEleTy())) {
-        // TODO: is this correct?
+      if (!box.substr().empty() && fir::hasDynamicSize(boxTy.getEleTy()))
         typeparams.push_back(box.substr()[1]);
-      }
     }
 
     // Write each of the fields with the appropriate values

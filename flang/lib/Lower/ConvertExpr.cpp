@@ -5383,7 +5383,7 @@ public:
                         : defaultStoreToDestination(substring);
       return [=](IterSpace iters) -> ExtValue { return lambda(iters); };
     }
-    if (semant == ConstituentSemantics::CustomCopyInCopyOut) {
+    if (isCustomCopyInCopyOut()) {
       // Create an array_modify to get the LHS element address and indicate
       // the assignment, the actual assignment must be implemented in
       // ccStoreToDest.
