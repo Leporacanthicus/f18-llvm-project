@@ -907,8 +907,8 @@ mlir::Value fir::factory::genLenOfCharacter(
   auto eleTy = fir::applyPathToType(arrTy, path);
   if (!fir::hasDynamicSize(eleTy)) {
     if (auto charTy = eleTy.dyn_cast<fir::CharacterType>()) {
-      auto len = builder.createIntegerConstant(loc, idxTy, charTy.getLen());
-      return saturatedDiff(lower, len);
+      // Use LEN from the type.
+      return builder.createIntegerConstant(loc, idxTy, charTy.getLen());
     }
     // Do we need to support !fir.array<!fir.char<k,n>>?
     fir::emitFatalError(loc,
