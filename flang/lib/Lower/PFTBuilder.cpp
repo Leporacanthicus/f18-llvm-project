@@ -450,7 +450,7 @@ private:
   /// not significant, but could be changed.
   ///
   void rewriteIfGotos() {
-    using T = struct {
+    struct T {
       lower::pft::EvaluationList::iterator ifConstructIt;
       parser::Label ifTargetLabel;
       bool isCycleStmt = false;
