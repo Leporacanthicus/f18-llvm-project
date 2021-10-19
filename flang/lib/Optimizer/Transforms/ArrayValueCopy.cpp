@@ -9,6 +9,7 @@
 #include "PassDetail.h"
 #include "flang/Lower/Todo.h" // delete!
 #include "flang/Optimizer/Builder/BoxValue.h"
+#include "flang/Optimizer/Builder/Character.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
 #include "flang/Optimizer/Builder/Factory.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
@@ -240,7 +241,7 @@ public:
       return;
     }
 
-    fir::emitFatalError(val.getLoc(), "unhandled value");
+    emitFatalError(val.getLoc(), "unhandled value");
   }
 
   /// Return all ops that produce the array value that is stored into the
@@ -249,8 +250,7 @@ public:
                              mlir::Value seq) {
     reach.clear();
     mlir::Region *loopRegion = nullptr;
-    if (auto doLoop =
-            mlir::dyn_cast_or_null<fir::DoLoopOp>(seq.getDefiningOp()))
+    if (auto doLoop = mlir::dyn_cast_or_null<DoLoopOp>(seq.getDefiningOp()))
       loopRegion = &doLoop->getRegion(0);
     ReachCollector collector(reach, loopRegion);
     collector.collectArrayMentionFrom(seq);
@@ -392,11 +392,11 @@ static bool conflictOnLoad(llvm::ArrayRef<mlir::Operation *> reach,
                            ArrayMergeStoreOp st) {
   mlir::Value load;
   auto addr = st.memref();
-  auto stEleTy = fir::dyn_cast_ptrOrBoxEleTy(addr.getType());
+  auto stEleTy = dyn_cast_ptrOrBoxEleTy(addr.getType());
   for (auto *op : reach)
     if (auto ld = mlir::dyn_cast<ArrayLoadOp>(op)) {
       auto ldTy = ld.memref().getType();
-      if (auto boxTy = ldTy.dyn_cast<fir::BoxType>())
+      if (auto boxTy = ldTy.dyn_cast<BoxType>())
         ldTy = boxTy.getEleTy();
       if (ldTy.isa<fir::PointerType>() && stEleTy == dyn_cast_ptrEleTy(ldTy))
         return true;
@@ -597,12 +597,12 @@ static mlir::Type getEleTy(mlir::Type ty) {
 static void getExtents(llvm::SmallVectorImpl<mlir::Value> &result,
                        mlir::Value shape) {
   auto *shapeOp = shape.getDefiningOp();
-  if (auto s = mlir::dyn_cast<fir::ShapeOp>(shapeOp)) {
+  if (auto s = mlir::dyn_cast<ShapeOp>(shapeOp)) {
     auto e = s.getExtents();
     result.insert(result.end(), e.begin(), e.end());
     return;
   }
-  if (auto s = mlir::dyn_cast<fir::ShapeShiftOp>(shapeOp)) {
+  if (auto s = mlir::dyn_cast<ShapeShiftOp>(shapeOp)) {
     auto e = s.getExtents();
     result.insert(result.end(), e.begin(), e.end());
     return;
@@ -619,31 +619,30 @@ static void getExtents(llvm::SmallVectorImpl<mlir::Value> &result,
 // argument of the ArrayLoadOp that is returned.
 static mlir::Value
 getOrReadExtentsAndShapeOp(mlir::Location loc, mlir::PatternRewriter &rewriter,
-                           fir::ArrayLoadOp loadOp,
+                           ArrayLoadOp loadOp,
                            llvm::SmallVectorImpl<mlir::Value> &result) {
   assert(result.empty());
-  if (auto boxTy = loadOp.memref().getType().dyn_cast<fir::BoxType>()) {
-    auto rank = fir::dyn_cast_ptrOrBoxEleTy(boxTy)
-                    .cast<fir::SequenceType>()
-                    .getDimension();
+  if (auto boxTy = loadOp.memref().getType().dyn_cast<BoxType>()) {
+    auto rank =
+        dyn_cast_ptrOrBoxEleTy(boxTy).cast<SequenceType>().getDimension();
     auto idxTy = rewriter.getIndexType();
     for (decltype(rank) dim = 0; dim < rank; ++dim) {
       auto dimVal = rewriter.create<mlir::ConstantIndexOp>(loc, dim);
-      auto dimInfo = rewriter.create<fir::BoxDimsOp>(loc, idxTy, idxTy, idxTy,
-                                                     loadOp.memref(), dimVal);
+      auto dimInfo = rewriter.create<BoxDimsOp>(loc, idxTy, idxTy, idxTy,
+                                                loadOp.memref(), dimVal);
       result.emplace_back(dimInfo.getResult(1));
     }
-    auto shapeType = fir::ShapeType::get(rewriter.getContext(), rank);
-    return rewriter.create<fir::ShapeOp>(loc, shapeType, result);
+    auto shapeType = ShapeType::get(rewriter.getContext(), rank);
+    return rewriter.create<ShapeOp>(loc, shapeType, result);
   }
   getExtents(result, loadOp.shape());
   return loadOp.shape();
 }
 
 static mlir::Type toRefType(mlir::Type ty) {
-  if (fir::isa_ref_type(ty))
+  if (isa_ref_type(ty))
     return ty;
-  return fir::ReferenceType::get(ty);
+  return ReferenceType::get(ty);
 }
 
 static mlir::Value
@@ -655,25 +654,27 @@ genCoorOp(mlir::PatternRewriter &rewriter, mlir::Location loc, mlir::Type eleTy,
   if (skipOrig)
     originated.assign(indices.begin(), indices.end());
   else
-    originated = fir::factory::originateIndices(loc, rewriter, alloc.getType(),
-                                                shape, indices);
-  auto seqTy = fir::dyn_cast_ptrOrBoxEleTy(alloc.getType());
-  assert(seqTy && seqTy.isa<fir::SequenceType>());
-  const auto dimension = seqTy.cast<fir::SequenceType>().getDimension();
-  mlir::Value result = rewriter.create<fir::ArrayCoorOp>(
+    originated = factory::originateIndices(loc, rewriter, alloc.getType(),
+                                           shape, indices);
+  auto seqTy = dyn_cast_ptrOrBoxEleTy(alloc.getType());
+  assert(seqTy && seqTy.isa<SequenceType>());
+  const auto dimension = seqTy.cast<SequenceType>().getDimension();
+  mlir::Value result = rewriter.create<ArrayCoorOp>(
       loc, eleTy, alloc, shape, slice,
       llvm::ArrayRef<mlir::Value>{originated}.take_front(dimension),
       typeparams);
   if (dimension < originated.size())
-    result = rewriter.create<fir::CoordinateOp>(
+    result = rewriter.create<CoordinateOp>(
         loc, resTy, result,
         llvm::ArrayRef<mlir::Value>{originated}.drop_front(dimension));
   return result;
 }
 
+/// Generate an array copy. This is used for both copy-in and copy-out.
 static void genArrayCopy(mlir::Location loc, mlir::PatternRewriter &rewriter,
                          mlir::Value dst, mlir::Value src, mlir::Value shapeOp,
-                         mlir::Type arrTy) {
+                         ArrayLoadOp arrLoad) {
+  auto arrTy = arrLoad.getType();
   auto insPt = rewriter.saveInsertionPoint();
   llvm::SmallVector<mlir::Value> indices;
   llvm::SmallVector<mlir::Value> extents;
@@ -681,29 +682,45 @@ static void genArrayCopy(mlir::Location loc, mlir::PatternRewriter &rewriter,
   // Build loop nest from column to row.
   for (auto sh : llvm::reverse(extents)) {
     auto idxTy = rewriter.getIndexType();
-    auto ubi = rewriter.create<fir::ConvertOp>(loc, idxTy, sh);
+    auto ubi = rewriter.create<ConvertOp>(loc, idxTy, sh);
     auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
     auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
     auto ub = rewriter.create<mlir::SubIOp>(loc, idxTy, ubi, one);
-    auto loop = rewriter.create<fir::DoLoopOp>(loc, zero, ub, one);
+    auto loop = rewriter.create<DoLoopOp>(loc, zero, ub, one);
     rewriter.setInsertionPointToStart(loop.getBody());
     indices.push_back(loop.getInductionVar());
   }
   // Reverse the indices so they are in column-major order.
   std::reverse(indices.begin(), indices.end());
   auto ty = getEleTy(arrTy);
-  auto fromAddr = rewriter.create<fir::ArrayCoorOp>(
+  auto typeparams = arrLoad.typeparams();
+  auto fromAddr = rewriter.create<ArrayCoorOp>(
       loc, ty, src, shapeOp, mlir::Value{},
-      fir::factory::originateIndices(loc, rewriter, src.getType(), shapeOp,
-                                     indices),
-      mlir::ValueRange{});
-  auto load = rewriter.create<fir::LoadOp>(loc, fromAddr);
-  auto toAddr = rewriter.create<fir::ArrayCoorOp>(
+      factory::originateIndices(loc, rewriter, src.getType(), shapeOp, indices),
+      typeparams);
+  auto toAddr = rewriter.create<ArrayCoorOp>(
       loc, ty, dst, shapeOp, mlir::Value{},
-      fir::factory::originateIndices(loc, rewriter, dst.getType(), shapeOp,
-                                     indices),
-      mlir::ValueRange{});
-  rewriter.create<fir::StoreOp>(loc, load, toAddr);
+      factory::originateIndices(loc, rewriter, dst.getType(), shapeOp, indices),
+      typeparams);
+  auto eleTy = unwrapSequenceType(unwrapRefType(arrTy));
+  if (hasDynamicSize(eleTy)) {
+    if (auto charTy = eleTy.dyn_cast<fir::CharacterType>()) {
+      assert(charTy.hasDynamicLen() && "dynamic size and constant length");
+      // Copy from (to) object to (from) temp copy of same object.
+      auto len = typeparams.back();
+      CharBoxValue toChar(toAddr, len);
+      CharBoxValue fromChar(fromAddr, len);
+      auto module = toAddr->getParentOfType<mlir::ModuleOp>();
+      FirOpBuilder builder{rewriter, getKindMapping(module)};
+      factory::CharacterExprHelper helper{builder, loc};
+      helper.createAssign(ExtendedValue{toChar}, ExtendedValue{fromChar});
+    } else {
+      TODO(loc, "copy element of dynamic size");
+    }
+  } else {
+    auto load = rewriter.create<fir::LoadOp>(loc, fromAddr);
+    rewriter.create<fir::StoreOp>(loc, load, toAddr);
+  }
   rewriter.restoreInsertionPoint(insPt);
 }
 
@@ -740,20 +757,20 @@ public:
         loc, dyn_cast_ptrOrBoxEleTy(load.memref().getType()), load.typeparams(),
         extents);
     genArrayCopy(load.getLoc(), rewriter, allocmem, load.memref(), shapeOp,
-                 load.getType());
+                 load);
     // Generate the reference for the access.
     rewriter.setInsertionPoint(op);
     auto coor =
         genCoorOp(rewriter, loc, getEleTy(load.getType()), eleTy, allocmem,
                   shapeOp, load.slice(), access.indices(), load.typeparams(),
-                  access->hasAttr(fir::factory::attrFortranArrayOffsets()));
+                  access->hasAttr(factory::attrFortranArrayOffsets()));
     // Copy out.
     auto *storeOp = useMap.lookup(loadOp);
     auto store = mlir::cast<ArrayMergeStoreOp>(storeOp);
     rewriter.setInsertionPoint(storeOp);
     // Copy out.
     genArrayCopy(store.getLoc(), rewriter, store.memref(), allocmem, shapeOp,
-                 load.getType());
+                 load);
     rewriter.create<FreeMemOp>(loc, allocmem);
     return coor;
   }
@@ -786,19 +803,19 @@ public:
           loc, dyn_cast_ptrOrBoxEleTy(load.memref().getType()),
           load.typeparams(), extents);
       genArrayCopy(load.getLoc(), rewriter, allocmem, load.memref(), shapeOp,
-                   load.getType());
+                   load);
       rewriter.setInsertionPoint(op);
       auto coor = genCoorOp(
           rewriter, loc, getEleTy(load.getType()), lhsEltRefType, allocmem,
           shapeOp, load.slice(), update.indices(), load.typeparams(),
-          update->hasAttr(fir::factory::attrFortranArrayOffsets()));
+          update->hasAttr(factory::attrFortranArrayOffsets()));
       assignElement(coor);
       auto *storeOp = useMap.lookup(loadOp);
       auto store = mlir::cast<ArrayMergeStoreOp>(storeOp);
       rewriter.setInsertionPoint(storeOp);
       // Copy out.
       genArrayCopy(store.getLoc(), rewriter, store.memref(), allocmem, shapeOp,
-                   load.getType());
+                   load);
       rewriter.create<FreeMemOp>(loc, allocmem);
       return {coor, load.getResult()};
     }
@@ -807,10 +824,10 @@ public:
     LLVM_DEBUG(llvm::outs() << "No, conflict wasn't found\n");
     rewriter.setInsertionPoint(op);
     auto coorTy = getEleTy(load.getType());
-    auto coor = genCoorOp(
-        rewriter, loc, coorTy, lhsEltRefType, load.memref(), load.shape(),
-        load.slice(), update.indices(), load.typeparams(),
-        update->hasAttr(fir::factory::attrFortranArrayOffsets()));
+    auto coor = genCoorOp(rewriter, loc, coorTy, lhsEltRefType, load.memref(),
+                          load.shape(), load.slice(), update.indices(),
+                          load.typeparams(),
+                          update->hasAttr(factory::attrFortranArrayOffsets()));
     assignElement(coor);
     return {coor, load.getResult()};
   }
@@ -833,8 +850,8 @@ public:
     auto loc = update.getLoc();
     auto assignElement = [&](mlir::Value coor) {
       auto input = update.merge();
-      if (auto inEleTy = fir::dyn_cast_ptrEleTy(input.getType())) {
-        fir::emitFatalError(loc, "array_update on references not supported");
+      if (auto inEleTy = dyn_cast_ptrEleTy(input.getType())) {
+        emitFatalError(loc, "array_update on references not supported");
       } else {
         rewriter.create<fir::StoreOp>(loc, input, coor);
       }
@@ -884,12 +901,11 @@ public:
     rewriter.setInsertionPoint(op);
     auto load = mlir::cast<ArrayLoadOp>(useMap.lookup(op));
     auto loc = fetch.getLoc();
-    auto coor =
-        genCoorOp(rewriter, loc, getEleTy(load.getType()),
-                  toRefType(fetch.getType()), load.memref(), load.shape(),
-                  load.slice(), fetch.indices(), load.typeparams(),
-                  fetch->hasAttr(fir::factory::attrFortranArrayOffsets()));
-    if (fir::isa_ref_type(fetch.getType()))
+    auto coor = genCoorOp(
+        rewriter, loc, getEleTy(load.getType()), toRefType(fetch.getType()),
+        load.memref(), load.shape(), load.slice(), fetch.indices(),
+        load.typeparams(), fetch->hasAttr(factory::attrFortranArrayOffsets()));
+    if (isa_ref_type(fetch.getType()))
       rewriter.replaceOp(fetch, coor);
     else
       rewriter.replaceOpWithNewOp<fir::LoadOp>(fetch, coor);
@@ -924,11 +940,10 @@ public:
     }
     rewriter.setInsertionPoint(op);
     auto load = mlir::cast<ArrayLoadOp>(useMap.lookup(op));
-    auto coor =
-        genCoorOp(rewriter, loc, getEleTy(load.getType()),
-                  toRefType(access.getType()), load.memref(), load.shape(),
-                  load.slice(), access.indices(), load.typeparams(),
-                  access->hasAttr(fir::factory::attrFortranArrayOffsets()));
+    auto coor = genCoorOp(
+        rewriter, loc, getEleTy(load.getType()), toRefType(access.getType()),
+        load.memref(), load.shape(), load.slice(), access.indices(),
+        load.typeparams(), access->hasAttr(factory::attrFortranArrayOffsets()));
     rewriter.replaceOp(access, coor);
     return mlir::success();
   }
@@ -949,7 +964,7 @@ public:
     auto *op = amend.getOperation();
     rewriter.setInsertionPoint(op);
     auto loc = amend.getLoc();
-    auto undef = rewriter.create<fir::UndefOp>(loc, amend.getType());
+    auto undef = rewriter.create<UndefOp>(loc, amend.getType());
     rewriter.replaceOp(amend, undef.getResult());
     return mlir::success();
   }

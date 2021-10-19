@@ -7,7 +7,7 @@ subroutine issue(c1, c2)
   ! CHECK: %[[VAL_2:.*]] = constant false
   ! CHECK: %[[VAL_3:.*]] = constant 32 : i8
   ! CHECK: %[[VAL_4:.*]] = constant 3 : index
-  ! CHECK: %[[VAL_5:.*]] = constant 5 : index
+  ! CHECK: %[[VAL_5:.*]] = constant 4 : index
   ! CHECK: %[[VAL_6:.*]] = constant 0 : index
   ! CHECK: %[[VAL_7:.*]] = constant 1 : index
   ! CHECK: %[[VAL_8:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
@@ -92,6 +92,7 @@ end program p
 ! CHECK-LABEL: func @_QPcharlit() {
 subroutine charlit
   ! CHECK: %[[VAL_0:.*]] = constant -1 : i32
+  ! CHECK: %[[VAL_3:.*]] = constant 3 : index
   ! CHECK: %[[VAL_4:.*]] = constant false
   ! CHECK: %[[VAL_5:.*]] = constant 4 : index
   ! CHECK: %[[VAL_6:.*]] = constant 0 : index
@@ -110,7 +111,7 @@ subroutine charlit
   ! CHECK: %[[VAL_17:.*]] = addi %[[VAL_14]], %[[VAL_7]] : index
   ! CHECK: %[[VAL_18:.*]] = fir.array_coor %[[VAL_11]](%[[VAL_12]]) %[[VAL_17]] : (!fir.ref<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
   ! CHECK: %[[VAL_19:.*]] = fir.array_coor %[[VAL_13]](%[[VAL_12]]) %[[VAL_17]] : (!fir.heap<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
-  ! CHECK: %[[VAL_20:.*]] = fir.convert %[[VAL_5]] : (index) -> i64
+  ! CHECK: %[[VAL_20:.*]] = fir.convert %[[VAL_3]] : (index) -> i64
   ! CHECK: %[[VAL_21:.*]] = fir.convert %[[VAL_19]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_22:.*]] = fir.convert %[[VAL_18]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_21]], %[[VAL_22]], %[[VAL_20]], %[[VAL_4]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
@@ -132,7 +133,7 @@ subroutine charlit
   ! CHECK: %[[VAL_33:.*]] = addi %[[VAL_30]], %[[VAL_7]] : index
   ! CHECK: %[[VAL_34:.*]] = fir.array_coor %[[VAL_11]](%[[VAL_12]]) %[[VAL_33]] : (!fir.ref<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
   ! CHECK: %[[VAL_35:.*]] = fir.array_coor %[[VAL_29]](%[[VAL_12]]) %[[VAL_33]] : (!fir.heap<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
-  ! CHECK: %[[VAL_36:.*]] = fir.convert %[[VAL_5]] : (index) -> i64
+  ! CHECK: %[[VAL_36:.*]] = fir.convert %[[VAL_3]] : (index) -> i64
   ! CHECK: %[[VAL_37:.*]] = fir.convert %[[VAL_35]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_38:.*]] = fir.convert %[[VAL_34]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_37]], %[[VAL_38]], %[[VAL_36]], %[[VAL_4]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
@@ -154,7 +155,7 @@ subroutine charlit
   ! CHECK: %[[VAL_49:.*]] = addi %[[VAL_46]], %[[VAL_7]] : index
   ! CHECK: %[[VAL_50:.*]] = fir.array_coor %[[VAL_11]](%[[VAL_12]]) %[[VAL_49]] : (!fir.ref<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
   ! CHECK: %[[VAL_51:.*]] = fir.array_coor %[[VAL_45]](%[[VAL_12]]) %[[VAL_49]] : (!fir.heap<!fir.array<4x!fir.char<1,3>>>, !fir.shape<1>, index) -> !fir.ref<!fir.char<1,3>>
-  ! CHECK: %[[VAL_52:.*]] = fir.convert %[[VAL_5]] : (index) -> i64
+  ! CHECK: %[[VAL_52:.*]] = fir.convert %[[VAL_3]] : (index) -> i64
   ! CHECK: %[[VAL_53:.*]] = fir.convert %[[VAL_51]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_54:.*]] = fir.convert %[[VAL_50]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_53]], %[[VAL_54]], %[[VAL_52]], %[[VAL_4]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()

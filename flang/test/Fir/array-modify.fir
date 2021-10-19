@@ -88,10 +88,10 @@ func @overlap(%arg0: !fir.ref<!fir.array<100xf32>>) {
 // CHECK:             %[[VAL_14:.*]] = constant 1 : index
 // CHECK:             %[[VAL_15:.*]] = addi %[[VAL_13]], %[[VAL_14]] : index
 // CHECK:             %[[VAL_16:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_7]]) %[[VAL_15]] : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>, index) -> !fir.ref<f32>
-// CHECK:             %[[VAL_17:.*]] = fir.load %[[VAL_16]] : !fir.ref<f32>
 // CHECK:             %[[VAL_18:.*]] = constant 1 : index
 // CHECK:             %[[VAL_19:.*]] = addi %[[VAL_13]], %[[VAL_18]] : index
 // CHECK:             %[[VAL_20:.*]] = fir.array_coor %[[VAL_8]](%[[VAL_7]]) %[[VAL_19]] : (!fir.heap<!fir.array<100xf32>>, !fir.shape<1>, index) -> !fir.ref<f32>
+// CHECK:             %[[VAL_17:.*]] = fir.load %[[VAL_16]] : !fir.ref<f32>
 // CHECK:             fir.store %[[VAL_17]] to %[[VAL_20]] : !fir.ref<f32>
 // CHECK:           }
 // CHECK:           %[[VAL_21:.*]] = fir.undefined !fir.array<100xf32>
@@ -117,10 +117,10 @@ func @overlap(%arg0: !fir.ref<!fir.array<100xf32>>) {
 // CHECK:             %[[VAL_39:.*]] = constant 1 : index
 // CHECK:             %[[VAL_40:.*]] = addi %[[VAL_38]], %[[VAL_39]] : index
 // CHECK:             %[[VAL_41:.*]] = fir.array_coor %[[VAL_8]](%[[VAL_7]]) %[[VAL_40]] : (!fir.heap<!fir.array<100xf32>>, !fir.shape<1>, index) -> !fir.ref<f32>
-// CHECK:             %[[VAL_42:.*]] = fir.load %[[VAL_41]] : !fir.ref<f32>
 // CHECK:             %[[VAL_43:.*]] = constant 1 : index
 // CHECK:             %[[VAL_44:.*]] = addi %[[VAL_38]], %[[VAL_43]] : index
 // CHECK:             %[[VAL_45:.*]] = fir.array_coor %[[VAL_0]](%[[VAL_7]]) %[[VAL_44]] : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>, index) -> !fir.ref<f32>
+// CHECK:             %[[VAL_42:.*]] = fir.load %[[VAL_41]] : !fir.ref<f32>
 // CHECK:             fir.store %[[VAL_42]] to %[[VAL_45]] : !fir.ref<f32>
 // CHECK:           }
 // CHECK:           fir.freemem %[[VAL_8]] : !fir.heap<!fir.array<100xf32>>
