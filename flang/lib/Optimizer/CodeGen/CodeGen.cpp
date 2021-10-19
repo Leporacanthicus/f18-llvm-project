@@ -374,6 +374,17 @@ struct AllocaOpConversion : public FIROpConversion<fir::AllocaOp> {
       }
     }
     if (alloc.hasShapeOperands()) {
+      auto allocEleTy = fir::unwrapRefType(alloc.getType());
+      // Scale the size by constant factors encoded in the array type.
+      if (auto seqTy = allocEleTy.dyn_cast<fir::SequenceType>()) {
+        fir::SequenceType::Extent constSize = 1;
+        for (auto extent : seqTy.getShape())
+          if (extent != fir::SequenceType::getUnknownExtent())
+            constSize *= extent;
+        auto constVal =
+            genConstantIndex(loc, ity, rewriter, constSize).getResult();
+        size = rewriter.create<mlir::LLVM::MulOp>(loc, ity, size, constVal);
+      }
       unsigned end = operands.size();
       for (; i < end; ++i)
         size = rewriter.create<mlir::LLVM::MulOp>(
@@ -632,8 +643,8 @@ struct BoxProcHostOpConversion : public FIROpConversion<fir::BoxProcHostOp> {
                   mlir::ConversionPatternRewriter &rewriter) const override {
     auto a = operands[0];
     auto ty = convertType(boxprochost.getType());
-    auto c1 = mlir::ArrayAttr::get(boxprochost.getContext(),
-                                   rewriter.getI32IntegerAttr(1));
+    auto c1 = mlir::ArrayAttr::get(boxprochost.getContext(), 
+        rewriter.getI32IntegerAttr(1));
     rewriter.replaceOpWithNewOp<mlir::LLVM::ExtractValueOp>(boxprochost, ty, a,
                                                             c1);
     return success();
@@ -989,15 +1000,16 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
     // The ancestor OpenMP Op which is outlineable.
     // The ancestor LLVM Function Op.
     if (auto iface =
-            thisBlock->getParent()
-                ->getParentOfType<mlir::omp::OutlineableOpenMPOpInterface>()) {
-      rewriter.setInsertionPointToStart(iface.getAllocaBlock());
-    } else {
-      auto func = mlir::isa<mlir::LLVM::LLVMFuncOp>(op)
-                      ? mlir::cast<mlir::LLVM::LLVMFuncOp>(op)
-                      : op->getParentOfType<mlir::LLVM::LLVMFuncOp>();
-      rewriter.setInsertionPointToStart(&func.front());
-    }
+             thisBlock->getParent()
+                 ->getParentOfType<
+                     mlir::omp::OutlineableOpenMPOpInterface>()) {
+       rewriter.setInsertionPointToStart(iface.getAllocaBlock());
+     } else {
+       auto func = mlir::isa<mlir::LLVM::LLVMFuncOp>(op) ? 
+           mlir::cast<mlir::LLVM::LLVMFuncOp>(op) : 
+           op->getParentOfType<mlir::LLVM::LLVMFuncOp>();
+       rewriter.setInsertionPointToStart(&func.front());
+     }
     auto sz = this->genConstantOffset(loc, rewriter, 1);
     auto al = rewriter.create<mlir::LLVM::AllocaOp>(loc, toTy, sz, alignment);
     rewriter.restoreInsertionPoint(thisPt);
@@ -1097,12 +1109,13 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
         return doCharacter(charWidth, len);
       }
       assert(!lenParams.empty());
-      return doCharacter(charWidth, lenParams.back());
+      return doCharacter(charWidth, lenParams[0]);
     }
     if (auto ty = boxEleTy.dyn_cast<fir::LogicalType>())
       return doLogical(getKindMap().getLogicalBitsize(ty.getFKind()));
-    if (auto seqTy = boxEleTy.dyn_cast<fir::SequenceType>())
+    if (auto seqTy = boxEleTy.dyn_cast<fir::SequenceType>()) {
       return getSizeAndTypeCode(loc, rewriter, seqTy.getEleTy(), lenParams);
+    }
     if (boxEleTy.isa<fir::RecordType>()) {
       auto ptrTy = mlir::LLVM::LLVMPointerType::get(
           this->lowerTy().convertType(boxEleTy));
@@ -1213,15 +1226,9 @@ struct EmboxCommonConversion : public FIROpConversion<OP> {
     auto llvmBoxTy = llvmBoxPtrTy.getElementType();
     mlir::Value dest = rewriter.create<mlir::LLVM::UndefOp>(loc, llvmBoxTy);
 
-    llvm::SmallVector<mlir::Value> typeparams = lenParams;
-    if constexpr (!std::is_same_v<BOX, fir::EmboxOp>) {
-      if (!box.substr().empty() && fir::hasDynamicSize(boxTy.getEleTy()))
-        typeparams.push_back(box.substr()[1]);
-    }
-
     // Write each of the fields with the appropriate values
     auto [eleSize, cfiTy] =
-        getSizeAndTypeCode(loc, rewriter, boxTy.getEleTy(), typeparams);
+        getSizeAndTypeCode(loc, rewriter, boxTy.getEleTy(), lenParams);
     dest = insertField(rewriter, loc, dest, {1}, eleSize);
     dest = insertField(rewriter, loc, dest, {2},
                        this->genConstantOffset(loc, rewriter, CFI_VERSION));
@@ -1438,7 +1445,7 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
       if (hasSlice)
         sliceOff += 3;
     }
-    if (hasSlice || hasSubcomp || !xbox.substr().empty()) {
+    if (hasSlice || hasSubcomp) {
       llvm::SmallVector<mlir::Value> args = {base, ptrOffset};
       args.append(gepArgs.rbegin(), gepArgs.rend());
       if (hasSubcomp) {
@@ -1451,10 +1458,6 @@ struct XEmboxOpConversion : public EmboxCommonConversion<fir::cg::XEmboxOp> {
         const auto *beginOffset = xbox.subcomponentOffset() + operands.begin();
         const auto *lastOffset = beginOffset + xbox.subcomponent().size();
         args.append(beginOffset, lastOffset);
-      }
-      if (!xbox.substr().empty()) {
-        // Append the substring starting offset.
-        args.push_back(xbox.substr()[0]);
       }
       base = rewriter.create<mlir::LLVM::GEPOp>(loc, base.getType(), args);
     }
@@ -2450,7 +2453,7 @@ struct GlobalOpConversion : public FIROpConversion<fir::GlobalOp> {
     auto &gr = g.getInitializerRegion();
     rewriter.inlineRegionBefore(global.region(), gr, gr.end());
     if (!gr.empty()) {
-      // Replace insert_on_range with a constant dense attribute if the
+      // Replace insert_on_range with a constant dense attribute if the 
       // initialization is on the full range.
       auto insertOnRangeOps = gr.front().getOps<fir::InsertOnRangeOp>();
       for (auto insertOp : insertOnRangeOps) {
@@ -2459,11 +2462,11 @@ struct GlobalOpConversion : public FIROpConversion<fir::GlobalOp> {
           auto *op = insertOp.val().getDefiningOp();
           auto constant = mlir::dyn_cast<mlir::ConstantOp>(op);
           if (!constant) {
-            auto convertOp = mlir::dyn_cast<fir::ConvertOp>(op);
-            if (!convertOp)
-              continue;
-            constant =
-                cast<mlir::ConstantOp>(convertOp.value().getDefiningOp());
+              auto convertOp = mlir::dyn_cast<fir::ConvertOp>(op);
+              if (!convertOp)
+                continue;
+              constant = 
+                  cast<mlir::ConstantOp>(convertOp.value().getDefiningOp());
           }
           mlir::Type vecType = mlir::VectorType::get(
               insertOp.getType().getShape(), constant.getType());
@@ -2483,10 +2486,10 @@ struct GlobalOpConversion : public FIROpConversion<fir::GlobalOp> {
     auto extents = seqTy.getShape();
     if (indexes.size() / 2 != extents.size())
       return false;
-    for (unsigned i = 0; i < indexes.size(); i += 2) {
+    for (unsigned i = 0; i < indexes.size(); i+= 2) {
       if (indexes[i].cast<IntegerAttr>().getInt() != 0)
         return false;
-      if (indexes[i + 1].cast<IntegerAttr>().getInt() != extents[i / 2] - 1)
+      if (indexes[i+1].cast<IntegerAttr>().getInt() != extents[i/2] - 1)
         return false;
     }
     return true;
