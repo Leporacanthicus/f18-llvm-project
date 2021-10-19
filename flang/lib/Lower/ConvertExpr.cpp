@@ -2520,9 +2520,9 @@ createCharArrayAmend(mlir::Location loc, fir::FirOpBuilder &builder,
   fir::factory::CharacterExprHelper helper{builder, loc};
   if (!bounds.empty()) {
     dstChar = helper.createSubstring(dstChar, bounds);
-    fir::factory::genCharacterCopy(dstChar.getAddr(), dstChar.getLen(),
-                                   fir::getBase(srcExv), fir::getLen(srcExv),
-                                   builder, loc);
+    fir::factory::genCharacterCopy(fir::getBase(srcExv), fir::getLen(srcExv),
+                                   dstChar.getAddr(), dstChar.getLen(), builder,
+                                   loc);
     // Update the LEN to the substring's LEN.
     dstLen = dstChar.getLen();
   }

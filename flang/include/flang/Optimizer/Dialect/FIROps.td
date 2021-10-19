@@ -1343,6 +1343,16 @@ def fir_ArrayLoadOp : fir_Op<"array_load", [AttrSizedOperandSegments]> {
   let summary = "Load an array as a value.";
 
   let description = [{
+    This operation taken with array_merge_store captures Fortran's
+    copy-in/copy-out semantics. One way to think of this is that array_load
+    creates a snapshot copy of the entire array. This copy can then be used
+    as the "original value" of the array while the array's new value is
+    computed. The array_merge_store operation is the copy-out semantics, which
+    merge the updates with the original array value to produce the final array
+    result. This abstracts the copy operations as opposed to always creating
+    copies or requiring dependence analysis be performed on the syntax trees
+    and before lowering to the IR.
+
     Load an entire array as a single SSA value.
 
     ```fortran
