@@ -374,6 +374,17 @@ struct AllocaOpConversion : public FIROpConversion<fir::AllocaOp> {
       }
     }
     if (alloc.hasShapeOperands()) {
+      auto allocEleTy = fir::unwrapRefType(alloc.getType());
+      // Scale the size by constants factors encoded in the array type.
+      if (auto seqTy = allocEleTy.dyn_cast<fir::SequenceType>()) {
+        fir::SequenceType::Extent constSize = 1;
+        for (auto extent : seqTy.getShape())
+          if (extent != fir::SequenceType::getUnknownExtent())
+            constSize *= extent;
+        auto constVal =
+            genConstantIndex(loc, ity, rewriter, constSize).getResult();
+        size = rewriter.create<mlir::LLVM::MulOp>(loc, ity, size, constVal);
+      }
       unsigned end = operands.size();
       for (; i < end; ++i)
         size = rewriter.create<mlir::LLVM::MulOp>(

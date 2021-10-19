@@ -41,9 +41,21 @@ func @f5() -> !fir.ref<!fir.ptr<!fir.array<?xi32>>> {
 // CHECK-SAME: i32 %[[l:.*]], i64 %[[e:.*]])
 func @char_array_alloca(%l: i32, %e : index) -> !fir.ref<!fir.array<?x?x!fir.char<1,?>>> {
   // CHECK: %[[lcast:.*]] = sext i32 %[[l]] to i64
-  // CHECK: %[[m1:.*]] = mul i64 %[[lcast]], %[[e]]
+  // CHECK: %[[prod:.*]] = mul i64 %[[lcast]], 1
+  // CHECK: %[[m1:.*]] = mul i64 %[[prod]], %[[e]]
   // CHECK: %[[size:.*]] = mul i64 %[[m1]], %[[e]]
   // CHECK: alloca i8, i64 %[[size]]
   %a = fir.alloca !fir.array<?x?x!fir.char<1,?>>(%l : i32), %e, %e
   return %a :  !fir.ref<!fir.array<?x?x!fir.char<1,?>>>
+}
+
+// Constant factor of 60 (4*3*5) must be included.
+// CHECK-LABEL: define i32* @array_with_holes(
+// CHECK-SAME: i64 %[[a:.*]], i64 %[[b:.*]])
+func @array_with_holes(%0 : index, %1 : index) -> !fir.ref<!fir.array<4x?x3x?x5xi32>> {
+  // CHECK: %[[prod1:.*]] = mul i64 60, %[[a]]
+  // CHECK: %[[prod2:.*]] = mul i64 %[[prod1]], %[[b]]
+  // CHECK: alloca i32, i64 %[[prod2]]
+  %a = fir.alloca !fir.array<4x?x3x?x5xi32>, %0, %1
+  return %a : !fir.ref<!fir.array<4x?x3x?x5xi32>>
 }
