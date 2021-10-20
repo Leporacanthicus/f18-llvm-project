@@ -5046,6 +5046,20 @@ public:
                            : sel.gen(base.GetComponent());
   }
 
+  template <typename A>
+  bool hasEvArrayRef(const A &x) {
+    struct HasEvArrayRefHelper
+        : public Fortran::evaluate::AnyTraverse<HasEvArrayRefHelper> {
+      HasEvArrayRefHelper()
+          : Fortran::evaluate::AnyTraverse<HasEvArrayRefHelper>(*this) {}
+      using Fortran::evaluate::AnyTraverse<HasEvArrayRefHelper>::operator();
+      bool operator()(const Fortran::evaluate::ArrayRef &) const {
+        return true;
+      }
+    } helper;
+    return helper(x);
+  }
+
   /// When we have an array reference, the expressions specified in each
   /// dimension may be slice operations (e.g. `i:j:k`), vectors, or simple
   /// (loop-invarianet) scalar expressions. This returns the base entity, the
@@ -5089,6 +5103,10 @@ public:
                   // vector subscript with replicated values.
                   assert(!isBoxValue() &&
                          "fir.box cannot be created with vector subscripts");
+                  if (Fortran::evaluate::HasVectorSubscript(toEvExpr(e)))
+                    TODO(loc, "vector subscript of vector subscript");
+                  if (hasEvArrayRef(e))
+                    TODO(loc, "vector subscript with slice subscript");
                   auto base = x.base();
                   auto exv = genArrayBase(base);
                   auto arrExpr = ignoreEvConvert(e);
