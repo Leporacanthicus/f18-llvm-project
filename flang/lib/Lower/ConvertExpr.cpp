@@ -4674,16 +4674,9 @@ public:
   static ExtValue convertAdjustedType(fir::FirOpBuilder &builder,
                                       mlir::Location loc, mlir::Type toType,
                                       const ExtValue &exv) {
-    auto lenFromBufferType = [&](mlir::Type ty) {
-      return builder.create<mlir::ConstantIndexOp>(
-          loc, fir::dyn_cast_ptrEleTy(ty).cast<fir::CharacterType>().getLen());
-    };
     return exv.match(
         [&](const fir::CharBoxValue &cb) -> ExtValue {
-          auto typeParams = fir::getTypeParams(exv);
-          auto len = typeParams.size() > 0
-                         ? typeParams[0]
-                         : lenFromBufferType(cb.getBuffer().getType());
+          auto len = cb.getLen();
           auto mem =
               builder.create<fir::AllocaOp>(loc, toType, mlir::ValueRange{len});
           fir::CharBoxValue result(mem, len);
@@ -4705,7 +4698,9 @@ public:
     return [=](IterSpace iters) -> ExtValue {
       auto exv = lambda(iters);
       auto val = fir::getBase(exv);
-      if (elementTypeWasAdjusted(val.getType()))
+      auto valTy = val.getType();
+      if (elementTypeWasAdjusted(valTy) &&
+          !(fir::isa_ref_type(valTy) && fir::isa_integer(ty)))
         return convertAdjustedType(builder, loc, ty, exv);
       return builder.createConvert(loc, ty, val);
     };

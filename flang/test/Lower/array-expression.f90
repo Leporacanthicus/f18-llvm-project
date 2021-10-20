@@ -816,13 +816,12 @@ subroutine test19g(a,b,i)
   ! CHECK: %[[VAL_25:.*]] = subi %[[VAL_14]], %[[VAL_23]] : index
   ! CHECK: %[[VAL_26:.*]] = fir.do_loop %[[VAL_27:.*]] = %[[VAL_24]] to %[[VAL_25]] step %[[VAL_23]] unordered iter_args(%[[VAL_28:.*]] = %[[VAL_12]]) -> (!fir.array<70x!fir.char<4,?>>) {
   ! CHECK: %[[VAL_29:.*]] = fir.array_access %[[VAL_20]], %[[VAL_27]] : (!fir.array<140x!fir.char<2,13>>, index) -> !fir.ref<!fir.char<2,13>>
-  ! CHECK: %[[VAL_30:.*]] = constant 13 : index
-  ! CHECK: %[[VAL_31:.*]] = fir.alloca !fir.char<4,?>(%[[VAL_30]] : index)
-  ! CHECK: %[[VAL_32:.*]] = cmpi slt, %[[VAL_30]], %[[VAL_4]] : index
-  ! CHECK: %[[VAL_33:.*]] = select %[[VAL_32]], %[[VAL_30]], %[[VAL_4]] : index
+  ! CHECK: %[[VAL_31:.*]] = fir.alloca !fir.char<4,?>(%[[VAL_4]] : index)
+  ! CHECK: %[[VAL_32:.*]] = cmpi slt, %[[VAL_4]], %[[VAL_4]] : index
+  ! CHECK: %[[VAL_33:.*]] = select %[[VAL_32]], %[[VAL_4]], %[[VAL_4]] : index
   ! CHECK: fir.char_convert %[[VAL_29]] for %[[VAL_33]] to %[[VAL_31]] : !fir.ref<!fir.char<2,13>>, index, !fir.ref<!fir.char<4,?>>
   ! CHECK: %[[VAL_34:.*]] = constant 1 : index
-  ! CHECK: %[[VAL_35:.*]] = subi %[[VAL_30]], %[[VAL_34]] : index
+  ! CHECK: %[[VAL_35:.*]] = subi %[[VAL_4]], %[[VAL_34]] : index
   ! CHECK: %[[VAL_36:.*]] = constant 32 : i32
   ! CHECK: %[[VAL_37:.*]] = fir.undefined !fir.char<4>
   ! CHECK: %[[VAL_38:.*]] = fir.insert_value %[[VAL_37]], %[[VAL_36]], [0 : index] : (!fir.char<4>, i32) -> !fir.char<4>
