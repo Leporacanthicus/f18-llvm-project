@@ -12,6 +12,7 @@ add_flang_library(flangFrontend
 
   DEPENDS
   clangBasic
+  LinalgOdsGen
 
   LINK_LIBS
   FortranParser
