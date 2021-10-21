@@ -510,370 +510,373 @@ end subroutine test_forall_with_array_assignment
 ! CHECK-LABEL: func @_QPtest_nested_forall_where(
 ! CHECK-SAME: %[[VAL_0:.*]]: !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, %[[VAL_1:.*]]: !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) {
 subroutine test_nested_forall_where(a,b)  
-  ! CHECK:         %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
-  ! CHECK:         %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
-  ! CHECK:         %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
-  ! CHECK:         %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
-  ! CHECK:         %[[VAL_6:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
-  ! CHECK:         %[[VAL_7:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
-  ! CHECK:         %[[VAL_8:.*]] = fir.alloca tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>
-  ! CHECK:         %[[VAL_9:.*]] = constant 0 : i32
-  ! CHECK:         %[[VAL_10:.*]] = constant 0 : i64
-  ! CHECK:         %[[VAL_11:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_9]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<i64>
-  ! CHECK:         fir.store %[[VAL_10]] to %[[VAL_11]] : !fir.ref<i64>
-  ! CHECK:         %[[VAL_12:.*]] = constant 1 : i32
-  ! CHECK:         %[[VAL_13:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi8>>
-  ! CHECK:         %[[VAL_14:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_12]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:         fir.store %[[VAL_13]] to %[[VAL_14]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:         %[[VAL_15:.*]] = constant 2 : i32
-  ! CHECK:         %[[VAL_16:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi64>>
-  ! CHECK:         %[[VAL_17:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_15]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:         fir.store %[[VAL_16]] to %[[VAL_17]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:         %[[VAL_18:.*]] = constant 1 : i32
-  ! CHECK:         %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (i32) -> index
-  ! CHECK:         %[[VAL_20:.*]] = constant 0 : index
-  ! CHECK:         %[[VAL_21:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_20]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, index) -> (index, index, index)
-  ! CHECK:         %[[VAL_22:.*]] = fir.convert %[[VAL_21]]#1 : (index) -> i64
-  ! CHECK:         %[[VAL_23:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_24:.*]] = fir.convert %[[VAL_23]] : (index) -> i64
-  ! CHECK:         %[[VAL_25:.*]] = addi %[[VAL_22]], %[[VAL_24]] : i64
-  ! CHECK:         %[[VAL_26:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_27:.*]] = subi %[[VAL_25]], %[[VAL_26]] : i64
-  ! CHECK:         %[[VAL_28:.*]] = fir.convert %[[VAL_27]] : (i64) -> i32
-  ! CHECK:         %[[VAL_29:.*]] = fir.convert %[[VAL_28]] : (i32) -> index
-  ! CHECK:         %[[VAL_30:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_31:.*]] = constant 1 : i32
-  ! CHECK:         %[[VAL_32:.*]] = fir.convert %[[VAL_31]] : (i32) -> index
-  ! CHECK:         %[[VAL_33:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_34:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_33]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, index) -> (index, index, index)
-  ! CHECK:         %[[VAL_35:.*]] = fir.convert %[[VAL_34]]#1 : (index) -> i64
-  ! CHECK:         %[[VAL_36:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_37:.*]] = fir.convert %[[VAL_36]] : (index) -> i64
-  ! CHECK:         %[[VAL_38:.*]] = addi %[[VAL_35]], %[[VAL_37]] : i64
-  ! CHECK:         %[[VAL_39:.*]] = constant 1 : i64
-  ! CHECK:         %[[VAL_40:.*]] = subi %[[VAL_38]], %[[VAL_39]] : i64
-  ! CHECK:         %[[VAL_41:.*]] = fir.convert %[[VAL_40]] : (i64) -> i32
-  ! CHECK:         %[[VAL_42:.*]] = fir.convert %[[VAL_41]] : (i32) -> index
-  ! CHECK:         %[[VAL_43:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_44:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         %[[VAL_45:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         %[[VAL_46:.*]] = fir.do_loop %[[VAL_47:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_48:.*]] = %[[VAL_44]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:           %[[VAL_49:.*]] = fir.convert %[[VAL_47]] : (index) -> i32
-  ! CHECK:           fir.store %[[VAL_49]] to %[[VAL_7]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_50:.*]] = fir.do_loop %[[VAL_51:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_52:.*]] = %[[VAL_48]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:             %[[VAL_53:.*]] = fir.convert %[[VAL_51]] : (index) -> i32
-  ! CHECK:             fir.store %[[VAL_53]] to %[[VAL_6]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_54:.*]] = constant 1 : i64
-  ! CHECK:             %[[VAL_55:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_56:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
-  ! CHECK:             %[[VAL_57:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
-  ! CHECK:             %[[VAL_58:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
-  ! CHECK:             %[[VAL_59:.*]] = subi %[[VAL_57]], %[[VAL_56]] : i64
-  ! CHECK:             %[[VAL_60:.*]] = addi %[[VAL_59]], %[[VAL_58]] : i64
-  ! CHECK:             %[[VAL_61:.*]] = divi_signed %[[VAL_60]], %[[VAL_58]] : i64
-  ! CHECK:             %[[VAL_62:.*]] = cmpi sgt, %[[VAL_61]], %[[VAL_55]] : i64
-  ! CHECK:             %[[VAL_63:.*]] = select %[[VAL_62]], %[[VAL_61]], %[[VAL_55]] : i64
-  ! CHECK:             %[[VAL_64:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_65:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
-  ! CHECK:             %[[VAL_66:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
-  ! CHECK:             %[[VAL_67:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
-  ! CHECK:             %[[VAL_68:.*]] = subi %[[VAL_66]], %[[VAL_65]] : i64
-  ! CHECK:             %[[VAL_69:.*]] = addi %[[VAL_68]], %[[VAL_67]] : i64
-  ! CHECK:             %[[VAL_70:.*]] = divi_signed %[[VAL_69]], %[[VAL_67]] : i64
-  ! CHECK:             %[[VAL_71:.*]] = cmpi sgt, %[[VAL_70]], %[[VAL_64]] : i64
-  ! CHECK:             %[[VAL_72:.*]] = select %[[VAL_71]], %[[VAL_70]], %[[VAL_64]] : i64
-  ! CHECK:             %[[VAL_73:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_74:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_73]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_75:.*]] = fir.load %[[VAL_74]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_76:.*]] = fir.convert %[[VAL_75]] : (!fir.heap<!fir.array<?xi8>>) -> i64
-  ! CHECK:             %[[VAL_77:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_78:.*]] = cmpi eq, %[[VAL_76]], %[[VAL_77]] : i64
-  ! CHECK:             fir.if %[[VAL_78]] {
-  ! CHECK:               %[[VAL_79:.*]] = constant true
-  ! CHECK:               %[[VAL_80:.*]] = constant 2 : i64
-  ! CHECK:               %[[VAL_81:.*]] = fir.allocmem !fir.array<2xi64>
-  ! CHECK:               %[[VAL_82:.*]] = constant 0 : i32
-  ! CHECK:               %[[VAL_83:.*]] = fir.coordinate_of %[[VAL_81]], %[[VAL_82]] : (!fir.heap<!fir.array<2xi64>>, i32) -> !fir.ref<i64>
-  ! CHECK:               fir.store %[[VAL_63]] to %[[VAL_83]] : !fir.ref<i64>
-  ! CHECK:               %[[VAL_84:.*]] = constant 1 : i32
-  ! CHECK:               %[[VAL_85:.*]] = fir.coordinate_of %[[VAL_81]], %[[VAL_84]] : (!fir.heap<!fir.array<2xi64>>, i32) -> !fir.ref<i64>
-  ! CHECK:               fir.store %[[VAL_72]] to %[[VAL_85]] : !fir.ref<i64>
-  ! CHECK:               %[[VAL_86:.*]] = fir.convert %[[VAL_8]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
-  ! CHECK:               %[[VAL_87:.*]] = fir.convert %[[VAL_81]] : (!fir.heap<!fir.array<2xi64>>) -> !fir.ref<i64>
-  ! CHECK:               %[[VAL_88:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_86]], %[[VAL_79]], %[[VAL_80]], %[[VAL_54]], %[[VAL_87]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
-  ! CHECK:             }
-  ! CHECK:             %[[VAL_89:.*]] = subi %[[VAL_47]], %[[VAL_19]] : index
-  ! CHECK:             %[[VAL_90:.*]] = divi_signed %[[VAL_89]], %[[VAL_30]] : index
-  ! CHECK:             %[[VAL_91:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_92:.*]] = addi %[[VAL_90]], %[[VAL_91]] : index
-  ! CHECK:             %[[VAL_93:.*]] = subi %[[VAL_51]], %[[VAL_32]] : index
-  ! CHECK:             %[[VAL_94:.*]] = divi_signed %[[VAL_93]], %[[VAL_43]] : index
-  ! CHECK:             %[[VAL_95:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_96:.*]] = addi %[[VAL_94]], %[[VAL_95]] : index
-  ! CHECK:             %[[VAL_97:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_98:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_97]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_99:.*]] = fir.load %[[VAL_98]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_100:.*]] = fir.convert %[[VAL_99]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
-  ! CHECK:             %[[VAL_101:.*]] = fir.shape %[[VAL_63]], %[[VAL_72]] : (i64, i64) -> !fir.shape<2>
-  ! CHECK:             %[[VAL_102:.*]] = fir.array_coor %[[VAL_100]](%[[VAL_101]]) %[[VAL_92]], %[[VAL_96]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
-  ! CHECK:             %[[VAL_103:.*]] = fir.load %[[VAL_6]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_104:.*]] = fir.convert %[[VAL_103]] : (i32) -> i64
-  ! CHECK:             %[[VAL_105:.*]] = constant 1 : i64
-  ! CHECK:             %[[VAL_106:.*]] = subi %[[VAL_104]], %[[VAL_105]] : i64
-  ! CHECK:             %[[VAL_107:.*]] = fir.load %[[VAL_7]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_108:.*]] = fir.convert %[[VAL_107]] : (i32) -> i64
-  ! CHECK:             %[[VAL_109:.*]] = constant 1 : i64
-  ! CHECK:             %[[VAL_110:.*]] = subi %[[VAL_108]], %[[VAL_109]] : i64
-  ! CHECK:             %[[VAL_111:.*]] = fir.coordinate_of %[[VAL_1]], %[[VAL_106]], %[[VAL_110]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, i64, i64) -> !fir.ref<!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:             %[[VAL_112:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
-  ! CHECK:             %[[VAL_113:.*]] = fir.coordinate_of %[[VAL_111]], %[[VAL_112]] : (!fir.ref<!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.field) -> !fir.ref<!fir.array<100xf32>>
-  ! CHECK:             %[[VAL_114:.*]] = constant 100 : index
-  ! CHECK:             %[[VAL_115:.*]] = fir.shape %[[VAL_114]] : (index) -> !fir.shape<1>
-  ! CHECK:             %[[VAL_116:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_117:.*]] = fir.slice %[[VAL_116]], %[[VAL_114]], %[[VAL_116]] : (index, index, index) -> !fir.slice<1>
-  ! CHECK:             %[[VAL_118:.*]] = fir.array_load %[[VAL_113]](%[[VAL_115]]) {{\[}}%[[VAL_117]]] : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<100xf32>
-  ! CHECK:             %[[VAL_119:.*]] = constant 0.000000e+00 : f32
-  ! CHECK:             %[[VAL_120:.*]] = constant 0 : index
-  ! CHECK:             %[[VAL_121:.*]] = subi %[[VAL_114]], %[[VAL_116]] : index
-  ! CHECK:             %[[VAL_122:.*]] = addi %[[VAL_121]], %[[VAL_116]] : index
-  ! CHECK:             %[[VAL_123:.*]] = divi_signed %[[VAL_122]], %[[VAL_116]] : index
-  ! CHECK:             %[[VAL_124:.*]] = cmpi sgt, %[[VAL_123]], %[[VAL_120]] : index
-  ! CHECK:             %[[VAL_125:.*]] = select %[[VAL_124]], %[[VAL_123]], %[[VAL_120]] : index
-  ! CHECK:             %[[VAL_126:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_127:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_126]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_128:.*]] = fir.load %[[VAL_127]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_129:.*]] = fir.shape %[[VAL_125]] : (index) -> !fir.shape<1>
-  ! CHECK:             %[[VAL_130:.*]] = fir.array_load %[[VAL_128]](%[[VAL_129]]) : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>) -> !fir.array<?xi8>
-  ! CHECK:             %[[VAL_131:.*]] = constant 1 : i64
-  ! CHECK:             %[[VAL_132:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_133:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_132]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_134:.*]] = fir.load %[[VAL_133]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_135:.*]] = fir.convert %[[VAL_134]] : (!fir.heap<!fir.array<?xi8>>) -> i64
-  ! CHECK:             %[[VAL_136:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_137:.*]] = cmpi eq, %[[VAL_135]], %[[VAL_136]] : i64
-  ! CHECK:             fir.if %[[VAL_137]] {
-  ! CHECK:               %[[VAL_138:.*]] = constant false
-  ! CHECK:               %[[VAL_139:.*]] = constant 1 : i64
-  ! CHECK:               %[[VAL_140:.*]] = fir.allocmem !fir.array<1xi64>
-  ! CHECK:               %[[VAL_141:.*]] = constant 0 : i32
-  ! CHECK:               %[[VAL_142:.*]] = fir.coordinate_of %[[VAL_140]], %[[VAL_141]] : (!fir.heap<!fir.array<1xi64>>, i32) -> !fir.ref<i64>
-  ! CHECK:               %[[VAL_143:.*]] = fir.convert %[[VAL_125]] : (index) -> i64
-  ! CHECK:               fir.store %[[VAL_143]] to %[[VAL_142]] : !fir.ref<i64>
-  ! CHECK:               %[[VAL_144:.*]] = fir.convert %[[VAL_102]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
-  ! CHECK:               %[[VAL_145:.*]] = fir.convert %[[VAL_140]] : (!fir.heap<!fir.array<1xi64>>) -> !fir.ref<i64>
-  ! CHECK:               %[[VAL_146:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_144]], %[[VAL_138]], %[[VAL_139]], %[[VAL_131]], %[[VAL_145]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
-  ! CHECK:             }
-  ! CHECK:             %[[VAL_147:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_148:.*]] = constant 0 : index
-  ! CHECK:             %[[VAL_149:.*]] = subi %[[VAL_125]], %[[VAL_147]] : index
-  ! CHECK:             %[[VAL_150:.*]] = fir.do_loop %[[VAL_151:.*]] = %[[VAL_148]] to %[[VAL_149]] step %[[VAL_147]] unordered iter_args(%[[VAL_152:.*]] = %[[VAL_130]]) -> (!fir.array<?xi8>) {
-  ! CHECK:               %[[VAL_153:.*]] = fir.array_fetch %[[VAL_118]], %[[VAL_151]] : (!fir.array<100xf32>, index) -> f32
-  ! CHECK:               %[[VAL_154:.*]] = cmpf ogt, %[[VAL_153]], %[[VAL_119]] : f32
-  ! CHECK:               %[[VAL_155:.*]] = constant 1 : i32
-  ! CHECK:               %[[VAL_156:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_155]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:               %[[VAL_157:.*]] = fir.load %[[VAL_156]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:               %[[VAL_158:.*]] = fir.shape %[[VAL_125]] : (index) -> !fir.shape<1>
-  ! CHECK:               %[[VAL_159:.*]] = constant 1 : index
-  ! CHECK:               %[[VAL_160:.*]] = addi %[[VAL_151]], %[[VAL_159]] : index
-  ! CHECK:               %[[VAL_161:.*]] = fir.array_coor %[[VAL_157]](%[[VAL_158]]) %[[VAL_160]] : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
-  ! CHECK:               %[[VAL_162:.*]] = fir.convert %[[VAL_154]] : (i1) -> i8
-  ! CHECK:               fir.store %[[VAL_162]] to %[[VAL_161]] : !fir.ref<i8>
-  ! CHECK:               fir.result %[[VAL_152]] : !fir.array<?xi8>
-  ! CHECK:             }
-  ! CHECK:             fir.result %[[VAL_52]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:           }
-  ! CHECK:           fir.result %[[VAL_163:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         }
-  ! CHECK:         %[[VAL_164:.*]] = fir.do_loop %[[VAL_165:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_166:.*]] = %[[VAL_44]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:           %[[VAL_167:.*]] = fir.convert %[[VAL_165]] : (index) -> i32
-  ! CHECK:           fir.store %[[VAL_167]] to %[[VAL_5]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_168:.*]] = fir.do_loop %[[VAL_169:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_170:.*]] = %[[VAL_166]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:             %[[VAL_171:.*]] = fir.convert %[[VAL_169]] : (index) -> i32
-  ! CHECK:             fir.store %[[VAL_171]] to %[[VAL_4]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_172:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_173:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
-  ! CHECK:             %[[VAL_174:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
-  ! CHECK:             %[[VAL_175:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
-  ! CHECK:             %[[VAL_176:.*]] = subi %[[VAL_174]], %[[VAL_173]] : i64
-  ! CHECK:             %[[VAL_177:.*]] = addi %[[VAL_176]], %[[VAL_175]] : i64
-  ! CHECK:             %[[VAL_178:.*]] = divi_signed %[[VAL_177]], %[[VAL_175]] : i64
-  ! CHECK:             %[[VAL_179:.*]] = cmpi sgt, %[[VAL_178]], %[[VAL_172]] : i64
-  ! CHECK:             %[[VAL_180:.*]] = select %[[VAL_179]], %[[VAL_178]], %[[VAL_172]] : i64
-  ! CHECK:             %[[VAL_181:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_182:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
-  ! CHECK:             %[[VAL_183:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
-  ! CHECK:             %[[VAL_184:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
-  ! CHECK:             %[[VAL_185:.*]] = subi %[[VAL_183]], %[[VAL_182]] : i64
-  ! CHECK:             %[[VAL_186:.*]] = addi %[[VAL_185]], %[[VAL_184]] : i64
-  ! CHECK:             %[[VAL_187:.*]] = divi_signed %[[VAL_186]], %[[VAL_184]] : i64
-  ! CHECK:             %[[VAL_188:.*]] = cmpi sgt, %[[VAL_187]], %[[VAL_181]] : i64
-  ! CHECK:             %[[VAL_189:.*]] = select %[[VAL_188]], %[[VAL_187]], %[[VAL_181]] : i64
-  ! CHECK:             %[[VAL_190:.*]] = subi %[[VAL_165]], %[[VAL_19]] : index
-  ! CHECK:             %[[VAL_191:.*]] = divi_signed %[[VAL_190]], %[[VAL_30]] : index
-  ! CHECK:             %[[VAL_192:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_193:.*]] = addi %[[VAL_191]], %[[VAL_192]] : index
-  ! CHECK:             %[[VAL_194:.*]] = subi %[[VAL_169]], %[[VAL_32]] : index
-  ! CHECK:             %[[VAL_195:.*]] = divi_signed %[[VAL_194]], %[[VAL_43]] : index
-  ! CHECK:             %[[VAL_196:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_197:.*]] = addi %[[VAL_195]], %[[VAL_196]] : index
-  ! CHECK:             %[[VAL_198:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_199:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_198]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_200:.*]] = fir.load %[[VAL_199]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_201:.*]] = fir.convert %[[VAL_200]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
-  ! CHECK:             %[[VAL_202:.*]] = fir.shape %[[VAL_180]], %[[VAL_189]] : (i64, i64) -> !fir.shape<2>
-  ! CHECK:             %[[VAL_203:.*]] = fir.array_coor %[[VAL_201]](%[[VAL_202]]) %[[VAL_193]], %[[VAL_197]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
-  ! CHECK:             %[[VAL_204:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_205:.*]] = fir.coordinate_of %[[VAL_203]], %[[VAL_204]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_206:.*]] = fir.load %[[VAL_205]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_207:.*]] = fir.convert %[[VAL_206]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?xi8>>
-  ! CHECK:             %[[VAL_208:.*]] = constant 2 : i32
-  ! CHECK:             %[[VAL_209:.*]] = fir.coordinate_of %[[VAL_203]], %[[VAL_208]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:             %[[VAL_210:.*]] = fir.load %[[VAL_209]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:             %[[VAL_211:.*]] = constant 0 : i32
-  ! CHECK:             %[[VAL_212:.*]] = fir.coordinate_of %[[VAL_210]], %[[VAL_211]] : (!fir.heap<!fir.array<?xi64>>, i32) -> !fir.ref<i64>
-  ! CHECK:             %[[VAL_213:.*]] = fir.load %[[VAL_212]] : !fir.ref<i64>
-  ! CHECK:             %[[VAL_214:.*]] = fir.convert %[[VAL_213]] : (i64) -> index
-  ! CHECK:             %[[VAL_215:.*]] = fir.shape %[[VAL_214]] : (index) -> !fir.shape<1>
-  ! CHECK:             %[[VAL_216:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_217:.*]] = constant 0 : index
-  ! CHECK:             %[[VAL_218:.*]] = subi %[[VAL_214]], %[[VAL_216]] : index
-  ! CHECK:             %[[VAL_219:.*]] = fir.do_loop %[[VAL_220:.*]] = %[[VAL_217]] to %[[VAL_218]] step %[[VAL_216]] unordered iter_args(%[[VAL_221:.*]] = %[[VAL_170]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:               %[[VAL_222:.*]] = constant 1 : index
-  ! CHECK:               %[[VAL_223:.*]] = addi %[[VAL_220]], %[[VAL_222]] : index
-  ! CHECK:               %[[VAL_224:.*]] = fir.array_coor %[[VAL_207]](%[[VAL_215]]) %[[VAL_223]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
-  ! CHECK:               %[[VAL_225:.*]] = fir.load %[[VAL_224]] : !fir.ref<i8>
-  ! CHECK:               %[[VAL_226:.*]] = fir.convert %[[VAL_225]] : (i8) -> i1
-  ! CHECK:               %[[VAL_227:.*]] = fir.if %[[VAL_226]] -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:                 %[[VAL_228:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_229:.*]] = fir.convert %[[VAL_228]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_230:.*]] = fir.convert %[[VAL_229]] : (i64) -> index
-  ! CHECK:                 %[[VAL_231:.*]] = fir.load %[[VAL_5]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_232:.*]] = fir.convert %[[VAL_231]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_233:.*]] = fir.convert %[[VAL_232]] : (i64) -> index
-  ! CHECK:                 %[[VAL_234:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
-  ! CHECK:                 %[[VAL_235:.*]] = constant 1 : index
-  ! CHECK:                 %[[VAL_236:.*]] = addi %[[VAL_220]], %[[VAL_235]] : index
-  ! CHECK:                 %[[VAL_237:.*]] = fir.array_fetch %[[VAL_45]], %[[VAL_230]], %[[VAL_233]], %[[VAL_234]], %[[VAL_236]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, index, index, !fir.field, index) -> f32
-  ! CHECK:                 %[[VAL_238:.*]] = constant 3.140000e+00 : f32
-  ! CHECK:                 %[[VAL_239:.*]] = divf %[[VAL_237]], %[[VAL_238]] : f32
-  ! CHECK:                 %[[VAL_240:.*]] = fir.load %[[VAL_5]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_241:.*]] = fir.convert %[[VAL_240]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_242:.*]] = fir.convert %[[VAL_241]] : (i64) -> index
-  ! CHECK:                 %[[VAL_243:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_244:.*]] = fir.convert %[[VAL_243]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_245:.*]] = fir.convert %[[VAL_244]] : (i64) -> index
-  ! CHECK:                 %[[VAL_246:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
-  ! CHECK:                 %[[VAL_247:.*]] = constant 1 : index
-  ! CHECK:                 %[[VAL_248:.*]] = addi %[[VAL_220]], %[[VAL_247]] : index
-  ! CHECK:                 %[[VAL_249:.*]] = fir.array_update %[[VAL_221]], %[[VAL_239]], %[[VAL_242]], %[[VAL_245]], %[[VAL_246]], %[[VAL_248]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, f32, index, index, !fir.field, index) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:                 fir.result %[[VAL_249]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:               } else {
-  ! CHECK:                 fir.result %[[VAL_221]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:               }
-  ! CHECK:               fir.result %[[VAL_250:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:             }
-  ! CHECK:             fir.result %[[VAL_251:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:           }
-  ! CHECK:           fir.result %[[VAL_252:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         }
-  ! CHECK:         fir.array_merge_store %[[VAL_44]], %[[VAL_253:.*]] to %[[VAL_0]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>
-  ! CHECK:         %[[VAL_254:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         %[[VAL_255:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         %[[VAL_256:.*]] = fir.do_loop %[[VAL_257:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_258:.*]] = %[[VAL_254]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:           %[[VAL_259:.*]] = fir.convert %[[VAL_257]] : (index) -> i32
-  ! CHECK:           fir.store %[[VAL_259]] to %[[VAL_3]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_260:.*]] = fir.do_loop %[[VAL_261:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_262:.*]] = %[[VAL_258]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:             %[[VAL_263:.*]] = fir.convert %[[VAL_261]] : (index) -> i32
-  ! CHECK:             fir.store %[[VAL_263]] to %[[VAL_2]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_264:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_265:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
-  ! CHECK:             %[[VAL_266:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
-  ! CHECK:             %[[VAL_267:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
-  ! CHECK:             %[[VAL_268:.*]] = subi %[[VAL_266]], %[[VAL_265]] : i64
-  ! CHECK:             %[[VAL_269:.*]] = addi %[[VAL_268]], %[[VAL_267]] : i64
-  ! CHECK:             %[[VAL_270:.*]] = divi_signed %[[VAL_269]], %[[VAL_267]] : i64
-  ! CHECK:             %[[VAL_271:.*]] = cmpi sgt, %[[VAL_270]], %[[VAL_264]] : i64
-  ! CHECK:             %[[VAL_272:.*]] = select %[[VAL_271]], %[[VAL_270]], %[[VAL_264]] : i64
-  ! CHECK:             %[[VAL_273:.*]] = constant 0 : i64
-  ! CHECK:             %[[VAL_274:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
-  ! CHECK:             %[[VAL_275:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
-  ! CHECK:             %[[VAL_276:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
-  ! CHECK:             %[[VAL_277:.*]] = subi %[[VAL_275]], %[[VAL_274]] : i64
-  ! CHECK:             %[[VAL_278:.*]] = addi %[[VAL_277]], %[[VAL_276]] : i64
-  ! CHECK:             %[[VAL_279:.*]] = divi_signed %[[VAL_278]], %[[VAL_276]] : i64
-  ! CHECK:             %[[VAL_280:.*]] = cmpi sgt, %[[VAL_279]], %[[VAL_273]] : i64
-  ! CHECK:             %[[VAL_281:.*]] = select %[[VAL_280]], %[[VAL_279]], %[[VAL_273]] : i64
-  ! CHECK:             %[[VAL_282:.*]] = subi %[[VAL_257]], %[[VAL_19]] : index
-  ! CHECK:             %[[VAL_283:.*]] = divi_signed %[[VAL_282]], %[[VAL_30]] : index
-  ! CHECK:             %[[VAL_284:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_285:.*]] = addi %[[VAL_283]], %[[VAL_284]] : index
-  ! CHECK:             %[[VAL_286:.*]] = subi %[[VAL_261]], %[[VAL_32]] : index
-  ! CHECK:             %[[VAL_287:.*]] = divi_signed %[[VAL_286]], %[[VAL_43]] : index
-  ! CHECK:             %[[VAL_288:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_289:.*]] = addi %[[VAL_287]], %[[VAL_288]] : index
-  ! CHECK:             %[[VAL_290:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_291:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_290]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_292:.*]] = fir.load %[[VAL_291]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_293:.*]] = fir.convert %[[VAL_292]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
-  ! CHECK:             %[[VAL_294:.*]] = fir.shape %[[VAL_272]], %[[VAL_281]] : (i64, i64) -> !fir.shape<2>
-  ! CHECK:             %[[VAL_295:.*]] = fir.array_coor %[[VAL_293]](%[[VAL_294]]) %[[VAL_285]], %[[VAL_289]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
-  ! CHECK:             %[[VAL_296:.*]] = constant 1 : i32
-  ! CHECK:             %[[VAL_297:.*]] = fir.coordinate_of %[[VAL_295]], %[[VAL_296]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_298:.*]] = fir.load %[[VAL_297]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
-  ! CHECK:             %[[VAL_299:.*]] = fir.convert %[[VAL_298]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?xi8>>
-  ! CHECK:             %[[VAL_300:.*]] = constant 2 : i32
-  ! CHECK:             %[[VAL_301:.*]] = fir.coordinate_of %[[VAL_295]], %[[VAL_300]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:             %[[VAL_302:.*]] = fir.load %[[VAL_301]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
-  ! CHECK:             %[[VAL_303:.*]] = constant 0 : i32
-  ! CHECK:             %[[VAL_304:.*]] = fir.coordinate_of %[[VAL_302]], %[[VAL_303]] : (!fir.heap<!fir.array<?xi64>>, i32) -> !fir.ref<i64>
-  ! CHECK:             %[[VAL_305:.*]] = fir.load %[[VAL_304]] : !fir.ref<i64>
-  ! CHECK:             %[[VAL_306:.*]] = fir.convert %[[VAL_305]] : (i64) -> index
-  ! CHECK:             %[[VAL_307:.*]] = fir.shape %[[VAL_306]] : (index) -> !fir.shape<1>
-  ! CHECK:             %[[VAL_308:.*]] = constant 1 : index
-  ! CHECK:             %[[VAL_309:.*]] = constant 0 : index
-  ! CHECK:             %[[VAL_310:.*]] = subi %[[VAL_306]], %[[VAL_308]] : index
-  ! CHECK:             %[[VAL_311:.*]] = fir.do_loop %[[VAL_312:.*]] = %[[VAL_309]] to %[[VAL_310]] step %[[VAL_308]] unordered iter_args(%[[VAL_313:.*]] = %[[VAL_262]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:               %[[VAL_314:.*]] = constant 1 : index
-  ! CHECK:               %[[VAL_315:.*]] = addi %[[VAL_312]], %[[VAL_314]] : index
-  ! CHECK:               %[[VAL_316:.*]] = fir.array_coor %[[VAL_299]](%[[VAL_307]]) %[[VAL_315]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
-  ! CHECK:               %[[VAL_317:.*]] = fir.load %[[VAL_316]] : !fir.ref<i8>
-  ! CHECK:               %[[VAL_318:.*]] = fir.convert %[[VAL_317]] : (i8) -> i1
-  ! CHECK:               %[[VAL_319:.*]] = fir.if %[[VAL_318]] -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
-  ! CHECK:                 fir.result %[[VAL_313]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:               } else {
-  ! CHECK:                 %[[VAL_320:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_321:.*]] = fir.convert %[[VAL_320]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_322:.*]] = fir.convert %[[VAL_321]] : (i64) -> index
-  ! CHECK:                 %[[VAL_323:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_324:.*]] = fir.convert %[[VAL_323]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_325:.*]] = fir.convert %[[VAL_324]] : (i64) -> index
-  ! CHECK:                 %[[VAL_326:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
-  ! CHECK:                 %[[VAL_327:.*]] = constant 1 : index
-  ! CHECK:                 %[[VAL_328:.*]] = addi %[[VAL_312]], %[[VAL_327]] : index
-  ! CHECK:                 %[[VAL_329:.*]] = fir.array_fetch %[[VAL_255]], %[[VAL_322]], %[[VAL_325]], %[[VAL_326]], %[[VAL_328]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, index, index, !fir.field, index) -> f32
-  ! CHECK:                 %[[VAL_330:.*]] = negf %[[VAL_329]] : f32
-  ! CHECK:                 %[[VAL_331:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_332:.*]] = fir.convert %[[VAL_331]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_333:.*]] = fir.convert %[[VAL_332]] : (i64) -> index
-  ! CHECK:                 %[[VAL_334:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-  ! CHECK:                 %[[VAL_335:.*]] = fir.convert %[[VAL_334]] : (i32) -> i64
-  ! CHECK:                 %[[VAL_336:.*]] = fir.convert %[[VAL_335]] : (i64) -> index
-  ! CHECK:                 %[[VAL_337:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
-  ! CHECK:                 %[[VAL_338:.*]] = constant 1 : index
-  ! CHECK:                 %[[VAL_339:.*]] = addi %[[VAL_312]], %[[VAL_338]] : index
-  ! CHECK:                 %[[VAL_340:.*]] = fir.array_update %[[VAL_313]], %[[VAL_330]], %[[VAL_333]], %[[VAL_336]], %[[VAL_337]], %[[VAL_339]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, f32, index, index, !fir.field, index) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:                 fir.result %[[VAL_340]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:               }
-  ! CHECK:               fir.result %[[VAL_341:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:             }
-  ! CHECK:             fir.result %[[VAL_342:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:           }
-  ! CHECK:           fir.result %[[VAL_343:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
-  ! CHECK:         }
-  ! CHECK:         fir.array_merge_store %[[VAL_254]], %[[VAL_344:.*]] to %[[VAL_0]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>
-  ! CHECK:         %[[VAL_345:.*]] = fir.convert %[[VAL_8]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
-  ! CHECK:         %[[VAL_346:.*]] = fir.call @_FortranARaggedArrayDeallocate(%[[VAL_345]]) : (!fir.llvm_ptr<i8>) -> none
-
+  ! CHECK: %[[VAL_2:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK: %[[VAL_3:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK: %[[VAL_4:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK: %[[VAL_5:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK: %[[VAL_6:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "j"}
+  ! CHECK: %[[VAL_7:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
+  ! CHECK: %[[VAL_8:.*]] = fir.alloca tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_9:.*]] = constant 0 : i32
+  ! CHECK: %[[VAL_10:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_11:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_9]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<i64>
+  ! CHECK: fir.store %[[VAL_10]] to %[[VAL_11]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_12:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_13:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi8>>
+  ! CHECK: %[[VAL_14:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_12]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: fir.store %[[VAL_13]] to %[[VAL_14]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_15:.*]] = constant 2 : i32
+  ! CHECK: %[[VAL_16:.*]] = fir.zero_bits !fir.heap<!fir.array<?xi64>>
+  ! CHECK: %[[VAL_17:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_15]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: fir.store %[[VAL_16]] to %[[VAL_17]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_18:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (i32) -> index
+  ! CHECK: %[[VAL_20:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_21:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_20]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, index) -> (index, index, index)
+  ! CHECK: %[[VAL_22:.*]] = fir.convert %[[VAL_21]]#1 : (index) -> i64
+  ! CHECK: %[[VAL_23:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_24:.*]] = fir.convert %[[VAL_23]] : (index) -> i64
+  ! CHECK: %[[VAL_25:.*]] = addi %[[VAL_22]], %[[VAL_24]] : i64
+  ! CHECK: %[[VAL_26:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_27:.*]] = subi %[[VAL_25]], %[[VAL_26]] : i64
+  ! CHECK: %[[VAL_28:.*]] = fir.convert %[[VAL_27]] : (i64) -> i32
+  ! CHECK: %[[VAL_29:.*]] = fir.convert %[[VAL_28]] : (i32) -> index
+  ! CHECK: %[[VAL_30:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_31:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_32:.*]] = fir.convert %[[VAL_31]] : (i32) -> index
+  ! CHECK: %[[VAL_33:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_34:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_33]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, index) -> (index, index, index)
+  ! CHECK: %[[VAL_35:.*]] = fir.convert %[[VAL_34]]#1 : (index) -> i64
+  ! CHECK: %[[VAL_36:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_37:.*]] = fir.convert %[[VAL_36]] : (index) -> i64
+  ! CHECK: %[[VAL_38:.*]] = addi %[[VAL_35]], %[[VAL_37]] : i64
+  ! CHECK: %[[VAL_39:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_40:.*]] = subi %[[VAL_38]], %[[VAL_39]] : i64
+  ! CHECK: %[[VAL_41:.*]] = fir.convert %[[VAL_40]] : (i64) -> i32
+  ! CHECK: %[[VAL_42:.*]] = fir.convert %[[VAL_41]] : (i32) -> index
+  ! CHECK: %[[VAL_43:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_44:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: %[[VAL_45:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: %[[VAL_46:.*]] = fir.do_loop %[[VAL_47:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_48:.*]] = %[[VAL_44]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_49:.*]] = fir.convert %[[VAL_47]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_49]] to %[[VAL_7]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_50:.*]] = fir.do_loop %[[VAL_51:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_52:.*]] = %[[VAL_48]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_53:.*]] = fir.convert %[[VAL_51]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_53]] to %[[VAL_6]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_54:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_55:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_56:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
+  ! CHECK: %[[VAL_57:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
+  ! CHECK: %[[VAL_58:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
+  ! CHECK: %[[VAL_59:.*]] = subi %[[VAL_57]], %[[VAL_56]] : i64
+  ! CHECK: %[[VAL_60:.*]] = addi %[[VAL_59]], %[[VAL_58]] : i64
+  ! CHECK: %[[VAL_61:.*]] = divi_signed %[[VAL_60]], %[[VAL_58]] : i64
+  ! CHECK: %[[VAL_62:.*]] = cmpi sgt, %[[VAL_61]], %[[VAL_55]] : i64
+  ! CHECK: %[[VAL_63:.*]] = select %[[VAL_62]], %[[VAL_61]], %[[VAL_55]] : i64
+  ! CHECK: %[[VAL_64:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_65:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
+  ! CHECK: %[[VAL_66:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
+  ! CHECK: %[[VAL_67:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
+  ! CHECK: %[[VAL_68:.*]] = subi %[[VAL_66]], %[[VAL_65]] : i64
+  ! CHECK: %[[VAL_69:.*]] = addi %[[VAL_68]], %[[VAL_67]] : i64
+  ! CHECK: %[[VAL_70:.*]] = divi_signed %[[VAL_69]], %[[VAL_67]] : i64
+  ! CHECK: %[[VAL_71:.*]] = cmpi sgt, %[[VAL_70]], %[[VAL_64]] : i64
+  ! CHECK: %[[VAL_72:.*]] = select %[[VAL_71]], %[[VAL_70]], %[[VAL_64]] : i64
+  ! CHECK: %[[VAL_73:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_74:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_73]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_75:.*]] = fir.load %[[VAL_74]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_76:.*]] = fir.convert %[[VAL_75]] : (!fir.heap<!fir.array<?xi8>>) -> i64
+  ! CHECK: %[[VAL_77:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_78:.*]] = cmpi eq, %[[VAL_76]], %[[VAL_77]] : i64
+  ! CHECK: fir.if %[[VAL_78]] {
+  ! CHECK: %[[VAL_79:.*]] = constant true
+  ! CHECK: %[[VAL_80:.*]] = constant 2 : i64
+  ! CHECK: %[[VAL_81:.*]] = fir.allocmem !fir.array<2xi64>
+  ! CHECK: %[[VAL_82:.*]] = constant 0 : i32
+  ! CHECK: %[[VAL_83:.*]] = fir.coordinate_of %[[VAL_81]], %[[VAL_82]] : (!fir.heap<!fir.array<2xi64>>, i32) -> !fir.ref<i64>
+  ! CHECK: fir.store %[[VAL_63]] to %[[VAL_83]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_84:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_85:.*]] = fir.coordinate_of %[[VAL_81]], %[[VAL_84]] : (!fir.heap<!fir.array<2xi64>>, i32) -> !fir.ref<i64>
+  ! CHECK: fir.store %[[VAL_72]] to %[[VAL_85]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_86:.*]] = fir.convert %[[VAL_8]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
+  ! CHECK: %[[VAL_87:.*]] = fir.convert %[[VAL_81]] : (!fir.heap<!fir.array<2xi64>>) -> !fir.ref<i64>
+  ! CHECK: %[[VAL_88:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_86]], %[[VAL_79]], %[[VAL_80]], %[[VAL_54]], %[[VAL_87]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
+  ! CHECK: }
+  ! CHECK: %[[VAL_89:.*]] = subi %[[VAL_47]], %[[VAL_19]] : index
+  ! CHECK: %[[VAL_90:.*]] = divi_signed %[[VAL_89]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_91:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_92:.*]] = addi %[[VAL_90]], %[[VAL_91]] : index
+  ! CHECK: %[[VAL_93:.*]] = subi %[[VAL_51]], %[[VAL_32]] : index
+  ! CHECK: %[[VAL_94:.*]] = divi_signed %[[VAL_93]], %[[VAL_43]] : index
+  ! CHECK: %[[VAL_95:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_96:.*]] = addi %[[VAL_94]], %[[VAL_95]] : index
+  ! CHECK: %[[VAL_97:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_98:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_97]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_99:.*]] = fir.load %[[VAL_98]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_100:.*]] = fir.convert %[[VAL_99]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
+  ! CHECK: %[[VAL_101:.*]] = fir.shape %[[VAL_63]], %[[VAL_72]] : (i64, i64) -> !fir.shape<2>
+  ! CHECK: %[[VAL_102:.*]] = fir.array_coor %[[VAL_100]](%[[VAL_101]]) %[[VAL_92]], %[[VAL_96]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
+  ! CHECK: %[[VAL_103:.*]] = fir.load %[[VAL_6]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_104:.*]] = fir.convert %[[VAL_103]] : (i32) -> i64
+  ! CHECK: %[[VAL_105:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_106:.*]] = subi %[[VAL_104]], %[[VAL_105]] : i64
+  ! CHECK: %[[VAL_107:.*]] = fir.load %[[VAL_7]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_108:.*]] = fir.convert %[[VAL_107]] : (i32) -> i64
+  ! CHECK: %[[VAL_109:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_110:.*]] = subi %[[VAL_108]], %[[VAL_109]] : i64
+  ! CHECK: %[[VAL_111:.*]] = fir.coordinate_of %[[VAL_1]], %[[VAL_106]], %[[VAL_110]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>, i64, i64) -> !fir.ref<!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: %[[VAL_112:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
+  ! CHECK: %[[VAL_113:.*]] = fir.coordinate_of %[[VAL_111]], %[[VAL_112]] : (!fir.ref<!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.field) -> !fir.ref<!fir.array<100xf32>>
+  ! CHECK: %[[VAL_114:.*]] = constant 100 : index
+  ! CHECK: %[[VAL_115:.*]] = fir.shape %[[VAL_114]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_116:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_117:.*]] = fir.slice %[[VAL_116]], %[[VAL_114]], %[[VAL_116]] : (index, index, index) -> !fir.slice<1>
+  ! CHECK: %[[VAL_118:.*]] = fir.array_load %[[VAL_113]](%[[VAL_115]]) {{\[}}%[[VAL_117]]] : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<100xf32>
+  ! CHECK: %[[VAL_119:.*]] = constant 0.000000e+00 : f32
+  ! CHECK: %[[VAL_120:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_121:.*]] = subi %[[VAL_114]], %[[VAL_116]] : index
+  ! CHECK: %[[VAL_122:.*]] = addi %[[VAL_121]], %[[VAL_116]] : index
+  ! CHECK: %[[VAL_123:.*]] = divi_signed %[[VAL_122]], %[[VAL_116]] : index
+  ! CHECK: %[[VAL_124:.*]] = cmpi sgt, %[[VAL_123]], %[[VAL_120]] : index
+  ! CHECK: %[[VAL_125:.*]] = select %[[VAL_124]], %[[VAL_123]], %[[VAL_120]] : index
+  ! CHECK: %[[VAL_126:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_127:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_126]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_128:.*]] = fir.load %[[VAL_127]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_129:.*]] = fir.shape %[[VAL_125]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_130:.*]] = fir.array_load %[[VAL_128]](%[[VAL_129]]) : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>) -> !fir.array<?xi8>
+  ! CHECK: %[[VAL_131:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_132:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_133:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_132]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_134:.*]] = fir.load %[[VAL_133]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_135:.*]] = fir.convert %[[VAL_134]] : (!fir.heap<!fir.array<?xi8>>) -> i64
+  ! CHECK: %[[VAL_136:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_137:.*]] = cmpi eq, %[[VAL_135]], %[[VAL_136]] : i64
+  ! CHECK: fir.if %[[VAL_137]] {
+  ! CHECK: %[[VAL_138:.*]] = constant false
+  ! CHECK: %[[VAL_139:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_140:.*]] = fir.allocmem !fir.array<1xi64>
+  ! CHECK: %[[VAL_141:.*]] = constant 0 : i32
+  ! CHECK: %[[VAL_142:.*]] = fir.coordinate_of %[[VAL_140]], %[[VAL_141]] : (!fir.heap<!fir.array<1xi64>>, i32) -> !fir.ref<i64>
+  ! CHECK: %[[VAL_143:.*]] = fir.convert %[[VAL_125]] : (index) -> i64
+  ! CHECK: fir.store %[[VAL_143]] to %[[VAL_142]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_144:.*]] = fir.convert %[[VAL_102]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
+  ! CHECK: %[[VAL_145:.*]] = fir.convert %[[VAL_140]] : (!fir.heap<!fir.array<1xi64>>) -> !fir.ref<i64>
+  ! CHECK: %[[VAL_146:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_144]], %[[VAL_138]], %[[VAL_139]], %[[VAL_131]], %[[VAL_145]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
+  ! CHECK: }
+  ! CHECK: %[[VAL_147:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_148:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_149:.*]] = subi %[[VAL_125]], %[[VAL_147]] : index
+  ! CHECK: %[[VAL_150:.*]] = fir.do_loop %[[VAL_151:.*]] = %[[VAL_148]] to %[[VAL_149]] step %[[VAL_147]] unordered iter_args(%[[VAL_152:.*]] = %[[VAL_130]]) -> (!fir.array<?xi8>) {
+  ! CHECK: %[[VAL_153:.*]] = fir.array_fetch %[[VAL_118]], %[[VAL_151]] : (!fir.array<100xf32>, index) -> f32
+  ! CHECK: %[[VAL_154:.*]] = cmpf ogt, %[[VAL_153]], %[[VAL_119]] : f32
+  ! CHECK: %[[VAL_155:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_156:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_155]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_157:.*]] = fir.load %[[VAL_156]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_158:.*]] = fir.shape %[[VAL_125]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_159:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_160:.*]] = addi %[[VAL_151]], %[[VAL_159]] : index
+  ! CHECK: %[[VAL_161:.*]] = fir.array_coor %[[VAL_157]](%[[VAL_158]]) %[[VAL_160]] : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_162:.*]] = fir.convert %[[VAL_154]] : (i1) -> i8
+  ! CHECK: fir.store %[[VAL_162]] to %[[VAL_161]] : !fir.ref<i8>
+  ! CHECK: fir.result %[[VAL_152]] : !fir.array<?xi8>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_52]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_163:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: %[[VAL_164:.*]] = fir.do_loop %[[VAL_165:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_166:.*]] = %[[VAL_44]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_167:.*]] = fir.convert %[[VAL_165]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_167]] to %[[VAL_5]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_168:.*]] = fir.do_loop %[[VAL_169:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_170:.*]] = %[[VAL_166]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_171:.*]] = fir.convert %[[VAL_169]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_171]] to %[[VAL_4]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_172:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_173:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
+  ! CHECK: %[[VAL_174:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
+  ! CHECK: %[[VAL_175:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
+  ! CHECK: %[[VAL_176:.*]] = subi %[[VAL_174]], %[[VAL_173]] : i64
+  ! CHECK: %[[VAL_177:.*]] = addi %[[VAL_176]], %[[VAL_175]] : i64
+  ! CHECK: %[[VAL_178:.*]] = divi_signed %[[VAL_177]], %[[VAL_175]] : i64
+  ! CHECK: %[[VAL_179:.*]] = cmpi sgt, %[[VAL_178]], %[[VAL_172]] : i64
+  ! CHECK: %[[VAL_180:.*]] = select %[[VAL_179]], %[[VAL_178]], %[[VAL_172]] : i64
+  ! CHECK: %[[VAL_181:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_182:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
+  ! CHECK: %[[VAL_183:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
+  ! CHECK: %[[VAL_184:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
+  ! CHECK: %[[VAL_185:.*]] = subi %[[VAL_183]], %[[VAL_182]] : i64
+  ! CHECK: %[[VAL_186:.*]] = addi %[[VAL_185]], %[[VAL_184]] : i64
+  ! CHECK: %[[VAL_187:.*]] = divi_signed %[[VAL_186]], %[[VAL_184]] : i64
+  ! CHECK: %[[VAL_188:.*]] = cmpi sgt, %[[VAL_187]], %[[VAL_181]] : i64
+  ! CHECK: %[[VAL_189:.*]] = select %[[VAL_188]], %[[VAL_187]], %[[VAL_181]] : i64
+  ! CHECK: %[[VAL_190:.*]] = subi %[[VAL_165]], %[[VAL_19]] : index
+  ! CHECK: %[[VAL_191:.*]] = divi_signed %[[VAL_190]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_192:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_193:.*]] = addi %[[VAL_191]], %[[VAL_192]] : index
+  ! CHECK: %[[VAL_194:.*]] = subi %[[VAL_169]], %[[VAL_32]] : index
+  ! CHECK: %[[VAL_195:.*]] = divi_signed %[[VAL_194]], %[[VAL_43]] : index
+  ! CHECK: %[[VAL_196:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_197:.*]] = addi %[[VAL_195]], %[[VAL_196]] : index
+  ! CHECK: %[[VAL_198:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_199:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_198]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_200:.*]] = fir.load %[[VAL_199]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_201:.*]] = fir.convert %[[VAL_200]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
+  ! CHECK: %[[VAL_202:.*]] = fir.shape %[[VAL_180]], %[[VAL_189]] : (i64, i64) -> !fir.shape<2>
+  ! CHECK: %[[VAL_203:.*]] = fir.array_coor %[[VAL_201]](%[[VAL_202]]) %[[VAL_193]], %[[VAL_197]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
+  ! CHECK: %[[VAL_204:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_205:.*]] = fir.coordinate_of %[[VAL_203]], %[[VAL_204]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_206:.*]] = fir.load %[[VAL_205]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_207:.*]] = fir.convert %[[VAL_206]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?xi8>>
+  ! CHECK: %[[VAL_208:.*]] = constant 2 : i32
+  ! CHECK: %[[VAL_209:.*]] = fir.coordinate_of %[[VAL_203]], %[[VAL_208]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_210:.*]] = fir.load %[[VAL_209]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_211:.*]] = constant 0 : i32
+  ! CHECK: %[[VAL_212:.*]] = fir.coordinate_of %[[VAL_210]], %[[VAL_211]] : (!fir.heap<!fir.array<?xi64>>, i32) -> !fir.ref<i64>
+  ! CHECK: %[[VAL_213:.*]] = fir.load %[[VAL_212]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_214:.*]] = fir.convert %[[VAL_213]] : (i64) -> index
+  ! CHECK: %[[VAL_215:.*]] = fir.shape %[[VAL_214]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_216:.*]] = constant 100 : i64
+  ! CHECK: %[[VAL_217:.*]] = fir.convert %[[VAL_216]] : (i64) -> index
+  ! CHECK: %[[VAL_218:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_219:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_220:.*]] = subi %[[VAL_217]], %[[VAL_218]] : index
+  ! CHECK: %[[VAL_221:.*]] = fir.do_loop %[[VAL_222:.*]] = %[[VAL_219]] to %[[VAL_220]] step %[[VAL_218]] unordered iter_args(%[[VAL_223:.*]] = %[[VAL_170]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_224:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_225:.*]] = addi %[[VAL_222]], %[[VAL_224]] : index
+  ! CHECK: %[[VAL_226:.*]] = fir.array_coor %[[VAL_207]](%[[VAL_215]]) %[[VAL_225]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_227:.*]] = fir.load %[[VAL_226]] : !fir.ref<i8>
+  ! CHECK: %[[VAL_228:.*]] = fir.convert %[[VAL_227]] : (i8) -> i1
+  ! CHECK: %[[VAL_229:.*]] = fir.if %[[VAL_228]] -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_230:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_231:.*]] = fir.convert %[[VAL_230]] : (i32) -> i64
+  ! CHECK: %[[VAL_232:.*]] = fir.convert %[[VAL_231]] : (i64) -> index
+  ! CHECK: %[[VAL_233:.*]] = fir.load %[[VAL_5]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_234:.*]] = fir.convert %[[VAL_233]] : (i32) -> i64
+  ! CHECK: %[[VAL_235:.*]] = fir.convert %[[VAL_234]] : (i64) -> index
+  ! CHECK: %[[VAL_236:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
+  ! CHECK: %[[VAL_237:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_238:.*]] = addi %[[VAL_222]], %[[VAL_237]] : index
+  ! CHECK: %[[VAL_239:.*]] = fir.array_fetch %[[VAL_45]], %[[VAL_232]], %[[VAL_235]], %[[VAL_236]], %[[VAL_238]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, index, index, !fir.field, index) -> f32
+  ! CHECK: %[[VAL_240:.*]] = constant 3.140000e+00 : f32
+  ! CHECK: %[[VAL_241:.*]] = divf %[[VAL_239]], %[[VAL_240]] : f32
+  ! CHECK: %[[VAL_242:.*]] = fir.load %[[VAL_5]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_243:.*]] = fir.convert %[[VAL_242]] : (i32) -> i64
+  ! CHECK: %[[VAL_244:.*]] = fir.convert %[[VAL_243]] : (i64) -> index
+  ! CHECK: %[[VAL_245:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_246:.*]] = fir.convert %[[VAL_245]] : (i32) -> i64
+  ! CHECK: %[[VAL_247:.*]] = fir.convert %[[VAL_246]] : (i64) -> index
+  ! CHECK: %[[VAL_248:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
+  ! CHECK: %[[VAL_249:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_250:.*]] = addi %[[VAL_222]], %[[VAL_249]] : index
+  ! CHECK: %[[VAL_251:.*]] = fir.array_update %[[VAL_223]], %[[VAL_241]], %[[VAL_244]], %[[VAL_247]], %[[VAL_248]], %[[VAL_250]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, f32, index, index, !fir.field, index) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: fir.result %[[VAL_251]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: } else {
+  ! CHECK: fir.result %[[VAL_223]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_252:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_253:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_254:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.array_merge_store %[[VAL_44]], %[[VAL_255:.*]] to %[[VAL_0]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>
+  ! CHECK: %[[VAL_256:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: %[[VAL_257:.*]] = fir.array_load %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: %[[VAL_258:.*]] = fir.do_loop %[[VAL_259:.*]] = %[[VAL_19]] to %[[VAL_29]] step %[[VAL_30]] unordered iter_args(%[[VAL_260:.*]] = %[[VAL_256]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_261:.*]] = fir.convert %[[VAL_259]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_261]] to %[[VAL_3]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_262:.*]] = fir.do_loop %[[VAL_263:.*]] = %[[VAL_32]] to %[[VAL_42]] step %[[VAL_43]] unordered iter_args(%[[VAL_264:.*]] = %[[VAL_260]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_265:.*]] = fir.convert %[[VAL_263]] : (index) -> i32
+  ! CHECK: fir.store %[[VAL_265]] to %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_266:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_267:.*]] = fir.convert %[[VAL_19]] : (index) -> i64
+  ! CHECK: %[[VAL_268:.*]] = fir.convert %[[VAL_29]] : (index) -> i64
+  ! CHECK: %[[VAL_269:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
+  ! CHECK: %[[VAL_270:.*]] = subi %[[VAL_268]], %[[VAL_267]] : i64
+  ! CHECK: %[[VAL_271:.*]] = addi %[[VAL_270]], %[[VAL_269]] : i64
+  ! CHECK: %[[VAL_272:.*]] = divi_signed %[[VAL_271]], %[[VAL_269]] : i64
+  ! CHECK: %[[VAL_273:.*]] = cmpi sgt, %[[VAL_272]], %[[VAL_266]] : i64
+  ! CHECK: %[[VAL_274:.*]] = select %[[VAL_273]], %[[VAL_272]], %[[VAL_266]] : i64
+  ! CHECK: %[[VAL_275:.*]] = constant 0 : i64
+  ! CHECK: %[[VAL_276:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
+  ! CHECK: %[[VAL_277:.*]] = fir.convert %[[VAL_42]] : (index) -> i64
+  ! CHECK: %[[VAL_278:.*]] = fir.convert %[[VAL_43]] : (index) -> i64
+  ! CHECK: %[[VAL_279:.*]] = subi %[[VAL_277]], %[[VAL_276]] : i64
+  ! CHECK: %[[VAL_280:.*]] = addi %[[VAL_279]], %[[VAL_278]] : i64
+  ! CHECK: %[[VAL_281:.*]] = divi_signed %[[VAL_280]], %[[VAL_278]] : i64
+  ! CHECK: %[[VAL_282:.*]] = cmpi sgt, %[[VAL_281]], %[[VAL_275]] : i64
+  ! CHECK: %[[VAL_283:.*]] = select %[[VAL_282]], %[[VAL_281]], %[[VAL_275]] : i64
+  ! CHECK: %[[VAL_284:.*]] = subi %[[VAL_259]], %[[VAL_19]] : index
+  ! CHECK: %[[VAL_285:.*]] = divi_signed %[[VAL_284]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_286:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_287:.*]] = addi %[[VAL_285]], %[[VAL_286]] : index
+  ! CHECK: %[[VAL_288:.*]] = subi %[[VAL_263]], %[[VAL_32]] : index
+  ! CHECK: %[[VAL_289:.*]] = divi_signed %[[VAL_288]], %[[VAL_43]] : index
+  ! CHECK: %[[VAL_290:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_291:.*]] = addi %[[VAL_289]], %[[VAL_290]] : index
+  ! CHECK: %[[VAL_292:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_293:.*]] = fir.coordinate_of %[[VAL_8]], %[[VAL_292]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_294:.*]] = fir.load %[[VAL_293]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_295:.*]] = fir.convert %[[VAL_294]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>
+  ! CHECK: %[[VAL_296:.*]] = fir.shape %[[VAL_274]], %[[VAL_283]] : (i64, i64) -> !fir.shape<2>
+  ! CHECK: %[[VAL_297:.*]] = fir.array_coor %[[VAL_295]](%[[VAL_296]]) %[[VAL_287]], %[[VAL_291]] : (!fir.ref<!fir.array<?x?xtuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>>, !fir.shape<2>, index, index) -> !fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>
+  ! CHECK: %[[VAL_298:.*]] = constant 1 : i32
+  ! CHECK: %[[VAL_299:.*]] = fir.coordinate_of %[[VAL_297]], %[[VAL_298]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_300:.*]] = fir.load %[[VAL_299]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
+  ! CHECK: %[[VAL_301:.*]] = fir.convert %[[VAL_300]] : (!fir.heap<!fir.array<?xi8>>) -> !fir.ref<!fir.array<?xi8>>
+  ! CHECK: %[[VAL_302:.*]] = constant 2 : i32
+  ! CHECK: %[[VAL_303:.*]] = fir.coordinate_of %[[VAL_297]], %[[VAL_302]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_304:.*]] = fir.load %[[VAL_303]] : !fir.ref<!fir.heap<!fir.array<?xi64>>>
+  ! CHECK: %[[VAL_305:.*]] = constant 0 : i32
+  ! CHECK: %[[VAL_306:.*]] = fir.coordinate_of %[[VAL_304]], %[[VAL_305]] : (!fir.heap<!fir.array<?xi64>>, i32) -> !fir.ref<i64>
+  ! CHECK: %[[VAL_307:.*]] = fir.load %[[VAL_306]] : !fir.ref<i64>
+  ! CHECK: %[[VAL_308:.*]] = fir.convert %[[VAL_307]] : (i64) -> index
+  ! CHECK: %[[VAL_309:.*]] = fir.shape %[[VAL_308]] : (index) -> !fir.shape<1>
+  ! CHECK: %[[VAL_310:.*]] = constant 100 : i64
+  ! CHECK: %[[VAL_311:.*]] = fir.convert %[[VAL_310]] : (i64) -> index
+  ! CHECK: %[[VAL_312:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_313:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_314:.*]] = subi %[[VAL_311]], %[[VAL_312]] : index
+  ! CHECK: %[[VAL_315:.*]] = fir.do_loop %[[VAL_316:.*]] = %[[VAL_313]] to %[[VAL_314]] step %[[VAL_312]] unordered iter_args(%[[VAL_317:.*]] = %[[VAL_264]]) -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: %[[VAL_318:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_319:.*]] = addi %[[VAL_316]], %[[VAL_318]] : index
+  ! CHECK: %[[VAL_320:.*]] = fir.array_coor %[[VAL_301]](%[[VAL_309]]) %[[VAL_319]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
+  ! CHECK: %[[VAL_321:.*]] = fir.load %[[VAL_320]] : !fir.ref<i8>
+  ! CHECK: %[[VAL_322:.*]] = fir.convert %[[VAL_321]] : (i8) -> i1
+  ! CHECK: %[[VAL_323:.*]] = fir.if %[[VAL_322]] -> (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>) {
+  ! CHECK: fir.result %[[VAL_317]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: } else {
+  ! CHECK: %[[VAL_324:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_325:.*]] = fir.convert %[[VAL_324]] : (i32) -> i64
+  ! CHECK: %[[VAL_326:.*]] = fir.convert %[[VAL_325]] : (i64) -> index
+  ! CHECK: %[[VAL_327:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_328:.*]] = fir.convert %[[VAL_327]] : (i32) -> i64
+  ! CHECK: %[[VAL_329:.*]] = fir.convert %[[VAL_328]] : (i64) -> index
+  ! CHECK: %[[VAL_330:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
+  ! CHECK: %[[VAL_331:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_332:.*]] = addi %[[VAL_316]], %[[VAL_331]] : index
+  ! CHECK: %[[VAL_333:.*]] = fir.array_fetch %[[VAL_257]], %[[VAL_326]], %[[VAL_329]], %[[VAL_330]], %[[VAL_332]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, index, index, !fir.field, index) -> f32
+  ! CHECK: %[[VAL_334:.*]] = negf %[[VAL_333]] : f32
+  ! CHECK: %[[VAL_335:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_336:.*]] = fir.convert %[[VAL_335]] : (i32) -> i64
+  ! CHECK: %[[VAL_337:.*]] = fir.convert %[[VAL_336]] : (i64) -> index
+  ! CHECK: %[[VAL_338:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
+  ! CHECK: %[[VAL_339:.*]] = fir.convert %[[VAL_338]] : (i32) -> i64
+  ! CHECK: %[[VAL_340:.*]] = fir.convert %[[VAL_339]] : (i64) -> index
+  ! CHECK: %[[VAL_341:.*]] = fir.field_index data, !fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>
+  ! CHECK: %[[VAL_342:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_343:.*]] = addi %[[VAL_316]], %[[VAL_342]] : index
+  ! CHECK: %[[VAL_344:.*]] = fir.array_update %[[VAL_317]], %[[VAL_334]], %[[VAL_337]], %[[VAL_340]], %[[VAL_341]], %[[VAL_343]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, f32, index, index, !fir.field, index) -> !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: fir.result %[[VAL_344]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_345:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_346:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.result %[[VAL_347:.*]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>
+  ! CHECK: }
+  ! CHECK: fir.array_merge_store %[[VAL_256]], %[[VAL_348:.*]] to %[[VAL_0]] : !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, !fir.box<!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>>
+  ! CHECK: %[[VAL_349:.*]] = fir.convert %[[VAL_8]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>) -> !fir.llvm_ptr<i8>
+  ! CHECK: %[[VAL_350:.*]] = fir.call @_FortranARaggedArrayDeallocate(%[[VAL_349]]) : (!fir.llvm_ptr<i8>) -> none
   type t
      real data(100)
   end type t

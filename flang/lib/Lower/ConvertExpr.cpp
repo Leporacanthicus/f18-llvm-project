@@ -4077,11 +4077,16 @@ public:
     return header;
   }
 
+  /// Lower mask expressions with implied iteration spaces from the variants of
+  /// WHERE syntax. Since it is legal for mask expressions to have side-effects
+  /// and modify values that will be used for the lhs, rhs, or both of
+  /// subsequent assignments, the mask must be evaluated before the assignment
+  /// is processed.
   /// Mask expressions are array expressions too.
   void genMasks() {
-    auto loc = getLoc();
     // Lower the mask expressions, if any.
     if (implicitSpaceHasMasks()) {
+      auto loc = getLoc();
       // Mask expressions are array expressions too.
       for (const auto *e : implicitSpace->getExprs())
         if (e && !implicitSpace->isLowered(e)) {
@@ -4140,7 +4145,6 @@ public:
             auto ldExt = builder.create<fir::LoadOp>(loc, coor);
             extents.push_back(builder.createConvert(loc, idxTy, ldExt));
           }
-          destShape = extents;
           // Construct shape of buffer.
           auto shapeOp = builder.genShape(loc, extents);
 
@@ -4221,11 +4225,6 @@ public:
   std::pair<IterationSpace, mlir::OpBuilder::InsertPoint>
   genIterSpace(mlir::Type resultType) {
     auto loc = getLoc();
-
-    // Generate any mask expressions, as necessary. This is the compute step
-    // that creates the effective masks. See 10.2.3.2 in particular.
-    genMasks();
-
     auto shape = genIterationShape();
     if (!destination) {
       // Allocate storage for the result if it is not already provided.
@@ -6401,7 +6400,11 @@ private:
       : converter{converter}, builder{converter.getFirOpBuilder()},
         stmtCtx{stmtCtx}, symMap{symMap},
         explicitSpace(expSpace->isActive() ? expSpace : nullptr),
-        implicitSpace(impSpace->empty() ? nullptr : impSpace), semant{sem} {}
+        implicitSpace(impSpace->empty() ? nullptr : impSpace), semant{sem} {
+    // Generate any mask expressions, as necessary. This is the compute step
+    // that creates the effective masks. See 10.2.3.2 in particular.
+    genMasks();
+  }
 
   mlir::Location getLoc() { return converter.getCurrentLocation(); }
 
