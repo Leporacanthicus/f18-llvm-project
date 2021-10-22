@@ -286,7 +286,7 @@ class DialectRegistry {
     SmallVector<std::pair<TypeID, DialectInterfaceAllocatorFunction>, 2>
         dialectInterfaces;
     /// Attribute/Operation/Type interfaces.
-    SmallVector<std::pair<TypeID, ObjectInterfaceAllocatorFunction>, 2>
+    SmallVector<std::tuple<TypeID, TypeID, ObjectInterfaceAllocatorFunction>, 2>
         objectInterfaces;
   };
 

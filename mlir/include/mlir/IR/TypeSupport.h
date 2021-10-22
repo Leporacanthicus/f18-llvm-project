@@ -96,16 +96,6 @@ private:
   /// be found in the context.
   static AbstractType *lookupMutable(TypeID typeID, MLIRContext *context);
 
-  /// Give StorageUserBase access to the mutable lookup.
-  template <typename ConcreteT, typename BaseT, typename StorageT,
-            typename UniquerT, template <typename T> class... Traits>
-  friend class detail::StorageUserBase;
-
-  /// Look up the specified abstract type in the MLIRContext and return a
-  /// (mutable) pointer to it. Return a null pointer if the type could not
-  /// be found in the context.
-  static AbstractType *lookupMutable(TypeID typeID, MLIRContext *context);
-
   /// This is the dialect that this type was registered to.
   const Dialect &dialect;
 

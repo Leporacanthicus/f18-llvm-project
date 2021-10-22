@@ -683,21 +683,6 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
   llvm::CanonicalLoopInfo *loopInfo =
       ompBuilder->collapseLoops(diLoc, loopInfos, {});
 
-  // Find the loop configuration.
-  llvm::Type *ivType = loopInfo->getIndVar()->getType();
-  llvm::Value *chunk =
-      loop.schedule_chunk_var()
-          ? moduleTranslation.lookupValue(loop.schedule_chunk_var())
-          : llvm::ConstantInt::get(ivType, 1);
-  llvm::OpenMPIRBuilder::InsertPointTy allocaIP =
-      findAllocaInsertPoint(builder, moduleTranslation);
-
-  // Collapse loops. Store the insertion point because LoopInfos may get
-  // invalidated.
-  llvm::IRBuilderBase::InsertPoint afterIP = loopInfos.front()->getAfterIP();
-  llvm::CanonicalLoopInfo *loopInfo =
-      ompBuilder->collapseLoops(diLoc, loopInfos, {});
-
   allocaIP = findAllocaInsertPoint(builder, moduleTranslation);
   if (schedule == omp::ClauseScheduleKind::Static) {
     ompBuilder->applyStaticWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
