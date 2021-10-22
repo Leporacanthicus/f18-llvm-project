@@ -686,7 +686,7 @@ static mlir::LogicalResult verify(fir::CharConvertOp op) {
 template <typename OPTY>
 static void printCmpOp(OpAsmPrinter &p, OPTY op) {
   p << op.getOperationName() << ' ';
-  auto predSym = mlir::symbolizearith::CmpFPredicate(
+  auto predSym = mlir::arith::symbolizeCmpFPredicate(
       op->template getAttrOfType<mlir::IntegerAttr>(
             OPTY::getPredicateAttrName())
           .getInt());
@@ -748,7 +748,7 @@ mlir::ParseResult fir::parseCmpcOp(mlir::OpAsmParser &parser,
 }
 
 mlir::arith::CmpFPredicate fir::CmpcOp::getPredicateByName(llvm::StringRef name) {
-  auto pred = mlir::symbolizearith::CmpFPredicate(name);
+  auto pred = mlir::arith::symbolizeCmpFPredicate(name);
   assert(pred.hasValue() && "invalid predicate name");
   return pred.getValue();
 }
