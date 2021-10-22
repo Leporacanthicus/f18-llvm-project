@@ -174,21 +174,21 @@ translateRelational(Fortran::common::RelationalOperator rop) {
 /// FIXME: The signaling/quiet aspect of the table 17.1 requirement is not
 /// fully enforced. FIR and LLVM `fcmp` instructions do not give any guarantee
 /// whether the comparison will signal or not in case of quiet NaN argument.
-static mlir::CmpFPredicate
+static mlir::arith::CmpFPredicate
 translateFloatRelational(Fortran::common::RelationalOperator rop) {
   switch (rop) {
   case Fortran::common::RelationalOperator::LT:
-    return mlir::CmpFPredicate::OLT;
+    return mlir::arith::CmpFPredicate::OLT;
   case Fortran::common::RelationalOperator::LE:
-    return mlir::CmpFPredicate::OLE;
+    return mlir::arith::CmpFPredicate::OLE;
   case Fortran::common::RelationalOperator::EQ:
-    return mlir::CmpFPredicate::OEQ;
+    return mlir::arith::CmpFPredicate::OEQ;
   case Fortran::common::RelationalOperator::NE:
-    return mlir::CmpFPredicate::UNE;
+    return mlir::arith::CmpFPredicate::UNE;
   case Fortran::common::RelationalOperator::GT:
-    return mlir::CmpFPredicate::OGT;
+    return mlir::arith::CmpFPredicate::OGT;
   case Fortran::common::RelationalOperator::GE:
-    return mlir::CmpFPredicate::OGE;
+    return mlir::arith::CmpFPredicate::OGE;
   }
   llvm_unreachable("unhandled REAL relational operator");
 }
@@ -438,7 +438,7 @@ public:
   }
 
   template <typename OpTy>
-  mlir::Value createFltCmpOp(mlir::CmpFPredicate pred, const ExtValue &left,
+  mlir::Value createFltCmpOp(mlir::arith::CmpFPredicate pred, const ExtValue &left,
                              const ExtValue &right) {
     if (auto *lhs = left.getUnboxed())
       if (auto *rhs = right.getUnboxed())
@@ -446,7 +446,7 @@ public:
     fir::emitFatalError(getLoc(), "array compare should be handled in genarr");
   }
   template <typename OpTy, typename A>
-  mlir::Value createFltCmpOp(const A &ex, mlir::CmpFPredicate pred) {
+  mlir::Value createFltCmpOp(const A &ex, mlir::arith::CmpFPredicate pred) {
     auto left = genval(ex.left());
     return createFltCmpOp<OpTy>(pred, left, genval(ex.right()));
   }

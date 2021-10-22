@@ -2644,7 +2644,7 @@ def fir_CmpcOp : fir_Op<"cmpc",
 
   let printer = "printCmpcOp(p, *this);";
 
-  let builders = [OpBuilder<(ins "mlir::CmpFPredicate":$predicate,
+  let builders = [OpBuilder<(ins "mlir::arith::CmpFPredicate":$predicate,
     "mlir::Value":$lhs, "mlir::Value":$rhs), [{
       buildCmpCOp($_builder, $_state, predicate, lhs, rhs);
   }]>];
@@ -2654,12 +2654,12 @@ def fir_CmpcOp : fir_Op<"cmpc",
       return "predicate";
     }
 
-    CmpFPredicate getPredicate() {
-      return (CmpFPredicate)(*this)->getAttrOfType<mlir::IntegerAttr>(
+    arith::CmpFPredicate getPredicate() {
+      return (arith::CmpFPredicate)(*this)->getAttrOfType<mlir::IntegerAttr>(
           getPredicateAttrName()).getInt();
     }
 
-    static CmpFPredicate getPredicateByName(llvm::StringRef name);
+    static arith::CmpFPredicate getPredicateByName(llvm::StringRef name);
   }];
 }
 

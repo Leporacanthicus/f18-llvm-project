@@ -747,14 +747,14 @@ private:
     auto zero = builder->create<mlir::ConstantOp>(
         loc, exprType, builder->getFloatAttr(exprType, 0.0));
     auto cond1 =
-        builder->create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OLT, sum, zero);
+        builder->create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OLT, sum, zero);
     auto *elseIfBlock =
         builder->getBlock()->splitBlock(builder->getInsertionPoint());
     genFIRConditionalBranch(cond1, blockOfLabel(eval, std::get<1>(stmt.t)),
                             elseIfBlock);
     startBlock(elseIfBlock);
     auto cond2 =
-        builder->create<mlir::CmpFOp>(loc, mlir::CmpFPredicate::OGT, sum, zero);
+        builder->create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OGT, sum, zero);
     genFIRConditionalBranch(cond2, blockOfLabel(eval, std::get<3>(stmt.t)),
                             blockOfLabel(eval, std::get<2>(stmt.t)));
   }

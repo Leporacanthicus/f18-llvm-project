@@ -767,10 +767,10 @@ struct CmpcOpConversion : public FIROpConversion<fir::CmpcOp> {
         rewriter.create<mlir::LLVM::FCmpOp>(loc, resTy, ip, cmp->getAttrs());
     SmallVector<mlir::Value, 2> cp{rcp, icp};
     switch (cmp.getPredicate()) {
-    case mlir::CmpFPredicate::OEQ: // .EQ.
+    case mlir::arith::CmpFPredicate::OEQ: // .EQ.
       rewriter.replaceOpWithNewOp<mlir::LLVM::AndOp>(cmp, resTy, cp);
       break;
-    case mlir::CmpFPredicate::UNE: // .NE.
+    case mlir::arith::CmpFPredicate::UNE: // .NE.
       rewriter.replaceOpWithNewOp<mlir::LLVM::OrOp>(cmp, resTy, cp);
       break;
     default:
