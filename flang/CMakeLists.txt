@@ -342,7 +342,14 @@ if (FLANG_ENABLE_WERROR)
   if ( LLVM_COMPILER_IS_GCC_COMPATIBLE )
     append("-Werror" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
     append("-Wno-error" CMAKE_REQUIRED_FLAGS)
-    append("-Wno-maybe-uninitialized" CMAKE_CXX_FLAGS)
+
+    # This is GCC-specific workaround for an issue described in
+    # https://github.com/flang-compiler/f18-llvm-project/pull/1130
+    check_cxx_compiler_flag("-Wno-maybe-uninitialized" CXX_SUPPORTS_MAYBE_UNITIALIZED_FLAG)
+    if (CXX_SUPPORTS_MAYBE_UNITIALIZED_FLAG)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-maybe-uninitialized")
+    endif()
+
   endif( LLVM_COMPILER_IS_GCC_COMPATIBLE )
   if (NOT LLVM_ENABLE_WERROR)
       message(WARNING "FLANG_ENABLE_WERROR setting is different from LLVM_ENABLE_WERROR.")
