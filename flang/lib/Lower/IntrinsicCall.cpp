@@ -2105,7 +2105,7 @@ mlir::Value IntrinsicLibrary::genDim(mlir::Type resultType,
   }
   assert(fir::isa_real(resultType) && "Only expects real and integer in DIM");
   auto zero = builder.createRealZeroConstant(loc, resultType);
-  auto diff = builder.create<mlir::SubFOp>(loc, args[0], args[1]);
+  auto diff = builder.create<mlir::arith::SubFOp>(loc, args[0], args[1]);
   auto cmp =
       builder.create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OGT, diff, zero);
   return builder.create<mlir::SelectOp>(loc, cmp, diff, zero);

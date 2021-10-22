@@ -1005,7 +1005,7 @@ private:
       // Unstructured loop preheader - initialize tripVariable and loopVariable.
       mlir::Value tripCount;
       if (info.hasRealControl) {
-        auto diff1 = builder->create<mlir::SubFOp>(loc, upperValue, lowerValue);
+        auto diff1 = builder->create<mlir::arith::SubFOp>(loc, upperValue, lowerValue);
         auto diff2 = builder->create<mlir::arith::AddFOp>(loc, diff1, info.stepValue);
         tripCount = builder->create<mlir::DivFOp>(loc, diff2, info.stepValue);
         controlType = builder->getIndexType();
