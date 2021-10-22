@@ -1657,8 +1657,6 @@ std::optional<SpecificCall> IntrinsicInterface::Match(
       resultType =
           DynamicType{TypeCategory::Integer, defaults.sizeIntegerKind()};
       break;
-    case KindCode::defaultCharKind:
-    case KindCode::typeless:
     case KindCode::teamType:
       CHECK(result.categorySet == DerivedType);
       CHECK(*category == TypeCategory::Derived);

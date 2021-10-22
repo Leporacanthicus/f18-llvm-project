@@ -68,7 +68,7 @@
 // Pgmath is defined in C using _Complex (and windows _Fcomplex/_DComplex
 // equivalents). Since this file defines the call interface with the runtime
 // for both folding and code generation (through template introspection), it
-// is crucial to make a difference between std::complex and _Complex here.
+// is crucial to make a distinction between std::complex and _Complex here.
 // Unfortunately, _Complex support is not standard in C++.
 // Reserve pgmath usage at compile time (folding) when _Complex is available
 // (cmake is responsible to detect this).

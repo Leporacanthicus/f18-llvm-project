@@ -26,7 +26,6 @@
 #include "flang/Common/indirection.h"
 #include "flang/Common/template.h"
 #include "flang/Parser/char-block.h"
-#include "llvm/Support/Compiler.h"
 #include <algorithm>
 #include <list>
 #include <tuple>
@@ -94,7 +93,9 @@ public:
   std::optional<DynamicType> GetType() const;
   int Rank() const;
   std::string AsFortran() const;
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
   LLVM_DUMP_METHOD void dump() const;
+#endif
   llvm::raw_ostream &AsFortran(llvm::raw_ostream &) const;
   static Derived Rewrite(FoldingContext &, Derived &&);
 };
@@ -133,8 +134,8 @@ private:
 
 public:
   CLASS_BOILERPLATE(Operation)
-  explicit Operation(const Expr<OPERANDS> &... x) : operand_{x...} {}
-  explicit Operation(Expr<OPERANDS> &&... x) : operand_{std::move(x)...} {}
+  explicit Operation(const Expr<OPERANDS> &...x) : operand_{x...} {}
+  explicit Operation(Expr<OPERANDS> &&...x) : operand_{std::move(x)...} {}
 
   Derived &derived() { return *static_cast<Derived *>(this); }
   const Derived &derived() const { return *static_cast<const Derived *>(this); }
