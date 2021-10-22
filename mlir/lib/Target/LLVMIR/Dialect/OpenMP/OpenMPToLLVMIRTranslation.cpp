@@ -684,8 +684,6 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
       ompBuilder->collapseLoops(diLoc, loopInfos, {});
 
   allocaIP = findAllocaInsertPoint(builder, moduleTranslation);
-  llvm::OpenMPIRBuilder::InsertPointTy afterIP;
-  llvm::OpenMPIRBuilder *ompBuilder = moduleTranslation.getOpenMPBuilder();
 
   bool isSimd = false;
   if (auto simd = loop.simd_modifier()) {
@@ -722,9 +720,9 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
       break;
     }
 
-    if (loop.schedule_modifier().hasValue()) {
+    if (loop.schedule_modifiers().hasValue()) {
       omp::ScheduleModifier modifier =
-          *omp::symbolizeScheduleModifier(loop.schedule_modifier().getValue());
+          *omp::symbolizeScheduleModifier(loop.schedule_modifiers().getValue());
       switch (modifier) {
       case omp::ScheduleModifier::monotonic:
         schedType |= llvm::omp::OMPScheduleType::ModifierMonotonic;
