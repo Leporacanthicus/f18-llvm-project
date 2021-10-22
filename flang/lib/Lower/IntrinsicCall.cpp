@@ -1710,7 +1710,7 @@ mlir::Value IntrinsicLibrary::genAbs(mlir::Type resultType,
         builder.createIntegerConstant(loc, intType, intType.getWidth() - 1);
     auto mask = builder.create<mlir::SignedShiftRightOp>(loc, arg, shift);
     auto xored = builder.create<mlir::XOrOp>(loc, arg, mask);
-    return builder.create<mlir::SubIOp>(loc, xored, mask);
+    return builder.create<mlir::arith::SubIOp>(loc, xored, mask);
   }
   if (fir::isa_complex(type)) {
     // Use HYPOT to fulfill the no underflow/overflow requirement.
@@ -2098,7 +2098,7 @@ mlir::Value IntrinsicLibrary::genDim(mlir::Type resultType,
   assert(args.size() == 2);
   if (resultType.isa<mlir::IntegerType>()) {
     auto zero = builder.createIntegerConstant(loc, resultType, 0);
-    auto diff = builder.create<mlir::SubIOp>(loc, args[0], args[1]);
+    auto diff = builder.create<mlir::arith::SubIOp>(loc, args[0], args[1]);
     auto cmp =
         builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, diff, zero);
     return builder.create<mlir::SelectOp>(loc, cmp, diff, zero);
@@ -2250,7 +2250,7 @@ mlir::Value IntrinsicLibrary::genIbits(mlir::Type resultType,
   auto len = builder.createConvert(loc, resultType, args[2]);
   auto bitSize = builder.createIntegerConstant(
       loc, resultType, resultType.cast<mlir::IntegerType>().getWidth());
-  auto shiftCount = builder.create<mlir::SubIOp>(loc, bitSize, len);
+  auto shiftCount = builder.create<mlir::arith::SubIOp>(loc, bitSize, len);
   auto zero = builder.createIntegerConstant(loc, resultType, 0);
   auto ones = builder.createIntegerConstant(loc, resultType, -1);
   auto mask = builder.create<mlir::UnsignedShiftRightOp>(loc, ones, shiftCount);
@@ -2433,7 +2433,7 @@ mlir::Value IntrinsicLibrary::genIshftc(mlir::Type resultType,
   auto zero = builder.createIntegerConstant(loc, resultType, 0);
   auto ones = builder.createIntegerConstant(loc, resultType, -1);
   auto absShift = genAbs(resultType, {shift});
-  auto elseSize = builder.create<mlir::SubIOp>(loc, size, absShift);
+  auto elseSize = builder.create<mlir::arith::SubIOp>(loc, size, absShift);
   auto shiftIsZero =
       builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::eq, shift, zero);
   auto shiftEqualsSize = builder.create<mlir::CmpIOp>(
@@ -2453,12 +2453,12 @@ mlir::Value IntrinsicLibrary::genIshftc(mlir::Type resultType,
       builder.create<mlir::ShiftLeftOp>(loc, unchangedTmp1, size);
   auto unchanged =
       builder.create<mlir::SelectOp>(loc, hasUnchanged, unchangedTmp2, zero);
-  auto leftMaskShift = builder.create<mlir::SubIOp>(loc, bitSize, leftSize);
+  auto leftMaskShift = builder.create<mlir::arith::SubIOp>(loc, bitSize, leftSize);
   auto leftMask =
       builder.create<mlir::UnsignedShiftRightOp>(loc, ones, leftMaskShift);
   auto leftTmp = builder.create<mlir::UnsignedShiftRightOp>(loc, I, rightSize);
   auto left = builder.create<mlir::AndOp>(loc, leftTmp, leftMask);
-  auto rightMaskShift = builder.create<mlir::SubIOp>(loc, bitSize, rightSize);
+  auto rightMaskShift = builder.create<mlir::arith::SubIOp>(loc, bitSize, rightSize);
   auto rightMask =
       builder.create<mlir::UnsignedShiftRightOp>(loc, ones, rightMaskShift);
   auto rightTmp = builder.create<mlir::AndOp>(loc, I, rightMask);
@@ -2586,7 +2586,7 @@ mlir::Value IntrinsicLibrary::genModulo(mlir::Type resultType,
         loc, mlir::CmpIPredicate::ne, remainder, zero);
     auto mustAddP =
         builder.create<mlir::AndOp>(loc, remainderIsNotZero, argSignDifferent);
-    auto remPlusP = builder.create<mlir::AddIOp>(loc, remainder, args[1]);
+    auto remPlusP = builder.create<mlir::arith::AddIOp>(loc, remainder, args[1]);
     return builder.create<mlir::SelectOp>(loc, mustAddP, remPlusP, remainder);
   }
   // Real case
@@ -2602,7 +2602,7 @@ mlir::Value IntrinsicLibrary::genModulo(mlir::Type resultType,
       builder.create<mlir::XOrOp>(loc, aLessThanZero, pLessThanZero);
   auto mustAddP =
       builder.create<mlir::AndOp>(loc, remainderIsNotZero, argSignDifferent);
-  auto remPlusP = builder.create<mlir::AddFOp>(loc, remainder, args[1]);
+  auto remPlusP = builder.create<mlir::arith::AddFOp>(loc, remainder, args[1]);
   return builder.create<mlir::SelectOp>(loc, mustAddP, remPlusP, remainder);
 }
 
@@ -2636,7 +2636,7 @@ void IntrinsicLibrary::genMvbits(llvm::ArrayRef<fir::ExtendedValue> args) {
   auto ones = builder.createIntegerConstant(loc, resultType, -1);
   auto bitSize = builder.createIntegerConstant(
       loc, resultType, resultType.cast<mlir::IntegerType>().getWidth());
-  auto shiftCount = builder.create<mlir::SubIOp>(loc, bitSize, len);
+  auto shiftCount = builder.create<mlir::arith::SubIOp>(loc, bitSize, len);
   auto mask = builder.create<mlir::UnsignedShiftRightOp>(loc, ones, shiftCount);
   auto unchangedTmp1 = builder.create<mlir::ShiftLeftOp>(loc, mask, topos);
   auto unchangedTmp2 = builder.create<mlir::XOrOp>(loc, unchangedTmp1, ones);
@@ -2956,7 +2956,7 @@ mlir::Value IntrinsicLibrary::genSign(mlir::Type resultType,
   auto abs = genAbs(resultType, {args[0]});
   if (resultType.isa<mlir::IntegerType>()) {
     auto zero = builder.createIntegerConstant(loc, resultType, 0);
-    auto neg = builder.create<mlir::SubIOp>(loc, zero, abs);
+    auto neg = builder.create<mlir::arith::SubIOp>(loc, zero, abs);
     auto cmp = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::slt,
                                             args[1], zero);
     return builder.create<mlir::SelectOp>(loc, cmp, neg, abs);
@@ -2995,7 +2995,7 @@ IntrinsicLibrary::genSize(mlir::Type resultType,
   auto oneBasedDim =
       builder.createConvert(loc, indexType, fir::getBase(args[1]));
   auto one = builder.createIntegerConstant(loc, indexType, 1);
-  auto zeroBasedDim = builder.create<mlir::SubIOp>(loc, oneBasedDim, one);
+  auto zeroBasedDim = builder.create<mlir::arith::SubIOp>(loc, oneBasedDim, one);
 
   // The value of the KIND argument is already reflected in the resultType
 

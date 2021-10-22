@@ -629,7 +629,7 @@ static void genIoLoop(Fortran::lower::AbstractConverter &converter,
     builder.create<fir::StoreOp>(loc, lcv, loopVar);
     genItemList(ioImpliedDo);
     builder.setInsertionPointToEnd(doLoopOp.getBody());
-    mlir::Value result = builder.create<mlir::AddIOp>(
+    mlir::Value result = builder.create<mlir::arith::AddIOp>(
         loc, doLoopOp.getInductionVar(), doLoopOp.step());
     builder.create<fir::ResultOp>(loc, result);
     builder.setInsertionPointAfter(doLoopOp);
@@ -670,7 +670,7 @@ static void genIoLoop(Fortran::lower::AbstractConverter &converter,
   auto iterateResult = builder.getBlock()->back().getResult(0);
   auto inductionResult0 = iterWhileOp.getInductionVar();
   auto inductionResult1 =
-      builder.create<mlir::AddIOp>(loc, inductionResult0, iterWhileOp.step());
+      builder.create<mlir::arith::AddIOp>(loc, inductionResult0, iterWhileOp.step());
   auto inductionResult = builder.create<mlir::SelectOp>(
       loc, iterateResult, inductionResult1, inductionResult0);
   llvm::SmallVector<mlir::Value> results = {inductionResult, iterateResult};

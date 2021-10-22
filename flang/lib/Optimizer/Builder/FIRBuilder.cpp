@@ -479,8 +479,8 @@ mlir::Value fir::FirOpBuilder::genExtentFromTriplet(mlir::Location loc,
   lb = createConvert(loc, type, lb);
   ub = createConvert(loc, type, ub);
   step = createConvert(loc, type, step);
-  auto diff = create<mlir::SubIOp>(loc, ub, lb);
-  auto add = create<mlir::AddIOp>(loc, diff, step);
+  auto diff = create<mlir::arith::SubIOp>(loc, ub, lb);
+  auto add = create<mlir::arith::AddIOp>(loc, diff, step);
   auto div = create<mlir::SignedDivIOp>(loc, add, step);
   auto cmp = create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, div, zero);
   return create<mlir::SelectOp>(loc, cmp, div, zero);
@@ -888,9 +888,9 @@ mlir::Value fir::factory::genLenOfCharacter(
   auto idxTy = builder.getIndexType();
   auto zero = builder.createIntegerConstant(loc, idxTy, 0);
   auto saturatedDiff = [&](mlir::Value lower, mlir::Value upper) {
-    auto diff = builder.create<mlir::SubIOp>(loc, upper, lower);
+    auto diff = builder.create<mlir::arith::SubIOp>(loc, upper, lower);
     auto one = builder.createIntegerConstant(loc, idxTy, 1);
-    auto size = builder.create<mlir::AddIOp>(loc, diff, one);
+    auto size = builder.create<mlir::arith::AddIOp>(loc, diff, one);
     auto cmp =
         builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt, size, zero);
     return builder.create<mlir::SelectOp>(loc, cmp, size, zero);

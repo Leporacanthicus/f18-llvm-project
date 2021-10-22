@@ -743,7 +743,7 @@ private:
     // Arithmetic expression has Real type.  Generate
     //   sum = expr + expr  [ raise an exception if expr is a NaN ]
     //   if (sum < 0.0) goto L1 else if (sum > 0.0) goto L3 else goto L2
-    auto sum = builder->create<mlir::AddFOp>(loc, expr, expr);
+    auto sum = builder->create<mlir::arith::AddFOp>(loc, expr, expr);
     auto zero = builder->create<mlir::ConstantOp>(
         loc, exprType, builder->getFloatAttr(exprType, 0.0));
     auto cond1 =
@@ -1006,13 +1006,13 @@ private:
       mlir::Value tripCount;
       if (info.hasRealControl) {
         auto diff1 = builder->create<mlir::SubFOp>(loc, upperValue, lowerValue);
-        auto diff2 = builder->create<mlir::AddFOp>(loc, diff1, info.stepValue);
+        auto diff2 = builder->create<mlir::arith::AddFOp>(loc, diff1, info.stepValue);
         tripCount = builder->create<mlir::DivFOp>(loc, diff2, info.stepValue);
         controlType = builder->getIndexType();
         tripCount = builder->createConvert(loc, controlType, tripCount);
       } else {
-        auto diff1 = builder->create<mlir::SubIOp>(loc, upperValue, lowerValue);
-        auto diff2 = builder->create<mlir::AddIOp>(loc, diff1, info.stepValue);
+        auto diff1 = builder->create<mlir::arith::SubIOp>(loc, upperValue, lowerValue);
+        auto diff2 = builder->create<mlir::arith::AddIOp>(loc, diff1, info.stepValue);
         tripCount =
             builder->create<mlir::SignedDivIOp>(loc, diff2, info.stepValue);
       }
@@ -1068,7 +1068,7 @@ private:
         // End fir.do_loop.
         if (!info.isUnordered) {
           builder->setInsertionPointToEnd(info.doLoop.getBody());
-          mlir::Value result = builder->create<mlir::AddIOp>(
+          mlir::Value result = builder->create<mlir::arith::AddIOp>(
               loc, info.doLoop.getInductionVar(), info.doLoop.step());
           builder->create<fir::ResultOp>(loc, result);
         }
@@ -1088,13 +1088,13 @@ private:
       auto tripVarType = info.hasRealControl ? builder->getIndexType()
                                              : genType(info.loopVariableSym);
       auto one = builder->createIntegerConstant(loc, tripVarType, 1);
-      tripCount = builder->create<mlir::SubIOp>(loc, tripCount, one);
+      tripCount = builder->create<mlir::arith::SubIOp>(loc, tripCount, one);
       builder->create<fir::StoreOp>(loc, tripCount, info.tripVariable);
       mlir::Value value = builder->create<fir::LoadOp>(loc, info.loopVariable);
       if (info.hasRealControl)
-        value = builder->create<mlir::AddFOp>(loc, value, info.stepValue);
+        value = builder->create<mlir::arith::AddFOp>(loc, value, info.stepValue);
       else
-        value = builder->create<mlir::AddIOp>(loc, value, info.stepValue);
+        value = builder->create<mlir::arith::AddIOp>(loc, value, info.stepValue);
       builder->create<fir::StoreOp>(loc, value, info.loopVariable);
 
       genFIRBranch(info.headerBlock);

@@ -65,8 +65,8 @@ using OpRewritePattern::OpRewritePattern;
 
     // Initalization block
     rewriter.setInsertionPointToEnd(initBlock);
-    auto diff = rewriter.create<mlir::SubIOp>(loc, high, low);
-    auto distance = rewriter.create<mlir::AddIOp>(loc, diff, step);
+    auto diff = rewriter.create<mlir::arith::SubIOp>(loc, high, low);
+    auto distance = rewriter.create<mlir::arith::AddIOp>(loc, diff, step);
     mlir::Value iters =
         rewriter.create<mlir::SignedDivIOp>(loc, distance, step);
 
@@ -90,13 +90,13 @@ using OpRewritePattern::OpRewritePattern;
     auto *terminator = lastBlock->getTerminator();
     rewriter.setInsertionPointToEnd(lastBlock);
     auto iv = conditionalBlock->getArgument(0);
-    mlir::Value steppedIndex = rewriter.create<mlir::AddIOp>(loc, iv, step);
+    mlir::Value steppedIndex = rewriter.create<mlir::arith::AddIOp>(loc, iv, step);
     assert(steppedIndex && "must be a Value");
     auto lastArg = conditionalBlock->getNumArguments() - 1;
     auto itersLeft = conditionalBlock->getArgument(lastArg);
     auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
     mlir::Value itersMinusOne =
-        rewriter.create<mlir::SubIOp>(loc, itersLeft, one);
+        rewriter.create<mlir::arith::SubIOp>(loc, itersLeft, one);
 
     llvm::SmallVector<mlir::Value> loopCarried;
     loopCarried.push_back(steppedIndex);
@@ -232,7 +232,7 @@ public:
     auto *terminator = lastBodyBlock->getTerminator();
     rewriter.setInsertionPointToEnd(lastBodyBlock);
     auto step = whileOp.step();
-    mlir::Value stepped = rewriter.create<mlir::AddIOp>(loc, iv, step);
+    mlir::Value stepped = rewriter.create<mlir::arith::AddIOp>(loc, iv, step);
     assert(stepped && "must be a Value");
 
     llvm::SmallVector<mlir::Value> loopCarried;

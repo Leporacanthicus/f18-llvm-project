@@ -968,9 +968,9 @@ static mlir::Value computeExtent(fir::FirOpBuilder &builder, mlir::Location loc,
                                  mlir::Value lb, mlir::Value ub) {
   auto idxTy = builder.getIndexType();
   // Let the folder deal with the common `ub - <const> + 1` case.
-  auto diff = builder.create<mlir::SubIOp>(loc, idxTy, ub, lb);
+  auto diff = builder.create<mlir::arith::SubIOp>(loc, idxTy, ub, lb);
   auto one = builder.createIntegerConstant(loc, idxTy, 1);
-  return builder.create<mlir::AddIOp>(loc, idxTy, diff, one);
+  return builder.create<mlir::arith::AddIOp>(loc, idxTy, diff, one);
 }
 
 /// Lower explicit lower bounds into \p result. Does nothing if this is not an

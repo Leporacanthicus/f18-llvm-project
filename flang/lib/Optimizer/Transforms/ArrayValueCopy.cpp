@@ -685,7 +685,7 @@ static void genArrayCopy(mlir::Location loc, mlir::PatternRewriter &rewriter,
     auto ubi = rewriter.create<ConvertOp>(loc, idxTy, sh);
     auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
     auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
-    auto ub = rewriter.create<mlir::SubIOp>(loc, idxTy, ubi, one);
+    auto ub = rewriter.create<mlir::arith::SubIOp>(loc, idxTy, ubi, one);
     auto loop = rewriter.create<DoLoopOp>(loc, zero, ub, one);
     rewriter.setInsertionPointToStart(loop.getBody());
     indices.push_back(loop.getInductionVar());

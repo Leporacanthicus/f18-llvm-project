@@ -1541,7 +1541,7 @@ struct UndoComplexPattern : public mlir::RewritePattern {
 
 void fir::InsertValueOp::getCanonicalizationPatterns(
     mlir::OwningRewritePatternList &results, mlir::MLIRContext *context) {
-  results.insert<UndoComplexPattern<mlir::AddFOp, fir::AddcOp>,
+  results.insert<UndoComplexPattern<mlir::arith::AddFOp, fir::AddcOp>,
                  UndoComplexPattern<mlir::SubFOp, fir::SubcOp>>(context);
 }
 

@@ -93,7 +93,7 @@ void genCharacterCopy(mlir::Value src, mlir::Value srcLen, mlir::Value dst,
     return;
   }
   auto minusOne = [&](mlir::Value v) -> mlir::Value {
-    return builder.template create<mlir::SubIOp>(
+    return builder.template create<mlir::arith::SubIOp>(
         loc, builder.template create<fir::ConvertOp>(loc, one.getType(), v),
         one);
   };
@@ -194,7 +194,7 @@ originateIndices(mlir::Location loc, B &builder, mlir::Type memTy,
       if (i.index() < dimension) {
         assert(fir::isa_integer(i.value().getType()));
         result.push_back(
-            builder.template create<mlir::AddIOp>(loc, i.value(), one));
+            builder.template create<mlir::arith::AddIOp>(loc, i.value(), one));
       } else {
         result.push_back(i.value());
       }
@@ -205,7 +205,7 @@ originateIndices(mlir::Location loc, B &builder, mlir::Type memTy,
   unsigned origOff = 0;
   for (auto i : llvm::enumerate(indices)) {
     if (i.index() < dimension)
-      result.push_back(builder.template create<mlir::AddIOp>(
+      result.push_back(builder.template create<mlir::arith::AddIOp>(
           loc, i.value(), origins[origOff++]));
     else
       result.push_back(i.value());

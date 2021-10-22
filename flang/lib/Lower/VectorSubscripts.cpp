@@ -367,13 +367,13 @@ Fortran::lower::VectorSubscriptBox::genLoopBounds(fir::FirOpBuilder &builder,
                                                  dimension, one);
       baseLb = builder.createConvert(loc, idxTy, baseLb);
       lb = baseLb;
-      ub = builder.create<mlir::SubIOp>(loc, idxTy, extent, one);
-      ub = builder.create<mlir::AddIOp>(loc, idxTy, ub, baseLb);
+      ub = builder.create<mlir::arith::SubIOp>(loc, idxTy, extent, one);
+      ub = builder.create<mlir::arith::AddIOp>(loc, idxTy, ub, baseLb);
       step = one;
     } else {
       const auto &vector = std::get<LoweredVectorSubscript>(subscript);
       lb = zero;
-      ub = builder.create<mlir::SubIOp>(loc, idxTy, vector.size, one);
+      ub = builder.create<mlir::arith::SubIOp>(loc, idxTy, vector.size, one);
       step = one;
     }
     bounds.emplace_back(lb, ub, step);

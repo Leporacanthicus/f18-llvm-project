@@ -349,8 +349,8 @@ private:
           Fortran::semantics::GetExpr(std::get<1>(shapeSpec.t)), stmtCtx, loc));
       ub = builder.createConvert(loc, idxTy, ub);
       if (lb) {
-        auto diff = builder.create<mlir::SubIOp>(loc, ub, lb);
-        extents.emplace_back(builder.create<mlir::AddIOp>(loc, diff, one));
+        auto diff = builder.create<mlir::arith::SubIOp>(loc, ub, lb);
+        extents.emplace_back(builder.create<mlir::arith::AddIOp>(loc, diff, one));
       } else {
         extents.emplace_back(ub);
       }

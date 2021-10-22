@@ -193,14 +193,14 @@ private:
   /// in an affine expression, this includes -, +, *, rem, constant.
   /// block arguments of a loopOp or forOp are used as dimensions
   MaybeAffineExpr toAffineExpr(mlir::Value value) {
-    if (auto op = value.getDefiningOp<mlir::SubIOp>())
+    if (auto op = value.getDefiningOp<mlir::arith::SubIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Add, toAffineExpr(op.lhs()),
                             affineBinaryOp(mlir::AffineExprKind::Mul,
                                            toAffineExpr(op.rhs()),
                                            toAffineExpr(-1)));
-    if (auto op = value.getDefiningOp<mlir::AddIOp>())
+    if (auto op = value.getDefiningOp<mlir::arith::AddIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Add, op.lhs(), op.rhs());
-    if (auto op = value.getDefiningOp<mlir::MulIOp>())
+    if (auto op = value.getDefiningOp<mlir::arith::MulIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mul, op.lhs(), op.rhs());
     if (auto op = value.getDefiningOp<mlir::UnsignedRemIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mod, op.lhs(), op.rhs());

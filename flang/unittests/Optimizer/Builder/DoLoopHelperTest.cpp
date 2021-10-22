@@ -44,8 +44,8 @@ TEST_F(DoLoopHelperTest, createLoopWithCountTest) {
   auto loop =
       helper.createLoop(c10, [&](fir::FirOpBuilder &, mlir::Value index) {});
   checkConstantValue(loop.lowerBound(), 0);
-  EXPECT_TRUE(mlir::isa<mlir::SubIOp>(loop.upperBound().getDefiningOp()));
-  auto subOp = dyn_cast<mlir::SubIOp>(loop.upperBound().getDefiningOp());
+  EXPECT_TRUE(mlir::isa<mlir::arith::SubIOp>(loop.upperBound().getDefiningOp()));
+  auto subOp = dyn_cast<mlir::arith::SubIOp>(loop.upperBound().getDefiningOp());
   EXPECT_EQ(c10, subOp.lhs());
   checkConstantValue(subOp.rhs(), 1);
   checkConstantValue(loop.step(), 1);
