@@ -5632,16 +5632,47 @@ public:
   /// Target agnostic computation of the size of an element in the array.
   /// Returns the size in bytes with type `index` or a null Value if the element
   /// size is not constant.
-  mlir::Value computeElementSize(mlir::Type eleTy, mlir::Type eleRefTy,
-                                 mlir::Type resRefTy) {
-    if (fir::hasDynamicSize(eleTy))
-      return {};
+  mlir::Value computeElementSize(const ExtValue &exv, mlir::Type eleTy,
+                                 mlir::Type resTy) {
     auto loc = getLoc();
     auto idxTy = builder.getIndexType();
+    auto multiplier = builder.createIntegerConstant(loc, idxTy, 1);
+    if (fir::hasDynamicSize(eleTy)) {
+      if (auto charTy = eleTy.dyn_cast<fir::CharacterType>()) {
+        // Array of char with dynamic length parameter. Downcast to an array
+        // of singleton char, and scale by the len type parameter from
+        // `exv`.
+        exv.match(
+            [&](const fir::CharBoxValue &cb) { multiplier = cb.getLen(); },
+            [&](const fir::CharArrayBoxValue &cb) { multiplier = cb.getLen(); },
+            [&](const fir::BoxValue &box) {
+              multiplier = fir::factory::CharacterExprHelper(builder, loc)
+                               .readLengthFromBox(box.getAddr());
+            },
+            [&](const fir::MutableBoxValue &box) {
+              multiplier = fir::factory::CharacterExprHelper(builder, loc)
+                               .readLengthFromBox(box.getAddr());
+            },
+            [&](const auto &) {
+              fir::emitFatalError(loc,
+                                  "array constructor element has unknown size");
+            });
+        auto newEleTy = fir::CharacterType::getSingleton(eleTy.getContext(),
+                                                 charTy.getFKind());
+        if (auto seqTy = resTy.dyn_cast<fir::SequenceType>()) {
+          assert(eleTy == seqTy.getEleTy());
+          resTy = fir::SequenceType::get(seqTy.getShape(), newEleTy);
+        }
+        eleTy = newEleTy;
+      } else {
+        TODO(loc, "dynamic sized type");
+      }
+    }
+    auto eleRefTy = builder.getRefType(eleTy);
+    auto resRefTy = builder.getRefType(resTy);
     auto nullPtr = builder.createNullConstant(loc, resRefTy);
-    auto one = builder.createIntegerConstant(loc, idxTy, 1);
-    auto offset = builder.create<fir::CoordinateOp>(loc, eleRefTy, nullPtr,
-                                                    mlir::ValueRange{one});
+    auto offset = builder.create<fir::CoordinateOp>(
+        loc, eleRefTy, nullPtr, mlir::ValueRange{multiplier});
     return builder.createConvert(loc, idxTy, offset);
   }
 
@@ -5789,7 +5820,6 @@ public:
                                                          mlir::ValueRange{off});
           auto val = builder.createConvert(loc, eleTy, v);
           builder.create<fir::StoreOp>(loc, val, buffi);
-
           builder.create<fir::StoreOp>(loc, plusOne, buffPos);
         },
         [&](const fir::CharBoxValue &v) {
@@ -5847,11 +5877,11 @@ public:
     mem = loop.getRegionIterArgs()[0];
 
     auto eleRefTy = builder.getRefType(eleTy);
-    auto eleSz = computeElementSize(eleTy, eleRefTy, builder.getRefType(resTy));
 
     // Cleanups for temps in loop body. Any temps created in the loop body
     // need to be freed before the end of the loop.
     Fortran::lower::StatementContext loopCtx;
+    llvm::Optional<mlir::Value> charLen;
     for (const Fortran::evaluate::ArrayConstructorValue<A> &acv : x.values()) {
       auto [exv, copyNeeded] = std::visit(
           [&](const auto &v) {
@@ -5859,9 +5889,16 @@ public:
                                            loopCtx);
           },
           acv.u);
+      auto eleSz = computeElementSize(exv, eleTy, resTy);
       mem = copyNeeded ? copyNextArrayCtorSection(exv, buffPos, buffSize, mem,
                                                   eleSz, eleTy, eleRefTy, resTy)
                        : fir::getBase(exv);
+      if (fir::isa_char(seqTy.getEleTy()) && !charLen.hasValue()) {
+        charLen = builder.createTemporary(loc, builder.getI64Type());
+        auto castLen =
+            builder.createConvert(loc, builder.getI64Type(), fir::getLen(exv));
+        builder.create<fir::StoreOp>(loc, castLen, charLen.getValue());
+      }
     }
     loopCtx.finalize();
 
@@ -5873,10 +5910,8 @@ public:
         builder.create<fir::LoadOp>(loc, buffPos).getResult()};
 
     // Convert to extended value.
-    if (auto charTy =
-            seqTy.getEleTy().template dyn_cast<fir::CharacterType>()) {
-      auto len = builder.createIntegerConstant(loc, builder.getI64Type(),
-                                               charTy.getLen());
+    if (fir::isa_char(seqTy.getEleTy())) {
+      auto len = builder.create<fir::LoadOp>(loc, charLen.getValue());
       return {fir::CharArrayBoxValue{mem, len, extents}, /*needCopy=*/false};
     }
     return {fir::ArrayBoxValue{mem, extents}, /*needCopy=*/false};
@@ -5925,9 +5960,9 @@ public:
     }
     // Compute size of element
     auto eleRefTy = builder.getRefType(eleTy);
-    auto eleSz = computeElementSize(eleTy, eleRefTy, builder.getRefType(resTy));
 
     // Populate the buffer with the elements, growing as necessary.
+    llvm::Optional<mlir::Value> charLen;
     for (const auto &expr : x) {
       auto [exv, copyNeeded] = std::visit(
           [&](const auto &e) {
@@ -5935,9 +5970,16 @@ public:
                                            stmtCtx);
           },
           expr.u);
+      auto eleSz = computeElementSize(exv, eleTy, resTy);
       mem = copyNeeded ? copyNextArrayCtorSection(exv, buffPos, buffSize, mem,
                                                   eleSz, eleTy, eleRefTy, resTy)
                        : fir::getBase(exv);
+      if (fir::isa_char(seqTy.getEleTy()) && !charLen.hasValue()) {
+        charLen = builder.createTemporary(loc, builder.getI64Type());
+        auto castLen =
+            builder.createConvert(loc, builder.getI64Type(), fir::getLen(exv));
+        builder.create<fir::StoreOp>(loc, castLen, charLen.getValue());
+      }
     }
     mem = builder.createConvert(loc, fir::HeapType::get(resTy), mem);
     llvm::SmallVector<mlir::Value> extents = {
@@ -5949,10 +5991,8 @@ public:
         [bldr, loc, mem]() { bldr->create<fir::FreeMemOp>(loc, mem); });
 
     // Return the continuation.
-    if (auto charTy =
-            seqTy.getEleTy().template dyn_cast<fir::CharacterType>()) {
-      auto len = builder.createIntegerConstant(loc, builder.getI64Type(),
-                                               charTy.getLen());
+    if (fir::isa_char(seqTy.getEleTy())) {
+      auto len = builder.create<fir::LoadOp>(loc, charLen.getValue());
       return genarr(fir::CharArrayBoxValue{mem, len, extents});
     }
     return genarr(fir::ArrayBoxValue{mem, extents});

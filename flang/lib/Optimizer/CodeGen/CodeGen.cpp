@@ -2149,7 +2149,8 @@ struct CoordinateOpConversion
     }
 
     if (fir::hasDynamicSize(fir::unwrapSequenceType(cpnTy)))
-      TODO(loc, "type has dynamic size");
+      return mlir::emitError(
+          loc, "fir.coordinate_of with a dynamic element size is unsupported");
 
     if (hasKnownShape || columnIsDeferred) {
       SmallVector<mlir::Value> offs;
@@ -2207,7 +2208,8 @@ struct CoordinateOpConversion
       rewriter.replaceOp(coor, retval);
       return success();
     }
-    return mlir::emitError(loc, "fir.coordinate_of base must have box type");
+    return mlir::emitError(
+        loc, "fir.coordinate_of base operand has unsupported type");
   }
 
   unsigned getFieldNumber(fir::RecordType ty, mlir::Value op) const {
