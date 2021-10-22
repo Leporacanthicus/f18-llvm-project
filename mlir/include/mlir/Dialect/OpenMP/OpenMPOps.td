@@ -139,11 +139,13 @@ def TerminatorOp : OpenMP_Op<"terminator", [Terminator]> {
 def OMP_SCHEDULE_MOD_None : StrEnumAttrCase<"none", 0>;
 def OMP_SCHEDULE_MOD_Monotonic : StrEnumAttrCase<"monotonic", 1>;
 def OMP_SCHEDULE_MOD_Nonmonotonic : StrEnumAttrCase<"nonmonotonic", 2>;
+def OMP_SCHEDULE_MOD_SIMD : StrEnumAttrCase<"simd", 3>;
 
 def ScheduleModifier : StrEnumAttr<"ScheduleModifier", "OpenMP Schedule Modifier",
                                          [OMP_SCHEDULE_MOD_None,
                                           OMP_SCHEDULE_MOD_Monotonic,
-                                          OMP_SCHEDULE_MOD_Nonmonotonic]>
+                                          OMP_SCHEDULE_MOD_Nonmonotonic,
+                                          OMP_SCHEDULE_MOD_SIMD]>
 {
     let cppNamespace = "::mlir::omp";
 }
@@ -227,7 +229,8 @@ def WsLoopOp : OpenMP_Op<"wsloop", [AttrSizedOperandSegments,
                             "array of symbol references">>:$reductions,
              OptionalAttr<ScheduleKind>:$schedule_val,
              Optional<AnyType>:$schedule_chunk_var,
-             OptionalAttr<ScheduleModifier>:$schedule_modifier,
+             OptionalAttr<ScheduleModifier>:$schedule_modifiers,
+             OptionalAttr<ScheduleModifier>:$simd_modifier,
              Confined<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$collapse_val,
              UnitAttr:$nowait,
              Confined<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$ordered_val,
