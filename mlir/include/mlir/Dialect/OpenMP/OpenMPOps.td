@@ -21,7 +21,6 @@ include "mlir/IR/SymbolInterfaces.td"
 include "mlir/Dialect/OpenMP/OmpCommon.td"
 include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 include "mlir/Dialect/OpenMP/OpenMPOpsInterfaces.td"
-include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 
 def OpenMP_Dialect : Dialect {
   let name = "omp";
@@ -34,27 +33,6 @@ class OpenMP_Op<string mnemonic, list<OpTrait> traits = []> :
 
 // Type which can be constraint accepting standard integers and indices.
 def IntLikeType : AnyTypeOf<[AnyInteger, Index]>;
-
-def OpenMP_PointerLikeTypeInterface : TypeInterface<"PointerLikeType"> {
-  let cppNamespace = "::mlir::omp";
-
-  let description = [{
-    An interface for pointer-like types suitable to contain a value that OpenMP
-    specification refers to as variable.
-  }];
-
-  let methods = [
-    InterfaceMethod<
-      /*description=*/"Returns the pointee type.",
-      /*retTy=*/"::mlir::Type",
-      /*methodName=*/"getElementType"
-    >,
-  ];
-}
-
-def OpenMP_PointerLikeType : Type<
-  CPred<"$_self.isa<::mlir::omp::PointerLikeType>()">,
-  "OpenMP-compatible variable type", "::mlir::omp::PointerLikeType">;
 
 def OpenMP_PointerLikeTypeInterface : TypeInterface<"PointerLikeType"> {
   let cppNamespace = "::mlir::omp";
@@ -158,20 +136,6 @@ def TerminatorOp : OpenMP_Op<"terminator", [Terminator]> {
   let assemblyFormat = "attr-dict";
 }
 
-def OMP_SCHEDULE_MOD_None : StrEnumAttrCase<"none", 0>;
-def OMP_SCHEDULE_MOD_Monotonic : StrEnumAttrCase<"monotonic", 1>;
-def OMP_SCHEDULE_MOD_Nonmonotonic : StrEnumAttrCase<"nonmonotonic", 2>;
-def OMP_SCHEDULE_MOD_SIMD : StrEnumAttrCase<"simd", 3>;
-
-def ScheduleModifier : StrEnumAttr<"ScheduleModifier", "OpenMP Schedule Modifier",
-                                         [OMP_SCHEDULE_MOD_None,
-                                          OMP_SCHEDULE_MOD_Monotonic,
-                                          OMP_SCHEDULE_MOD_Nonmonotonic,
-                                          OMP_SCHEDULE_MOD_SIMD]>
-{
-    let cppNamespace = "::mlir::omp";
-}
-
 //===----------------------------------------------------------------------===//
 // 2.9.2 Workshare Loop Construct
 //===----------------------------------------------------------------------===//
@@ -251,8 +215,6 @@ def WsLoopOp : OpenMP_Op<"wsloop", [AttrSizedOperandSegments,
                             "array of symbol references">>:$reductions,
              OptionalAttr<ScheduleKind>:$schedule_val,
              Optional<AnyType>:$schedule_chunk_var,
-             OptionalAttr<ScheduleModifier>:$schedule_modifiers,
-             OptionalAttr<ScheduleModifier>:$simd_modifier,
              Confined<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$collapse_val,
              UnitAttr:$nowait,
              Confined<OptionalAttr<I64Attr>, [IntMinValue<0>]>:$ordered_val,
