@@ -167,7 +167,7 @@ public:
         auto &tup = e.value();
         auto ty = std::get<mlir::Type>(tup);
         auto index = e.index();
-        mlir::Value idx = rewriter->create<mlir::ConstantOp>(
+        mlir::Value idx = rewriter->create<mlir::arith::ConstantOp>(
             loc, iTy, mlir::IntegerAttr::get(iTy, index));
         auto val = rewriter->create<ExtractValueOp>(loc, ty, oper, idx);
         newInTys.push_back(ty);
@@ -576,9 +576,9 @@ public:
             auto cplxTy = oldArgTys[fixup.index - offset - fixup.second];
             auto undef = rewriter->create<UndefOp>(loc, cplxTy);
             auto iTy = rewriter->getIntegerType(32);
-            mlir::Value zero = rewriter->create<mlir::ConstantOp>(
+            mlir::Value zero = rewriter->create<mlir::arith::ConstantOp>(
                 loc, iTy, mlir::IntegerAttr::get(iTy, 0));
-            mlir::Value one = rewriter->create<mlir::ConstantOp>(
+            mlir::Value one = rewriter->create<mlir::arith::ConstantOp>(
                 loc, iTy, mlir::IntegerAttr::get(iTy, 1));
             auto cplx1 = rewriter->create<InsertValueOp>(
                 loc, cplxTy, undef, func.front().getArgument(fixup.index - 1),

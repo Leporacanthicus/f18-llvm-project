@@ -744,7 +744,7 @@ private:
     //   sum = expr + expr  [ raise an exception if expr is a NaN ]
     //   if (sum < 0.0) goto L1 else if (sum > 0.0) goto L3 else goto L2
     auto sum = builder->create<mlir::arith::AddFOp>(loc, expr, expr);
-    auto zero = builder->create<mlir::ConstantOp>(
+    auto zero = builder->create<mlir::arith::ConstantOp>(
         loc, exprType, builder->getFloatAttr(exprType, 0.0));
     auto cond1 =
         builder->create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OLT, sum, zero);

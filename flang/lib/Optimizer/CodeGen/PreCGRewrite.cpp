@@ -97,7 +97,7 @@ public:
     auto idxTy = rewriter.getIndexType();
     for (auto ext : seqTy.getShape()) {
       auto iAttr = rewriter.getIndexAttr(ext);
-      auto extVal = rewriter.create<mlir::ConstantOp>(loc, idxTy, iAttr);
+      auto extVal = rewriter.create<mlir::arith::ConstantOp>(loc, idxTy, iAttr);
       shapeOpers.push_back(extVal);
     }
     auto xbox = rewriter.create<cg::XEmboxOp>(

@@ -66,7 +66,7 @@ namespace fir {
 bool allConstants(OperandTy operands) {
   for (auto opnd : operands) {
     if (auto *defop = opnd.getDefiningOp())
-      if (isa<mlir::LLVM::ConstantOp>(defop) || isa<mlir::ConstantOp>(defop))
+      if (isa<mlir::LLVM::ConstantOp>(defop) || isa<mlir::arith::ConstantOp>(defop))
         continue;
     return false;
   }
@@ -1685,7 +1685,7 @@ struct ValueOpCommon {
     auto *defOp = value.getDefiningOp();
     if (auto v = dyn_cast<mlir::LLVM::ConstantOp>(defOp))
       return v.value();
-    if (auto v = dyn_cast<mlir::ConstantOp>(defOp))
+    if (auto v = dyn_cast<mlir::arith::ConstantOp>(defOp))
       return v.value();
     llvm_unreachable("must be a constant op");
     return {};
@@ -2460,20 +2460,20 @@ struct GlobalOpConversion : public FIROpConversion<fir::GlobalOp> {
         if (isFullRange(insertOp.coor(), insertOp.getType())) {
           auto seqTyAttr = convertType(insertOp.getType());
           auto *op = insertOp.val().getDefiningOp();
-          auto constant = mlir::dyn_cast<mlir::ConstantOp>(op);
+          auto constant = mlir::dyn_cast<mlir::arith::ConstantOp>(op);
           if (!constant) {
               auto convertOp = mlir::dyn_cast<fir::ConvertOp>(op);
               if (!convertOp)
                 continue;
               constant = 
-                  cast<mlir::ConstantOp>(convertOp.value().getDefiningOp());
+                  cast<mlir::arith::ConstantOp>(convertOp.value().getDefiningOp());
           }
           mlir::Type vecType = mlir::VectorType::get(
               insertOp.getType().getShape(), constant.getType());
           auto denseAttr = mlir::DenseElementsAttr::get(
               vecType.cast<ShapedType>(), constant.getValue());
           rewriter.setInsertionPointAfter(insertOp);
-          rewriter.replaceOpWithNewOp<mlir::ConstantOp>(insertOp, seqTyAttr,
+          rewriter.replaceOpWithNewOp<mlir::arith::ConstantOp>(insertOp, seqTyAttr,
                                                         denseAttr);
         }
       }

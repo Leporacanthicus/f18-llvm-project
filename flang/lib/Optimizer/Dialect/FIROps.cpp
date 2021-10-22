@@ -1346,7 +1346,7 @@ template <bool AllowFields>
 static void appendAsAttribute(llvm::SmallVectorImpl<mlir::Attribute> &attrs,
                               mlir::Value val) {
   if (auto *op = val.getDefiningOp()) {
-    if (auto cop = mlir::dyn_cast<mlir::ConstantOp>(op)) {
+    if (auto cop = mlir::dyn_cast<mlir::arith::ConstantOp>(op)) {
       // append the integer constant value
       if (auto iattr = cop.getValue().dyn_cast<mlir::IntegerAttr>()) {
         attrs.push_back(iattr);
@@ -3284,7 +3284,7 @@ mlir::Type fir::applyPathToType(mlir::Type eleTy, mlir::ValueRange path) {
                   if (auto *op = (*i++).getDefiningOp()) {
                     if (auto off = mlir::dyn_cast<fir::FieldIndexOp>(op))
                       return ty.getType(off.getFieldName());
-                    if (auto off = mlir::dyn_cast<mlir::ConstantOp>(op))
+                    if (auto off = mlir::dyn_cast<mlir::arith::ConstantOp>(op))
                       return ty.getType(fir::toInt(off));
                   }
                   return mlir::Type{};
@@ -3299,7 +3299,7 @@ mlir::Type fir::applyPathToType(mlir::Type eleTy, mlir::ValueRange path) {
                 })
                 .Case<mlir::TupleType>([&](mlir::TupleType ty) {
                   if (auto *op = (*i++).getDefiningOp())
-                    if (auto off = mlir::dyn_cast<mlir::ConstantOp>(op))
+                    if (auto off = mlir::dyn_cast<mlir::arith::ConstantOp>(op))
                       return ty.getType(fir::toInt(off));
                   return mlir::Type{};
                 })

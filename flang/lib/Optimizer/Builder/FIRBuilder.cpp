@@ -85,7 +85,7 @@ mlir::Value fir::FirOpBuilder::createNullConstant(mlir::Location loc,
 mlir::Value fir::FirOpBuilder::createIntegerConstant(mlir::Location loc,
                                                      mlir::Type ty,
                                                      std::int64_t cst) {
-  return create<mlir::ConstantOp>(loc, ty, getIntegerAttr(ty, cst));
+  return create<mlir::arith::ConstantOp>(loc, ty, getIntegerAttr(ty, cst));
 }
 
 mlir::Value
@@ -118,7 +118,7 @@ mlir::Value fir::FirOpBuilder::createRealConstant(mlir::Location loc,
                                                   const llvm::APFloat &value) {
   if (fltTy.isa<mlir::FloatType>()) {
     auto attr = getFloatAttr(fltTy, value);
-    return create<mlir::ConstantOp>(loc, fltTy, attr);
+    return create<mlir::arith::ConstantOp>(loc, fltTy, attr);
   }
   llvm_unreachable("should use builtin floating-point type");
 }

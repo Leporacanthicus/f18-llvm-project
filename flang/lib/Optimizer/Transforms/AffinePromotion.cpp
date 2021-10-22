@@ -204,7 +204,7 @@ private:
       return affineBinaryOp(mlir::AffineExprKind::Mul, op.lhs(), op.rhs());
     if (auto op = value.getDefiningOp<mlir::UnsignedRemIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mod, op.lhs(), op.rhs());
-    if (auto op = value.getDefiningOp<mlir::ConstantOp>())
+    if (auto op = value.getDefiningOp<mlir::arith::ConstantOp>())
       if (auto intConstant = op.getValue().dyn_cast<IntegerAttr>())
         return toAffineExpr(intConstant.getInt());
     if (auto blockArg = value.dyn_cast<mlir::BlockArgument>()) {
@@ -335,7 +335,7 @@ static mlir::Type coordinateArrayElement(fir::ArrayCoorOp op) {
 static void populateIndexArgs(fir::ArrayCoorOp acoOp, fir::ShapeOp shape,
                               SmallVectorImpl<mlir::Value> &indexArgs,
                               mlir::PatternRewriter &rewriter) {
-  auto one = rewriter.create<mlir::ConstantOp>(
+  auto one = rewriter.create<mlir::arith::ConstantOp>(
       acoOp.getLoc(), rewriter.getIndexType(), rewriter.getIndexAttr(1));
   auto extents = shape.extents();
   for (auto i = extents.begin(); i < extents.end(); i++) {
@@ -348,7 +348,7 @@ static void populateIndexArgs(fir::ArrayCoorOp acoOp, fir::ShapeOp shape,
 static void populateIndexArgs(fir::ArrayCoorOp acoOp, fir::ShapeShiftOp shape,
                               SmallVectorImpl<mlir::Value> &indexArgs,
                               mlir::PatternRewriter &rewriter) {
-  auto one = rewriter.create<mlir::ConstantOp>(
+  auto one = rewriter.create<mlir::arith::ConstantOp>(
       acoOp.getLoc(), rewriter.getIndexType(), rewriter.getIndexAttr(1));
   auto extents = shape.pairs();
   for (auto i = extents.begin(); i < extents.end();) {
