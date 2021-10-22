@@ -7,6 +7,7 @@ add_flang_library(FIRSupport
   KindMapping.cpp
 
   DEPENDS
+  FIRTypesIncGen
   ${dialect_libs}
 
   LINK_LIBS

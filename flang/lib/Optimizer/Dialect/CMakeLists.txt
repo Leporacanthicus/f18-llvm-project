@@ -9,6 +9,7 @@ add_flang_library(FIRDialect
   DEPENDS
   FIRSupport
   FIROpsIncGen
+  FIRTypesIncGen
 
   LINK_LIBS
   FIRSupport
