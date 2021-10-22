@@ -513,8 +513,7 @@ void fir::LogicalType::print(mlir::DialectAsmPrinter &printer) const {
 //===----------------------------------------------------------------------===//
 
 // `llvm_ptr` `<` type `>`
-mlir::Type fir::LLVMPointerType::parse(mlir::MLIRContext *context,
-                                       mlir::DialectAsmParser &parser) {
+mlir::Type fir::LLVMPointerType::parse(mlir::DialectAsmParser &parser) {
   return parseTypeSingleton<fir::LLVMPointerType>(parser);
 }
 

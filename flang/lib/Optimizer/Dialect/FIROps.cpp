@@ -648,7 +648,7 @@ static mlir::ParseResult parseCallOp(mlir::OpAsmParser &parser,
 void fir::CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &result,
                         mlir::FuncOp callee, mlir::ValueRange operands) {
   result.addOperands(operands);
-  result.addAttribute(getCalleeAttrName(), builder.getSymbolRefAttr(callee));
+  result.addAttribute(getCalleeAttrName(), SymbolRefAttr::get(callee));
   result.addTypes(callee.getType().getResults());
 }
 
@@ -991,7 +991,7 @@ static mlir::ParseResult parseDispatchTableOp(mlir::OpAsmParser &parser,
   // Convert the parsed name attr into a string attr.
   result.attributes.set(
       mlir::SymbolTable::getSymbolAttrName(),
-      parser.getBuilder().getStringAttr(nameAttr.getRootReference()));
+      nameAttr.getRootReference());
 
   // Parse the optional table body.
   mlir::Region *body = result.addRegion();
@@ -1191,7 +1191,7 @@ static ParseResult parseGlobalOp(OpAsmParser &parser, OperationState &result) {
                             result.attributes))
     return mlir::failure();
   result.addAttribute(mlir::SymbolTable::getSymbolAttrName(),
-                      builder.getStringAttr(nameAttr.getRootReference()));
+                      nameAttr.getRootReference());
 
   bool simpleInitializer = false;
   if (mlir::succeeded(parser.parseOptionalLParen())) {
@@ -1260,7 +1260,8 @@ void fir::GlobalOp::build(mlir::OpBuilder &builder, OperationState &result,
   result.addAttribute(getTypeAttrName(), mlir::TypeAttr::get(type));
   result.addAttribute(mlir::SymbolTable::getSymbolAttrName(),
                       builder.getStringAttr(name));
-  result.addAttribute(getSymbolAttrName(), builder.getSymbolRefAttr(name));
+  result.addAttribute(getSymbolAttrName(),
+                      SymbolRefAttr::get(builder.getContext(), name));
   if (isConstant)
     result.addAttribute(getConstantAttrName(), builder.getUnitAttr());
   if (initialVal)
