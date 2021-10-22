@@ -694,41 +694,19 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
       schedType = llvm::omp::OMPScheduleType::DynamicChunked;
       break;
     case omp::ClauseScheduleKind::Guided:
-      if (isSimd)
-        schedType = llvm::omp::OMPScheduleType::GuidedSimd;
-      else
-        schedType = llvm::omp::OMPScheduleType::GuidedChunked;
+      schedType = llvm::omp::OMPScheduleType::GuidedChunked;
       break;
     case omp::ClauseScheduleKind::Auto:
       schedType = llvm::omp::OMPScheduleType::Auto;
       break;
     case omp::ClauseScheduleKind::Runtime:
-      if (isSimd)
-        schedType = llvm::omp::OMPScheduleType::RuntimeSimd;
-      else
-        schedType = llvm::omp::OMPScheduleType::Runtime;
+      schedType = llvm::omp::OMPScheduleType::Runtime;
       break;
     default:
       llvm_unreachable("Unknown schedule value");
       break;
     }
 
-    if (loop.schedule_modifiers().hasValue()) {
-      omp::ScheduleModifier modifier =
-          *omp::symbolizeScheduleModifier(
-              loop.schedule_modifiers().getValue());
-      switch (modifier) {
-      case omp::ScheduleModifier::monotonic:
-        schedType |= llvm::omp::OMPScheduleType::ModifierMonotonic;
-        break;
-      case omp::ScheduleModifier::nonmonotonic:
-        schedType |= llvm::omp::OMPScheduleType::ModifierNonmonotonic;
-        break;
-      default:
-        // Nothing to do here.
-        break;
-      }
-    }
     ompBuilder->applyDynamicWorkshareLoop(ompLoc.DL, loopInfo, allocaIP,
                                           schedType, !loop.nowait(), chunk);
   }
