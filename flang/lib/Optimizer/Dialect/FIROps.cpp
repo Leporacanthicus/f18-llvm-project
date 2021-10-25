@@ -3189,7 +3189,7 @@ static void printBinaryOp(Operation *op, OpAsmPrinter &p) {
   assert(op->getNumOperands() == 2 && "binary op must have two operands");
   assert(op->getNumResults() == 1 && "binary op must have one result");
 
-  p << op->getName() << ' ' << op->getOperand(0) << ", " << op->getOperand(1);
+  p << ' ' << op->getOperand(0) << ", " << op->getOperand(1);
   p.printOptionalAttrDict(op->getAttrs());
   p << " : " << op->getResult(0).getType();
 }
@@ -3199,7 +3199,7 @@ static void printUnaryOp(Operation *op, OpAsmPrinter &p) {
   assert(op->getNumOperands() == 1 && "unary op must have one operand");
   assert(op->getNumResults() == 1 && "unary op must have one result");
 
-  p << op->getName() << ' ' << op->getOperand(0);
+  p << ' ' << op->getOperand(0);
   p.printOptionalAttrDict(op->getAttrs());
   p << " : " << op->getResult(0).getType();
 }
