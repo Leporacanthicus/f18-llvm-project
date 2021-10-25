@@ -29,7 +29,7 @@ subroutine char_ptr(p)
   ! CHECK-DAG: %[[str:.*]] = fir.address_of(@_QQcl.68656C6C6F20776F726C6421) : !fir.ref<!fir.char<1,12>>
   ! CHECK: %[[boxload:.*]] = fir.load %[[arg0]]
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[boxload]]
-  ! CHECK-DAG: %[[one:.*]] = constant 1
+  ! CHECK-DAG: %[[one:.*]] = arith.constant 1
   ! CHECK-DAG: %[[size:.*]] = fir.convert %{{.*}} : (index) -> i64
   ! CHECK: %[[count:.*]] = muli %[[one]], %[[size]] : i64
   ! CHECK: %[[dst:.*]] = fir.convert %[[addr]] : (!fir.ptr<!fir.char<1,12>>) -> !fir.ref<i8>

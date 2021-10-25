@@ -4,7 +4,7 @@
 ! CHECK-SAME: %[[arg0:.*]]: !fir.box<!fir.array<?x!fir.logical<4>>>) -> !fir.logical<4>
 logical function any_test(mask)
   logical :: mask(:)
-! CHECK: %[[c1:.*]] = constant 1 : index
+! CHECK: %[[c1:.*]] = arith.constant 1 : index
 ! CHECK: %[[a1:.*]] = fir.convert %[[arg0]] : (!fir.box<!fir.array<?x!fir.logical<4>>>) -> !fir.box<none>
 ! CHECK: %[[a2:.*]] = fir.convert %[[c1]] : (index) -> i32
   any_test = any(mask)

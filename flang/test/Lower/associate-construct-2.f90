@@ -6,7 +6,7 @@
 ! CHECK-SAME: %[[j:[^:]+]]: !fir.ref<i32>,
 ! CHECK-SAME: %[[k:[^:]+]]: !fir.ref<i32>)
 subroutine test1(a,i,j,k)
-  ! CHECK-DAG: %[[c:.*]] = constant 100 : index
+  ! CHECK-DAG: %[[c:.*]] = arith.constant 100 : index
   ! CHECK-DAG: %[[ii:.*]] = fir.load %[[i]] : !fir.ref<i32>
   ! CHECK-DAG: %[[iv:.*]] = fir.convert %[[ii]] : (i32) -> i64
   ! CHECK-DAG: %[[jj:.*]] = fir.load %[[j]] : !fir.ref<i32>

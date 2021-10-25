@@ -39,11 +39,11 @@ contains
   ! CHECK-SAME:  %[[arg1:[^:]*]]: !fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>)
   subroutine test2(a1, a2)
     type(t2) :: a1(:), a2(:)
-    ! CHECK-DAG: %[[VAL_33:.*]] = constant 1 : i64
-    ! CHECK-DAG: %[[VAL_34:.*]] = constant 5 : i64
-    ! CHECK-DAG: %[[VAL_35:.*]] = constant 3 : i64
-    ! CHECK-DAG: %[[VAL_36:.*]] = constant 0 : index
-    ! CHECK-DAG: %[[VAL_37:.*]] = constant 1 : index
+    ! CHECK-DAG: %[[VAL_33:.*]] = arith.constant 1 : i64
+    ! CHECK-DAG: %[[VAL_34:.*]] = arith.constant 5 : i64
+    ! CHECK-DAG: %[[VAL_35:.*]] = arith.constant 3 : i64
+    ! CHECK-DAG: %[[VAL_36:.*]] = arith.constant 0 : index
+    ! CHECK-DAG: %[[VAL_37:.*]] = arith.constant 1 : index
     ! CHECK: %[[VAL_38:.*]] = fir.field_index f2, !fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>
     ! CHECK: %[[VAL_39:.*]] = fir.field_index d, !fir.type<_QMcsTr{n:i32,d:i32}>
     ! CHECK: %[[VAL_40:.*]]:3 = fir.box_dims %[[arg0]], %[[VAL_36]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, index) -> (index, index, index)
@@ -83,13 +83,13 @@ contains
   ! CHECK-SAME:  %[[arg1:[^:]*]]: !fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>)
   subroutine test3(a3, a4)
     type(t3) :: a3(:), a4(:)
-    ! CHECK-DAG: %[[VAL_63:.*]] = constant 4 : i64
-    ! CHECK-DAG: %[[VAL_64:.*]] = constant 3 : i64
-    ! CHECK-DAG: %[[VAL_65:.*]] = constant 1 : i64
-    ! CHECK-DAG: %[[VAL_66:.*]] = constant 2 : i64
-    ! CHECK-DAG: %[[VAL_67:.*]] = constant 4 : i32
-    ! CHECK-DAG: %[[VAL_68:.*]] = constant 0 : index
-    ! CHECK-DAG: %[[VAL_69:.*]] = constant 1 : index
+    ! CHECK-DAG: %[[VAL_63:.*]] = arith.constant 4 : i64
+    ! CHECK-DAG: %[[VAL_64:.*]] = arith.constant 3 : i64
+    ! CHECK-DAG: %[[VAL_65:.*]] = arith.constant 1 : i64
+    ! CHECK-DAG: %[[VAL_66:.*]] = arith.constant 2 : i64
+    ! CHECK-DAG: %[[VAL_67:.*]] = arith.constant 4 : i32
+    ! CHECK-DAG: %[[VAL_68:.*]] = arith.constant 0 : index
+    ! CHECK-DAG: %[[VAL_69:.*]] = arith.constant 1 : index
     ! CHECK: %[[VAL_70:.*]] = fir.field_index f, !fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>
     ! CHECK: %[[VAL_71:.*]] = fir.field_index f2, !fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>
     ! CHECK: %[[VAL_72:.*]] = fir.field_index n, !fir.type<_QMcsTr{n:i32,d:i32}>

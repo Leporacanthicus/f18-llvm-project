@@ -8,7 +8,7 @@ integer function verify_test(s1, s2)
 ! CHECK: %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_4:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_5:.*]] = fir.alloca i32 {bindc_name = "verify_test", uniq_name = "_QFverify_testEverify_test"}
-! CHECK: %[[VAL_6:.*]] = constant 4 : i32
+! CHECK: %[[VAL_6:.*]] = arith.constant 4 : i32
 ! CHECK: %[[VAL_7:.*]] = fir.absent !fir.box<i1>
 ! CHECK: %[[VAL_8:.*]] = fir.embox %[[VAL_3]]#0 typeparams %[[VAL_3]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.box<!fir.char<1,?>>
 ! CHECK: %[[VAL_9:.*]] = fir.embox %[[VAL_4]]#0 typeparams %[[VAL_4]]#1 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.box<!fir.char<1,?>>
@@ -16,7 +16,7 @@ integer function verify_test(s1, s2)
 ! CHECK: %[[VAL_11:.*]] = fir.embox %[[VAL_10]] : (!fir.heap<i32>) -> !fir.box<!fir.heap<i32>>
 ! CHECK: fir.store %[[VAL_11]] to %[[VAL_2]] : !fir.ref<!fir.box<!fir.heap<i32>>>
 ! CHECK: %[[VAL_12:.*]] = fir.address_of(@_QQcl.{{[0-9a-z]+}}) : !fir.ref<!fir.char<1,{{[0-9]*}}>>
-! CHECK: %[[VAL_13:.*]] = constant {{[0-9]+}} : i32
+! CHECK: %[[VAL_13:.*]] = arith.constant {{[0-9]+}} : i32
 ! CHECK: %[[VAL_14:.*]] = fir.convert %[[VAL_2]] : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK: %[[VAL_15:.*]] = fir.convert %[[VAL_8]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
 ! CHECK: %[[VAL_16:.*]] = fir.convert %[[VAL_9]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
@@ -41,7 +41,7 @@ integer function verify_test2(s1, s2)
 ! CHECK: %[[VAL_2:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK: %[[VAL_4:.*]] = fir.alloca i32 {bindc_name = "verify_test2", uniq_name = "_QFverify_test2Everify_test2"}
-! CHECK: %[[VAL_5:.*]] = constant true
+! CHECK: %[[VAL_5:.*]] = arith.constant true
 ! CHECK: %[[VAL_6:.*]] = fir.convert %[[VAL_2]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
 ! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_2]]#1 : (index) -> i64
 ! CHECK: %[[VAL_8:.*]] = fir.convert %[[VAL_3]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>

@@ -3,7 +3,7 @@
 ! CHECK-LABEL: _QQmain
 program test1
   ! CHECK-DAG: %[[TMP:.*]] = fir.alloca
-  ! CHECK-DAG: %[[TEN:.*]] = constant
+  ! CHECK-DAG: %[[TEN:.*]] = arith.constant
   ! CHECK: fir.store %[[TEN]] to %[[TMP]]
   ! CHECK-NEXT: fir.call @_QPfoo
   call foo(10)

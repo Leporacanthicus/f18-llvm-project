@@ -27,16 +27,16 @@ program wsloop_collapse
 ! LLVMIRDialect:           %[[VAL_4:.*]] = llvm.mlir.constant(1 : i32) : i32
 ! LLVMIRDialect:           %[[VAL_7:.*]] = llvm.mlir.constant(1 : i64) : i64
   a=3
-! FIRDialect:         %[[VAL_7:.*]] = constant 3 : i32
+! FIRDialect:         %[[VAL_7:.*]] = arith.constant 3 : i32
 ! FIRDialect:         fir.store %[[VAL_7]] to %[[VAL_0]] : !fir.ref<i32>
   b=2
-! FIRDialect:         %[[VAL_8:.*]] = constant 2 : i32
+! FIRDialect:         %[[VAL_8:.*]] = arith.constant 2 : i32
 ! FIRDialect:         fir.store %[[VAL_8]] to %[[VAL_1]] : !fir.ref<i32>
   c=5
-! FIRDialect:         %[[VAL_9:.*]] = constant 5 : i32
+! FIRDialect:         %[[VAL_9:.*]] = arith.constant 5 : i32
 ! FIRDialect:         fir.store %[[VAL_9]] to %[[VAL_2]] : !fir.ref<i32>
   x=0
-! FIRDialect:         %[[VAL_10:.*]] = constant 0 : i32
+! FIRDialect:         %[[VAL_10:.*]] = arith.constant 0 : i32
 ! FIRDialect:         fir.store %[[VAL_10]] to %[[VAL_6]] : !fir.ref<i32>
 ! LLVMIRDialect:           %[[VAL_8:.*]] = llvm.alloca %[[VAL_7]] x i32 {{{.*}} uniq_name = "_QEa"} : (i64) -> !llvm.ptr<i32>
 ! LLVMIRDialect:           %[[VAL_9:.*]] = llvm.mlir.constant(1 : i64) : i64
@@ -75,15 +75,15 @@ program wsloop_collapse
 ! LLVMIRDialect:             %[[VAL_21:.*]] = llvm.load %[[VAL_8]] : !llvm.ptr<i32>
 ! LLVMIRDialect:             %[[VAL_22:.*]] = llvm.load %[[VAL_10]] : !llvm.ptr<i32>
 ! LLVMIRDialect:             %[[VAL_23:.*]] = llvm.load %[[VAL_12]] : !llvm.ptr<i32>
-! FIRDialect:           %[[VAL_20:.*]] = constant 1 : i32
+! FIRDialect:           %[[VAL_20:.*]] = arith.constant 1 : i32
 ! FIRDialect:           %[[VAL_21:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-! FIRDialect:           %[[VAL_22:.*]] = constant 1 : i32
-! FIRDialect:           %[[VAL_23:.*]] = constant 1 : i32
+! FIRDialect:           %[[VAL_22:.*]] = arith.constant 1 : i32
+! FIRDialect:           %[[VAL_23:.*]] = arith.constant 1 : i32
 ! FIRDialect:           %[[VAL_24:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
-! FIRDialect:           %[[VAL_25:.*]] = constant 1 : i32
-! FIRDialect:           %[[VAL_26:.*]] = constant 1 : i32
+! FIRDialect:           %[[VAL_25:.*]] = arith.constant 1 : i32
+! FIRDialect:           %[[VAL_26:.*]] = arith.constant 1 : i32
 ! FIRDialect:           %[[VAL_27:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
-! FIRDialect:           %[[VAL_28:.*]] = constant 1 : i32
+! FIRDialect:           %[[VAL_28:.*]] = arith.constant 1 : i32
 ! LLVMIR:       omp_parallel:                                     ; preds = %[[VAL_10:.*]]
 ! LLVMIR:         call void (%[[VAL_8]]*, i32, void (i32*, i32*, ...)*, ...) @__kmpc_fork_call(%[[VAL_8]]* @1, i32 4, void (i32*, i32*, ...)* bitcast (void (i32*, i32*, i32*, i32*, i32*, i32*)* @_QQmain..omp_par to void (i32*, i32*, ...)*), i32* %[[VAL_0]], i32* %[[VAL_1]], i32* %[[VAL_2]], i32* %[[VAL_6]]), !dbg !20
 ! LLVMIR:         br label %[[VAL_11:.*]]

@@ -12,7 +12,7 @@ subroutine reshape_test(x, source, pd, sh, ord)
   integer :: pd(:,:,:)
   integer :: sh(2)
   integer :: ord(2)
-! CHECK-DAG:  %[[c2:.*]] = constant 2 : index
+! CHECK-DAG:  %[[c2:.*]] = arith.constant 2 : index
 ! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?x?xi32>>>
 ! CHECK-DAG:  %[[a1:.*]] = fir.shape %[[c2]] : (index) -> !fir.shape<1>
 ! CHECK-DAG:  %[[a2:.*]] = fir.embox %[[arg3]](%{{.*}}) : (!fir.ref<!fir.array<2xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<2xi32>>

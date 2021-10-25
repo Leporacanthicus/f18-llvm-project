@@ -9,12 +9,12 @@
 // PPC-LABEL: define { float, float } @gen4()
 func @gen4() -> !fir.complex<4> {
   %1 = fir.undefined !fir.complex<4>
-  %2 = constant 2.0 : f32
+  %2 = arith.constant 2.0 : f32
   %3 = fir.convert %2 : (f32) -> !fir.real<4>
-  %c0 = constant 0 : i32
+  %c0 = arith.constant 0 : i32
   %4 = fir.insert_value %1, %3, [0 : index] : (!fir.complex<4>, !fir.real<4>) -> !fir.complex<4>
-  %c1 = constant 1 : i32
-  %5 = constant -42.0 : f32
+  %c1 = arith.constant 1 : i32
+  %5 = arith.constant -42.0 : f32
   %6 = fir.insert_value %4, %5, [1 : index] : (!fir.complex<4>, f32) -> !fir.complex<4>
   // I32: store { float, float } { float 2.000000e+00, float -4.200000e+01 }
   // I32: %[[load:.*]] = load i64, i64*
@@ -33,11 +33,11 @@ func @gen4() -> !fir.complex<4> {
 // PPC-LABEL: define { double, double } @gen8()
 func @gen8() -> !fir.complex<8> {
   %1 = fir.undefined !fir.complex<8>
-  %2 = constant 1.0 : f64
-  %3 = constant -4.0 : f64
-  %c0 = constant 0 : i32
+  %2 = arith.constant 1.0 : f64
+  %3 = arith.constant -4.0 : f64
+  %c0 = arith.constant 0 : i32
   %4 = fir.insert_value %1, %3, [0 : index] : (!fir.complex<8>, f64) -> !fir.complex<8>
-  %c1 = constant 1 : i32
+  %c1 = arith.constant 1 : i32
   %5 = fir.insert_value %4, %2, [1 : index] : (!fir.complex<8>, f64) -> !fir.complex<8>
   // I32: store { double, double } { double -4.000000e+00, double 1.000000e+00 }
   // I64: store { double, double } { double -4.000000e+00, double 1.000000e+00 }
@@ -126,8 +126,8 @@ func @char1copy(%arg0 : !fir.boxchar<1> {llvm.sret}, %arg1 : !fir.boxchar<1>) {
   // X64-DAG: = insertvalue { i8*, i64 } %[[p1]], i64 %1, 1
   %1:2 = fir.unboxchar %arg0 : (!fir.boxchar<1>) -> (!fir.ref<!fir.array<?x!fir.char<1>>>, i64)
   %2:2 = fir.unboxchar %arg1 : (!fir.boxchar<1>) -> (!fir.ref<!fir.array<?x!fir.char<1>>>, i64)
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
   %3 = fir.convert %1#1 : (i64) -> index
   %last = subi %3, %c1 : index
   fir.do_loop %i = %c0 to %last step %c1 {

@@ -24,9 +24,9 @@ contains
 subroutine foo1(i, c)
   integer :: i(10)
   character(*) :: c(10)
-! CHECK-DAG:   %[[VAL_0:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_1:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_2:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_0:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_1:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_2:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_3:.*]]:2 = fir.unboxchar %[[VAL_4]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_5:.*]] = fir.convert %[[VAL_3]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
 ! CHECK:   %[[VAL_6:.*]] = fir.shape %[[VAL_0]] : (index) -> !fir.shape<1>
@@ -54,9 +54,9 @@ end subroutine
 subroutine foo1b(i, c)
   integer :: i(10)
   character(10) :: c(10)
-! CHECK-DAG:   %[[VAL_17:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_18:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_19:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_17:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_18:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_19:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_20:.*]]:2 = fir.unboxchar %[[VAL_21]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_22:.*]] = fir.convert %[[VAL_20]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,10>>>
 ! CHECK:   %[[VAL_23:.*]] = fir.shape %[[VAL_17]] : (index) -> !fir.shape<1>
@@ -84,9 +84,9 @@ end subroutine
 ! CHECK-SAME: %[[VAL_47:[^:]+]]: !fir.ref<!fir.array<10xi32>>,
 ! CHECK-SAME: %[[VAL_39:.*]]: !fir.boxchar<1>) {
 subroutine foo2(i, j, c)
-! CHECK-DAG:   %[[VAL_35:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_36:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_37:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_35:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_36:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_37:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_38:.*]]:2 = fir.unboxchar %[[VAL_39]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_40:.*]] = fir.shape %[[VAL_35]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_36]], %[[VAL_35]] : index, index)
@@ -116,9 +116,9 @@ end subroutine
 subroutine foo2b(i, j, c)
   integer :: i(10), j(10)
   character(10) :: c
-! CHECK-DAG:   %[[VAL_52:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_53:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_54:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_52:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_53:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_54:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_55:.*]]:2 = fir.unboxchar %[[VAL_56]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_57:.*]] = fir.shape %[[VAL_52]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_53]], %[[VAL_52]] : index, index)
@@ -144,9 +144,9 @@ end subroutine
 ! CHECK-SAME: %[[VAL_79:[^:]+]]: !fir.ref<!fir.array<10xi32>>)
 subroutine foo3(i, j)
   integer :: i(10), j(10)
-! CHECK-DAG:   %[[VAL_69:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_70:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_71:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_69:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_70:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_71:.*]] = arith.constant 1 : index
 ! CHECK-DAG:   %[[VAL_72:.*]] = fir.alloca !fir.char<1>
 ! CHECK:   %[[VAL_73:.*]] = fir.shape %[[VAL_69]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_70]], %[[VAL_69]] : index, index)
@@ -178,10 +178,10 @@ end subroutine
 ! CHECK-SAME: %[[VAL_103:[^:]+]]: !fir.ref<!fir.array<10xi32>>)
 subroutine foo4(i, j)
   integer :: i(10), j(10)
-! CHECK-DAG:   %[[VAL_90:.*]] = constant 5 : index
-! CHECK-DAG:   %[[VAL_91:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_92:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_93:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_90:.*]] = arith.constant 5 : index
+! CHECK-DAG:   %[[VAL_91:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_92:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_93:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_94:.*]] = fir.shape %[[VAL_91]] : (index) -> !fir.shape<1>
 ! CHECK:   %[[VAL_95:.*]] = fir.address_of(@{{.*}}) : !fir.ref<!fir.char<1,5>>
 ! CHECK:   br ^bb1(%[[VAL_92]], %[[VAL_91]] : index, index)
@@ -215,11 +215,11 @@ end function
 ! CHECK-LABEL: func @_QMchar_elemPfoo6(
 ! CHECK-SAME:                          %[[VAL_0:.*]]: !fir.boxchar<1>) {
 subroutine foo6(c)
-  ! CHECK: %[[VAL_1:.*]] = constant false
-  ! CHECK: %[[VAL_2:.*]] = constant 32 : i8
-  ! CHECK: %[[VAL_3:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_1:.*]] = arith.constant false
+  ! CHECK: %[[VAL_2:.*]] = arith.constant 32 : i8
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
   ! CHECK: %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>

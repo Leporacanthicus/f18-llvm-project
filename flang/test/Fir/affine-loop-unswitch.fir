@@ -12,10 +12,10 @@
 
 // CHECK-LABEL: func @calc
 func @calc(%a: !arr_d1, %v: f32) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
-  %c2 = constant 2 : index
-  %len = constant 100 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %len = arith.constant 100 : index
   %dims = fir.shape %len : (index) -> !fir.shape<1>
 
   fir.do_loop %i = %c1 to %len step %c1 {

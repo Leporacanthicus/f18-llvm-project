@@ -22,11 +22,11 @@ contains
 
   ! CHECK-LABEL: func @_QMcomponents_testPs1(
   subroutine s1(i,j)
-    ! CHECK-DAG: %[[VAL_0:.*]] = constant 1 : i32
-    ! CHECK-DAG: %[[VAL_1:.*]] = constant 6 : i32
-    ! CHECK-DAG: %[[VAL_2:.*]] = constant 0 : i64
-    ! CHECK-DAG: %[[VAL_3:.*]] = constant 1 : i64
-    ! CHECK-DAG: %[[VAL_4:.*]] = constant 2 : i64
+    ! CHECK-DAG: %[[VAL_0:.*]] = arith.constant 1 : i32
+    ! CHECK-DAG: %[[VAL_1:.*]] = arith.constant 6 : i32
+    ! CHECK-DAG: %[[VAL_2:.*]] = arith.constant 0 : i64
+    ! CHECK-DAG: %[[VAL_3:.*]] = arith.constant 1 : i64
+    ! CHECK-DAG: %[[VAL_4:.*]] = arith.constant 2 : i64
     ! CHECK: %[[VAL_5:.*]] = fir.address_of(@_QMcomponents_testEinstance) : !fir.ref<!fir.type<_QMcomponents_testTt3{h1:!fir.array<3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,h2:!fir.array<4x!fir.type<_QMcomponents_testTt2{g1:!fir.array<3x3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g2:!fir.array<4x4x4x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g3:!fir.array<5xi32>}>>}>>
     ! CHECK: %[[VAL_6:.*]] = fir.load %[[VAL_7:.*]] : !fir.ref<i32>
     ! CHECK: %[[VAL_8:.*]] = cmpi sge, %[[VAL_6]], %[[VAL_0]] : i32
@@ -70,13 +70,13 @@ subroutine sliced_base()
     integer :: y
   end type
   type(t) :: a(100)
-  ! CHECK-DAG:  %[[VAL_0:.*]] = constant 100 : index
-  ! CHECK-DAG:  %[[VAL_1:.*]] = constant 42 : i32
-  ! CHECK-DAG:  %[[VAL_2:.*]] = constant 50 : i64
-  ! CHECK-DAG:  %[[VAL_3:.*]] = constant 1 : i64
-  ! CHECK-DAG:  %[[VAL_4:.*]] = constant 50 : index
-  ! CHECK-DAG:  %[[VAL_5:.*]] = constant 0 : index
-  ! CHECK-DAG:  %[[VAL_6:.*]] = constant 1 : index
+  ! CHECK-DAG:  %[[VAL_0:.*]] = arith.constant 100 : index
+  ! CHECK-DAG:  %[[VAL_1:.*]] = arith.constant 42 : i32
+  ! CHECK-DAG:  %[[VAL_2:.*]] = arith.constant 50 : i64
+  ! CHECK-DAG:  %[[VAL_3:.*]] = arith.constant 1 : i64
+  ! CHECK-DAG:  %[[VAL_4:.*]] = arith.constant 50 : index
+  ! CHECK-DAG:  %[[VAL_5:.*]] = arith.constant 0 : index
+  ! CHECK-DAG:  %[[VAL_6:.*]] = arith.constant 1 : index
   ! CHECK:  %[[VAL_7:.*]] = fir.alloca !fir.array<100x!fir.type<_QFsliced_baseTt{x:f32,y:i32}>> {bindc_name = "a", uniq_name = "_QFsliced_baseEa"}
   ! CHECK:  %[[VAL_8:.*]] = fir.field_index y, !fir.type<_QFsliced_baseTt{x:f32,y:i32}>
   ! CHECK:  %[[VAL_9:.*]] = fir.shape %[[VAL_0]] : (index) -> !fir.shape<1>
@@ -124,11 +124,11 @@ end subroutine
 ! CHECK-LABEL: func @_QPlhs_char_section(
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>>>) {
 subroutine lhs_char_section(a)
-  ! CHECK: %[[VAL_1:.*]] = constant 5 : index
-  ! CHECK: %[[VAL_2:.*]] = constant false
-  ! CHECK: %[[VAL_3:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_1:.*]] = arith.constant 5 : index
+  ! CHECK: %[[VAL_2:.*]] = arith.constant false
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]] = fir.field_index c, !fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>
   ! CHECK: %[[VAL_7:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_8:.*]] = fir.slice %[[VAL_5]], %[[VAL_3]], %[[VAL_5]] path %[[VAL_6]] : (index, index, index, !fir.field) -> !fir.slice<1>
@@ -160,10 +160,10 @@ end subroutine
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>>>,
 ! CHECK-SAME:    %[[VAL_1:.*]]: !fir.boxchar<1>) {
 subroutine rhs_char_section(a, c)
-  ! CHECK: %[[VAL_2:.*]] = constant false
-  ! CHECK: %[[VAL_3:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_2:.*]] = arith.constant false
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,10>>>
   ! CHECK: %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
@@ -203,11 +203,11 @@ subroutine elemental_char_section(a, i)
   end type
   type(t) :: a(10)
   integer :: i(10)
-  ! CHECK-DAG:  %[[VAL_34:.*]] = constant 5 : index
-  ! CHECK-DAG:  %[[VAL_35:.*]] = constant false
-  ! CHECK-DAG:  %[[VAL_36:.*]] = constant 10 : index
-  ! CHECK-DAG:  %[[VAL_37:.*]] = constant 0 : index
-  ! CHECK-DAG:  %[[VAL_38:.*]] = constant 1 : index
+  ! CHECK-DAG:  %[[VAL_34:.*]] = arith.constant 5 : index
+  ! CHECK-DAG:  %[[VAL_35:.*]] = arith.constant false
+  ! CHECK-DAG:  %[[VAL_36:.*]] = arith.constant 10 : index
+  ! CHECK-DAG:  %[[VAL_37:.*]] = arith.constant 0 : index
+  ! CHECK-DAG:  %[[VAL_38:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_39:.*]] = fir.shape %[[VAL_36]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_40:.*]] = fir.field_index c, !fir.type<_QFelemental_char_sectionTt{c:!fir.char<1,10>}>
   ! CHECK: %[[VAL_41:.*]] = fir.slice %[[VAL_38]], %[[VAL_36]], %[[VAL_38]] path %[[VAL_40]] : (index, index, index, !fir.field) -> !fir.slice<1>

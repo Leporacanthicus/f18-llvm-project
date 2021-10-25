@@ -8,12 +8,12 @@ subroutine simple(x, y)
   integer :: y(3)
   integer :: x(10)
   read(*,*) x(y)
-! CHECK-DAG: %[[VAL_0:.*]] = constant 10 : index
-! CHECK-DAG: %[[VAL_1:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_3:.*]] = constant 4 : i32
-! CHECK-DAG: %[[VAL_4:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_5:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_6:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_0:.*]] = arith.constant 10 : index
+! CHECK-DAG: %[[VAL_1:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_3:.*]] = arith.constant 4 : i32
+! CHECK-DAG: %[[VAL_4:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_5:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_6:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_7:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_8:.*]] = fir.convert %[[VAL_7]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_9:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_1]], %[[VAL_8]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -51,10 +51,10 @@ subroutine only_once(x)
   real :: x(:, :)
   ! Test subscripts are only evaluated once.
   read(*,*) x(get_substcript(), get_vector())
-! CHECK-DAG: %[[VAL_26:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_28:.*]] = constant 0 : i64
-! CHECK-DAG: %[[VAL_29:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_30:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_26:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_28:.*]] = arith.constant 0 : i64
+! CHECK-DAG: %[[VAL_29:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_30:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>> {bindc_name = ".result"}
 ! CHECK:   %[[VAL_32:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_33:.*]] = fir.convert %[[VAL_32]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
@@ -103,10 +103,10 @@ subroutine with_assumed_shapes(x, y)
   integer :: y(:)
   integer :: x(:)
   read(*,*) x(y)
-! CHECK-DAG: %[[VAL_60:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_62:.*]] = constant 4 : i32
-! CHECK-DAG: %[[VAL_63:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_64:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_60:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_62:.*]] = arith.constant 4 : i32
+! CHECK-DAG: %[[VAL_63:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_64:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_65:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_66:.*]] = fir.convert %[[VAL_65]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_67:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_60]], %[[VAL_66]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -138,15 +138,15 @@ subroutine lower_bounds(x, y)
   integer :: y(3)
   integer :: x(2:5,3:8)
   read(*,*) x(3, y)
-! CHECK-DAG: %[[VAL_84:.*]] = constant 4 : index
-! CHECK-DAG: %[[VAL_85:.*]] = constant 6 : index
-! CHECK-DAG: %[[VAL_86:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_88:.*]] = constant 3 : i64
-! CHECK-DAG: %[[VAL_89:.*]] = constant 2 : index
-! CHECK-DAG: %[[VAL_90:.*]] = constant 4 : i32
-! CHECK-DAG: %[[VAL_91:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_92:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_93:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_84:.*]] = arith.constant 4 : index
+! CHECK-DAG: %[[VAL_85:.*]] = arith.constant 6 : index
+! CHECK-DAG: %[[VAL_86:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_88:.*]] = arith.constant 3 : i64
+! CHECK-DAG: %[[VAL_89:.*]] = arith.constant 2 : index
+! CHECK-DAG: %[[VAL_90:.*]] = arith.constant 4 : i32
+! CHECK-DAG: %[[VAL_91:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_92:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_93:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_94:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_95:.*]] = fir.convert %[[VAL_94]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_96:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_86]], %[[VAL_95]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -180,11 +180,11 @@ subroutine two_vectors(x, y1, y2)
   integer :: y1(3), y2(3)
   real :: x(4, 4)
   read(*,*) x(y1, y2)
-! CHECK-DAG: %[[VAL_114:.*]] = constant 4 : index
-! CHECK-DAG: %[[VAL_115:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_117:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_118:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_119:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_114:.*]] = arith.constant 4 : index
+! CHECK-DAG: %[[VAL_115:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_117:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_118:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_119:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_120:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_121:.*]] = fir.convert %[[VAL_120]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_122:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_115]], %[[VAL_121]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -225,12 +225,12 @@ subroutine triplets_and_vector(x, y)
   integer :: y(3)
   complex :: x(4, 4)
   read(*,*) x(1:4:2, y)
-! CHECK-DAG: %[[VAL_147:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_149:.*]] = constant 4 : index
-! CHECK-DAG: %[[VAL_150:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_151:.*]] = constant 2 : index
-! CHECK-DAG: %[[VAL_152:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_153:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_147:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_149:.*]] = arith.constant 4 : index
+! CHECK-DAG: %[[VAL_150:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_151:.*]] = arith.constant 2 : index
+! CHECK-DAG: %[[VAL_152:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_153:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_154:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_155:.*]] = fir.convert %[[VAL_154]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_156:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_147]], %[[VAL_155]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -269,11 +269,11 @@ subroutine simple_char(x, y)
   integer :: y(3)
   character(*) :: x(3:8)
   read(*,*) x(y)
-! CHECK-DAG: %[[VAL_178:.*]] = constant 6 : index
-! CHECK-DAG: %[[VAL_179:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_181:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_182:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_183:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_178:.*]] = arith.constant 6 : index
+! CHECK-DAG: %[[VAL_179:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_181:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_182:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_183:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_184:.*]]:2 = fir.unboxchar %[[VAL_185]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_186:.*]] = fir.convert %[[VAL_184]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<6x!fir.char<1,?>>>
 ! CHECK:   %[[VAL_187:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
@@ -310,10 +310,10 @@ subroutine substring(x, y, i, j)
   integer :: y(3), i, j
   character(*) :: x(:)
   read(*,*) x(y)(i:j)
-! CHECK-DAG: %[[VAL_206:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_208:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_209:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_210:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_206:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_208:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_209:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_210:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_211:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_212:.*]] = fir.convert %[[VAL_211]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_213:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_206]], %[[VAL_212]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -357,10 +357,10 @@ subroutine complex_part(z, y)
   integer :: y(:)
   complex :: z(:)
   read(*,*) z(y)%IM
-! CHECK-DAG: %[[VAL_244:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_246:.*]] = constant 1 : i32
-! CHECK-DAG: %[[VAL_247:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_248:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_244:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_246:.*]] = arith.constant 1 : i32
+! CHECK-DAG: %[[VAL_247:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_248:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_249:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_250:.*]] = fir.convert %[[VAL_249]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_251:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_244]], %[[VAL_250]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -402,12 +402,12 @@ subroutine simple_derived(x, y)
   integer :: y(4)
   type(t) :: x(3:8)
   read(*,*) x(y)
-! CHECK-DAG: %[[VAL_267:.*]] = constant 6 : index
-! CHECK-DAG: %[[VAL_268:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_270:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_271:.*]] = constant 4 : index
-! CHECK-DAG: %[[VAL_272:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_273:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_267:.*]] = arith.constant 6 : index
+! CHECK-DAG: %[[VAL_268:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_270:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_271:.*]] = arith.constant 4 : index
+! CHECK-DAG: %[[VAL_272:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_273:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_274:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_275:.*]] = fir.convert %[[VAL_274]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_276:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_268]], %[[VAL_275]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -441,17 +441,17 @@ subroutine with_path(b, i)
   type(t2) :: b(4:, 4:, 4:)
   integer :: i(:)
   read (*, *) b(5, i, 8:9:1)%a(4,5)%i
-! CHECK-DAG: %[[VAL_294:.*]] = constant 4 : index
-! CHECK-DAG: %[[VAL_295:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_297:.*]] = constant 8 : index
-! CHECK-DAG: %[[VAL_298:.*]] = constant 9 : index
-! CHECK-DAG: %[[VAL_299:.*]] = constant 4 : i64
-! CHECK-DAG: %[[VAL_300:.*]] = constant 5 : i64
-! CHECK-DAG: %[[VAL_301:.*]] = constant 5 : index
-! CHECK-DAG: %[[VAL_302:.*]] = constant 4 : i32
-! CHECK-DAG: %[[VAL_303:.*]] = constant 2 : index
-! CHECK-DAG: %[[VAL_304:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_305:.*]] = constant 1 : index
+! CHECK-DAG: %[[VAL_294:.*]] = arith.constant 4 : index
+! CHECK-DAG: %[[VAL_295:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_297:.*]] = arith.constant 8 : index
+! CHECK-DAG: %[[VAL_298:.*]] = arith.constant 9 : index
+! CHECK-DAG: %[[VAL_299:.*]] = arith.constant 4 : i64
+! CHECK-DAG: %[[VAL_300:.*]] = arith.constant 5 : i64
+! CHECK-DAG: %[[VAL_301:.*]] = arith.constant 5 : index
+! CHECK-DAG: %[[VAL_302:.*]] = arith.constant 4 : i32
+! CHECK-DAG: %[[VAL_303:.*]] = arith.constant 2 : index
+! CHECK-DAG: %[[VAL_304:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_305:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_306:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_307:.*]] = fir.convert %[[VAL_306]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_308:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_295]], %[[VAL_307]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -496,12 +496,12 @@ subroutine simple_iostat(x, y, j, stat)
   integer :: j, y(:), stat
   real :: x(:)
   read(*, *, iostat=stat) x(y), j
-! CHECK-DAG: %[[VAL_334:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_336:.*]] = constant false
-! CHECK-DAG: %[[VAL_337:.*]] = constant true
-! CHECK-DAG: %[[VAL_338:.*]] = constant 1 : index
-! CHECK-DAG: %[[VAL_339:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_340:.*]] = constant 4 : i32
+! CHECK-DAG: %[[VAL_334:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_336:.*]] = arith.constant false
+! CHECK-DAG: %[[VAL_337:.*]] = arith.constant true
+! CHECK-DAG: %[[VAL_338:.*]] = arith.constant 1 : index
+! CHECK-DAG: %[[VAL_339:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_340:.*]] = arith.constant 4 : i32
 ! CHECK:   %[[VAL_341:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_342:.*]] = fir.convert %[[VAL_341]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
 ! CHECK:   %[[VAL_343:.*]] = fir.call @_FortranAioBeginExternalListInput(%[[VAL_334]], %[[VAL_342]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>
@@ -543,15 +543,15 @@ subroutine iostat_in_io_loop(k, j, stat)
   integer :: j(3)
   integer  :: stat
   read(*, *, iostat=stat) (k(i, j), i=1,3,1)
-! CHECK-DAG: %[[VAL_365:.*]] = constant 5 : index
-! CHECK-DAG: %[[VAL_366:.*]] = constant -1 : i32
-! CHECK-DAG: %[[VAL_368:.*]] = constant 3 : index
-! CHECK-DAG: %[[VAL_369:.*]] = constant true
-! CHECK-DAG: %[[VAL_370:.*]] = constant false
-! CHECK-DAG: %[[VAL_371:.*]] = constant 1 : index
-! CHECK-DAG: %[[VAL_372:.*]] = constant 0 : index
-! CHECK-DAG: %[[VAL_373:.*]] = constant 2 : index
-! CHECK-DAG: %[[VAL_374:.*]] = constant 4 : i32
+! CHECK-DAG: %[[VAL_365:.*]] = arith.constant 5 : index
+! CHECK-DAG: %[[VAL_366:.*]] = arith.constant -1 : i32
+! CHECK-DAG: %[[VAL_368:.*]] = arith.constant 3 : index
+! CHECK-DAG: %[[VAL_369:.*]] = arith.constant true
+! CHECK-DAG: %[[VAL_370:.*]] = arith.constant false
+! CHECK-DAG: %[[VAL_371:.*]] = arith.constant 1 : index
+! CHECK-DAG: %[[VAL_372:.*]] = arith.constant 0 : index
+! CHECK-DAG: %[[VAL_373:.*]] = arith.constant 2 : index
+! CHECK-DAG: %[[VAL_374:.*]] = arith.constant 4 : i32
 ! CHECK:   %[[VAL_375:.*]] = fir.alloca i32
 ! CHECK:   %[[VAL_376:.*]] = fir.address_of(@_QQ{{.*}}) : !fir.ref<!fir.char<1,{{.*}}>>
 ! CHECK:   %[[VAL_377:.*]] = fir.convert %[[VAL_376]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>

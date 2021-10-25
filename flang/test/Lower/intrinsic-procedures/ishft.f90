@@ -5,9 +5,9 @@ function ishft_test(i, j)
   ! CHECK-DAG: %[[result:.*]] = fir.alloca i32 {bindc_name = "ishft_test"
   ! CHECK-DAG:  %[[i:.*]] = fir.load %arg0 : !fir.ref<i32>
   ! CHECK-DAG:  %[[j:.*]] = fir.load %arg1 : !fir.ref<i32>
-  ! CHECK-DAG:  %[[VAL_5:.*]] = constant 32 : i32
-  ! CHECK-DAG:  %[[VAL_6:.*]] = constant 0 : i32
-  ! CHECK-DAG:  %[[VAL_7:.*]] = constant 31 : i32
+  ! CHECK-DAG:  %[[VAL_5:.*]] = arith.constant 32 : i32
+  ! CHECK-DAG:  %[[VAL_6:.*]] = arith.constant 0 : i32
+  ! CHECK-DAG:  %[[VAL_7:.*]] = arith.constant 31 : i32
   ! CHECK:  %[[VAL_8:.*]] = shift_right_signed %[[j]], %[[VAL_7]] : i32
   ! CHECK:  %[[VAL_9:.*]] = xor %[[j]], %[[VAL_8]] : i32
   ! CHECK:  %[[VAL_10:.*]] = subi %[[VAL_9]], %[[VAL_8]] : i32

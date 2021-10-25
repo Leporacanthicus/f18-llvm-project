@@ -4,12 +4,12 @@
 ! CHECK-SAME:                 %[[VAL_0:.*]]: !fir.boxchar<1>,
 ! CHECK-SAME:                 %[[VAL_1:.*]]: !fir.boxchar<1>) {
 subroutine issue(c1, c2)
-  ! CHECK: %[[VAL_2:.*]] = constant false
-  ! CHECK: %[[VAL_3:.*]] = constant 32 : i8
-  ! CHECK: %[[VAL_4:.*]] = constant 3 : index
-  ! CHECK: %[[VAL_5:.*]] = constant 4 : index
-  ! CHECK: %[[VAL_6:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_7:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_2:.*]] = arith.constant false
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 32 : i8
+  ! CHECK: %[[VAL_4:.*]] = arith.constant 3 : index
+  ! CHECK: %[[VAL_5:.*]] = arith.constant 4 : index
+  ! CHECK: %[[VAL_6:.*]] = arith.constant 0 : index
+  ! CHECK: %[[VAL_7:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_8:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK: %[[VAL_9:.*]] = fir.convert %[[VAL_8]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<3x!fir.char<1,4>>>
   ! CHECK: %[[VAL_10:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
@@ -55,9 +55,9 @@ end subroutine
 
 ! CHECK-LABEL: func @_QQmain() {
 program p
-  ! CHECK: %[[VAL_0:.*]] = constant 4 : index
-  ! CHECK: %[[VAL_1:.*]] = constant 3 : index
-  ! CHECK: %[[VAL_2:.*]] = constant -1 : i32
+  ! CHECK: %[[VAL_0:.*]] = arith.constant 4 : index
+  ! CHECK: %[[VAL_1:.*]] = arith.constant 3 : index
+  ! CHECK: %[[VAL_2:.*]] = arith.constant -1 : i32
   ! CHECK: %[[VAL_5:.*]] = fir.address_of(@_QEc1) : !fir.ref<!fir.array<3x!fir.char<1,4>>>
   ! CHECK: %[[VAL_6:.*]] = fir.address_of(@_QEc2) : !fir.ref<!fir.array<3x!fir.char<1,4>>>
   ! CHECK: %[[VAL_7:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,
@@ -91,12 +91,12 @@ end program p
 
 ! CHECK-LABEL: func @_QPcharlit() {
 subroutine charlit
-  ! CHECK: %[[VAL_0:.*]] = constant -1 : i32
-  ! CHECK: %[[VAL_3:.*]] = constant 3 : index
-  ! CHECK: %[[VAL_4:.*]] = constant false
-  ! CHECK: %[[VAL_5:.*]] = constant 4 : index
-  ! CHECK: %[[VAL_6:.*]] = constant 0 : index
-  ! CHECK: %[[VAL_7:.*]] = constant 1 : index
+  ! CHECK: %[[VAL_0:.*]] = arith.constant -1 : i32
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 3 : index
+  ! CHECK: %[[VAL_4:.*]] = arith.constant false
+  ! CHECK: %[[VAL_5:.*]] = arith.constant 4 : index
+  ! CHECK: %[[VAL_6:.*]] = arith.constant 0 : index
+  ! CHECK: %[[VAL_7:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_8:.*]] = fir.address_of(@_QQcl.{{.*}}) : !fir.ref<!fir.char<1,
   ! CHECK: %[[VAL_9:.*]] = fir.convert %[[VAL_8]] : (!fir.ref<!fir.char<1,{{.*}}>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_10:.*]] = fir.call @_FortranAioBeginExternalListOutput(%[[VAL_0]], %[[VAL_9]], %{{.*}}) : (i32, !fir.ref<i8>, i32) -> !fir.ref<i8>

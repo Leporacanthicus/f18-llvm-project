@@ -12,9 +12,9 @@ subroutine foo()
     end subroutine
   end interface
   real :: x(42, 55, 12)
-  ! CHECK-DAG: %[[c42:.*]] = constant 42 : index
-  ! CHECK-DAG: %[[c55:.*]] = constant 55 : index
-  ! CHECK-DAG: %[[c12:.*]] = constant 12 : index
+  ! CHECK-DAG: %[[c42:.*]] = arith.constant 42 : index
+  ! CHECK-DAG: %[[c55:.*]] = arith.constant 55 : index
+  ! CHECK-DAG: %[[c12:.*]] = arith.constant 12 : index
   ! CHECK-DAG: %[[addr:.*]] = fir.alloca !fir.array<42x55x12xf32> {{{.*}}uniq_name = "_QFfooEx"}
 
   call bar(x)
@@ -36,9 +36,9 @@ subroutine foo_char(x)
   character(*) :: x(42, 55, 12)
   ! CHECK-DAG: %[[x:.*]]:2 = fir.unboxchar %arg0 : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK-DAG: %[[addr:.*]] = fir.convert %[[x]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<42x55x12x!fir.char<1,?>>>
-  ! CHECK-DAG: %[[c42:.*]] = constant 42 : index
-  ! CHECK-DAG: %[[c55:.*]] = constant 55 : index
-  ! CHECK-DAG: %[[c12:.*]] = constant 12 : index
+  ! CHECK-DAG: %[[c42:.*]] = arith.constant 42 : index
+  ! CHECK-DAG: %[[c55:.*]] = arith.constant 55 : index
+  ! CHECK-DAG: %[[c12:.*]] = arith.constant 12 : index
 
   call bar_char(x)
   ! CHECK: %[[shape:.*]] = fir.shape %[[c42]], %[[c55]], %[[c12]] : (index, index, index) -> !fir.shape<3>

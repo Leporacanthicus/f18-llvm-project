@@ -7,8 +7,8 @@
 #map2 = affine_map<(d0)[s0, s1, s2] -> (d0 * s2 - s0)>
 module  {
   func @calc(%arg0: !fir.ref<!fir.array<?xf32>>, %arg1: !fir.ref<!fir.array<?xf32>>, %arg2: !fir.ref<!fir.array<?xf32>>) {
-    %c1 = constant 1 : index
-    %c100 = constant 100 : index
+    %c1 = arith.constant 1 : index
+    %c100 = arith.constant 100 : index
     %0 = fir.shape %c100 : (index) -> !fir.shape<1>
     %1 = affine.apply #map0()[%c1, %c100]
     %2 = fir.alloca !fir.array<?xf32>, %1
@@ -35,10 +35,10 @@ module  {
 }
 
 // CHECK:  func @calc(%[[VAL_0:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_1:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_2:.*]]: !fir.ref<!fir.array<?xf32>>) {
-// CHECK:    %[[VAL_3:.*]] = constant 1 : index
-// CHECK:    %[[VAL_4:.*]] = constant 100 : index
+// CHECK:    %[[VAL_3:.*]] = arith.constant 1 : index
+// CHECK:    %[[VAL_4:.*]] = arith.constant 100 : index
 // CHECK:    %[[VAL_5:.*]] = fir.shape %[[VAL_4]] : (index) -> !fir.shape<1>
-// CHECK:    %[[VAL_6:.*]] = constant 100 : index
+// CHECK:    %[[VAL_6:.*]] = arith.constant 100 : index
 // CHECK:    %[[VAL_7:.*]] = fir.alloca !fir.array<?xf32>, %[[VAL_6]]
 // CHECK:    %[[VAL_8:.*]] = fir.convert %[[VAL_0]] : (!fir.ref<!fir.array<?xf32>>) -> !fir.ref<!fir.array<?xf32>>
 // CHECK:    %[[VAL_9:.*]] = fir.convert %[[VAL_1]] : (!fir.ref<!fir.array<?xf32>>) -> !fir.ref<!fir.array<?xf32>>

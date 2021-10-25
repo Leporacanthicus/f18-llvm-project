@@ -7,9 +7,9 @@
 
 // CHECK-LABEL: func @calc
 func @calc(%a1: !arr_d1, %a2: !arr_d1, %a3: !arr_d1) {
-  %c1 = constant 1 : index
-  %c0 = constant 0 : index
-  %len = constant 100 : index
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  %len = arith.constant 100 : index
   %dims = fir.shape %len : (index) -> !fir.shape<1>
   %siz = affine.apply #arr_len()[%c1,%len]
   %t1 = fir.alloca !fir.array<?xf32>, %siz

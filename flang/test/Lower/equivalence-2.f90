@@ -34,7 +34,7 @@ subroutine test_eq_sets
   SAVE Ig, Xg
   EQUIVALENCE (Ig(1), Xg(1))
   ! CHECK-DAG: %[[igxg:.*]] = fir.address_of(@_QFtest_eq_setsEig) : !fir.ref<!fir.array<8xi8>>
-  ! CHECK-DAG: %[[igOffset:.*]] = constant 0 : index
+  ! CHECK-DAG: %[[igOffset:.*]] = arith.constant 0 : index
   ! CHECK-DAG: %[[igAddr:.*]] = fir.coordinate_of %[[igxg]], %c0{{.*}} : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[ig:.*]] = fir.convert %[[igAddr]] : (!fir.ref<i8>) -> !fir.ref<!fir.array<2xi32>>
   ! CHECK-DAG: %[[xgAddr:.*]] = fir.coordinate_of %[[igxg]], %c0{{.*}} : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
@@ -55,11 +55,11 @@ subroutine eq_and_entry_foo
   call foo1(x, i)
   ! CHECK: %[[xi:.*]] = fir.address_of(@_QFeq_and_entry_fooEi) : !fir.ref<!fir.array<8xi8>>
 
-  ! CHECK-DAG: %[[iOffset:.*]] = constant 4 : index
+  ! CHECK-DAG: %[[iOffset:.*]] = arith.constant 4 : index
   ! CHECK-DAG: %[[iAddr:.*]] = fir.coordinate_of %[[xi]], %[[iOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[i:.*]] = fir.convert %[[iAddr]] : (!fir.ref<i8>) -> !fir.ref<i32>
 
-  ! CHECK-DAG: %[[xOffset:.*]] = constant 0 : index
+  ! CHECK-DAG: %[[xOffset:.*]] = arith.constant 0 : index
   ! CHECK-DAG: %[[xAddr:.*]] = fir.coordinate_of %[[xi]], %[[xOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[x:.*]] = fir.convert %[[xAddr]] : (!fir.ref<i8>) -> !fir.ref<!fir.array<2xf32>>
   call foo2(x, i)
@@ -72,11 +72,11 @@ end
 ! CHECK-LABEL: @_QPeq_and_entry_bar()
   ! CHECK: %[[xi:.*]] = fir.address_of(@_QFeq_and_entry_fooEi) : !fir.ref<!fir.array<8xi8>>
 
-  ! CHECK-DAG: %[[iOffset:.*]] = constant 4 : index
+  ! CHECK-DAG: %[[iOffset:.*]] = arith.constant 4 : index
   ! CHECK-DAG: %[[iAddr:.*]] = fir.coordinate_of %[[xi]], %[[iOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[i:.*]] = fir.convert %[[iAddr]] : (!fir.ref<i8>) -> !fir.ref<i32>
 
-  ! CHECK-DAG: %[[xOffset:.*]] = constant 0 : index
+  ! CHECK-DAG: %[[xOffset:.*]] = arith.constant 0 : index
   ! CHECK-DAG: %[[xAddr:.*]] = fir.coordinate_of %[[xi]], %[[xOffset]] : (!fir.ref<!fir.array<8xi8>>, index) -> !fir.ref<i8>
   ! CHECK-DAG: %[[x:.*]] = fir.convert %[[xAddr]] : (!fir.ref<i8>) -> !fir.ref<!fir.array<2xf32>>
   ! CHECK-NOT: fir.call @_QPfoo1

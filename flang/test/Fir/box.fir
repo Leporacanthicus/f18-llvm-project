@@ -3,7 +3,7 @@
 // Global box initialization (test must come first because llvm globals are emitted first).
 // CHECK-LABEL: @globalx = internal global { i32*, i64, i32, i8, i8, i8, i8 } { i32* null, i64 4, i32 20180515, i8 0, i8 9, i8 2, i8 0 }
 fir.global internal @globalx : !fir.box<!fir.heap<i32>> {
-  %c0 = constant 0 : index
+  %c0 = arith.constant 0 : index
   %0 = fir.convert %c0 : (index) -> !fir.heap<i32>
   %1 = fir.embox %0 : (!fir.heap<i32>) -> !fir.box<!fir.heap<i32>>
   fir.has_value %1 : !fir.box<!fir.heap<i32>>
@@ -11,7 +11,7 @@ fir.global internal @globalx : !fir.box<!fir.heap<i32>> {
 
 // CHECK-LABEL: @globaly = internal global { float*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] } { float* null, i64 4, i32 20180515, i8 1, i8 25, i8 2, i8 0,{{.*}}[3 x i64] [i64 1, i64 0, i64 4]
 fir.global internal @globaly : !fir.box<!fir.heap<!fir.array<?xf32>>> {
-  %c0 = constant 0 : index
+  %c0 = arith.constant 0 : index
   %0 = fir.convert %c0 : (index) -> !fir.heap<!fir.array<?xf32>>
   %1 = fir.shape %c0 : (index) -> !fir.shape<1>
   %2 = fir.embox %0(%1) : (!fir.heap<!fir.array<?xf32>>, !fir.shape<1>) -> !fir.box<!fir.heap<!fir.array<?xf32>>>
@@ -41,8 +41,8 @@ func @f(%a : !fir.ref<f32>) {
 // CHECK: ([100 x float]* %[[ARG:.*]])
 func @fa(%a : !fir.ref<!fir.array<100xf32>>) {
   %c = fir.convert %a : (!fir.ref<!fir.array<100xf32>>) -> !fir.ref<!fir.array<?xf32>>
-  %c1 = constant 1 : index
-  %c100 = constant 100 : index
+  %c1 = arith.constant 1 : index
+  %c100 = arith.constant 100 : index
   %d = fir.shape %c100 : (index) -> !fir.shape<1>
   // CHECK: %[[bitcast:.*]] = bitcast [100 x float]* %
   // CHECK: %[[INS70:.*]] = insertvalue {{.*}} { float* undef, i64 4, i32 20180515, i8 1, i8 25, i8 0, i8 0, {{.*}} }, float* %[[bitcast]], 0
@@ -98,7 +98,7 @@ func @b3(%arg0 : !fir.ref<!fir.array<?x!fir.char<1,?>>>, %arg1 : index, %arg2 : 
 // CHECK-LABEL: define void @b4(
 // CHECK-SAME: { i8*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[res:.*]], i8* %[[arg0:.*]], i64 %[[arg1:.*]])
 func @b4(%arg0 : !fir.ref<!fir.array<7x!fir.char<1,?>>>, %arg1 : index) -> !fir.box<!fir.array<7x!fir.char<1,?>>> {
-  %c_7 = constant 7 : index
+  %c_7 = arith.constant 7 : index
   %1 = fir.shape %c_7 : (index) -> !fir.shape<1>
   // CHECK: insertvalue {{.*}} i64 %[[arg1]], 1
   // CHECK: insertvalue {{.*}} i32 20180515, 2
@@ -125,17 +125,17 @@ func private @callee6(!fir.box<none>) -> i32
 // CHECK-LABEL: define i32 @box6(
 // CHECK-SAME: float* %[[ARG0:.*]], i64 %[[ARG1:.*]], i64 %[[ARG2:.*]])
 func @box6(%0 : !fir.ref<!fir.array<?x?x?x?xf32>>, %1 : index, %2 : index) -> i32 {
-  %c100 = constant 100 : index
-  %c50 = constant 50 : index
-  %c30 = constant 30 : index
-  %c6 = constant 6 : index
+  %c100 = arith.constant 100 : index
+  %c50 = arith.constant 50 : index
+  %c30 = arith.constant 30 : index
+  %c6 = arith.constant 6 : index
   %shape = fir.shape %c100, %c50, %c30, %c6 : (index, index, index, index) -> !fir.shape<4>
   %3 = fir.undefined index
-  %c41 = constant 41 : index
-  %c2 = constant 2 : index
-  %c24 = constant 24 : index
-  %c1 = constant 1 : index
-  %c3 = constant 3 : index
+  %c41 = arith.constant 41 : index
+  %c2 = arith.constant 2 : index
+  %c24 = arith.constant 24 : index
+  %c1 = arith.constant 1 : index
+  %c3 = arith.constant 3 : index
 
   // CHECK: %[[i:.*]] = sub i64 %[[ARG1]], 1
   // CHECK: %[[i100:.*]] = mul i64 %[[i]], 100

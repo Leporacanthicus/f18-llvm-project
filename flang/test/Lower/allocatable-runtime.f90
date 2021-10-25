@@ -23,8 +23,8 @@ subroutine foo()
 
   allocate(x(42:100), y(43:50, 51), z)
   ! CHECK-DAG: %[[errMsg:.*]] = fir.absent !fir.box<none>
-  ! CHECK-DAG: %[[xlb:.*]] = constant 42 : i32
-  ! CHECK-DAG: %[[xub:.*]] = constant 100 : i32
+  ! CHECK-DAG: %[[xlb:.*]] = arith.constant 42 : i32
+  ! CHECK-DAG: %[[xub:.*]] = arith.constant 100 : i32
   ! CHECK-DAG: %[[xBoxCast2:.*]] = fir.convert %[[xBoxAddr]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>) -> !fir.ref<!fir.box<none>>
   ! CHECK-DAG: %[[xlbCast:.*]] = fir.convert %[[xlb]] : (i32) -> i64
   ! CHECK-DAG: %[[xubCast:.*]] = fir.convert %[[xub]] : (i32) -> i64

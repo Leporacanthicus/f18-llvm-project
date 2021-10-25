@@ -73,7 +73,7 @@ end subroutine
 subroutine dyn_array_cst_len_lb(n)
   integer(8) :: n
   character(10) :: c(11:n)
-  ! CHECK-DAG: %[[cm10:.*]] = constant -10 : index
+  ! CHECK-DAG: %[[cm10:.*]] = arith.constant -10 : index
   ! CHECK-DAG: %[[n:.*]] = fir.load %[[arg0]] : !fir.ref<i64>
   ! CHECK-DAG: %[[ni:.*]] = fir.convert %[[n]] : (i64) -> index
   ! CHECK: %[[extent:.*]] = addi %[[ni]], %[[cm10]] : index
@@ -85,7 +85,7 @@ end subroutine
 subroutine dyn_array_dyn_len_lb(l, n)
   integer(8) :: l, n
   character(l) :: c(11:n)
-  ! CHECK-DAG: %[[cm10:.*]] = constant -10 : index
+  ! CHECK-DAG: %[[cm10:.*]] = arith.constant -10 : index
   ! CHECK-DAG: %[[l:.*]] = fir.load %[[arg0]] : !fir.ref<i64>
   ! CHECK-DAG: %[[n:.*]] = fir.load %[[arg1]] : !fir.ref<i64>
   ! CHECK-DAG: %[[ni:.*]] = fir.convert %[[n]] : (i64) -> index

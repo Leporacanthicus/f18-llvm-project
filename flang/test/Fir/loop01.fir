@@ -13,7 +13,7 @@ func @x(%lb : index, %ub : index, %step : index, %b : i1, %addr : !fir.ref<index
       // CHECK: store i64
       fir.store %iv to %addr : !fir.ref<index>
     } else {
-      %zero = constant 0 : index
+      %zero = arith.constant 0 : index
       fir.store %zero to %addr : !fir.ref<index>
     }
     // CHECK: br label %[[LOOP]]
@@ -30,7 +30,7 @@ func private @f2() -> i1
 // FIROPT:       %[[VAL_7:.*]] = divi_signed %[[VAL_6]], %[[VAL_2]] : index
 // FIROPT:       br ^bb1(%[[VAL_0]], %[[VAL_7]] : index, index)
 // FIROPT:     ^bb1(%[[VAL_8:.*]]: index, %[[VAL_9:.*]]: index):
-// FIROPT:       %[[VAL_10:.*]] = constant 0 : index
+// FIROPT:       %[[VAL_10:.*]] = arith.constant 0 : index
 // FIROPT:       %[[VAL_11:.*]] = cmpi sgt, %[[VAL_9]], %[[VAL_10]] : index
 // FIROPT:       cond_br %[[VAL_11]], ^bb2, ^bb6
 // FIROPT:     ^bb2:
@@ -39,12 +39,12 @@ func private @f2() -> i1
 // FIROPT:       fir.store %[[VAL_8]] to %[[VAL_4]] : !fir.ref<index>
 // FIROPT:       br ^bb5
 // FIROPT:     ^bb4:
-// FIROPT:       %[[VAL_12:.*]] = constant 0 : index
+// FIROPT:       %[[VAL_12:.*]] = arith.constant 0 : index
 // FIROPT:       fir.store %[[VAL_12]] to %[[VAL_4]] : !fir.ref<index>
 // FIROPT:       br ^bb5
 // FIROPT:     ^bb5:
 // FIROPT:       %[[VAL_13:.*]] = addi %[[VAL_8]], %[[VAL_2]] : index
-// FIROPT:       %[[VAL_14:.*]] = constant 1 : index
+// FIROPT:       %[[VAL_14:.*]] = arith.constant 1 : index
 // FIROPT:       %[[VAL_15:.*]] = subi %[[VAL_9]], %[[VAL_14]] : index
 // FIROPT:       br ^bb1(%[[VAL_13]], %[[VAL_15]] : index, index)
 // FIROPT:     ^bb6:
@@ -56,7 +56,7 @@ func private @f2() -> i1
 
 // CHECK-LABEL: @x2
 func @x2(%lo : index, %up : index, %ok : i1) {
-  %c1 = constant 1 : index
+  %c1 = arith.constant 1 : index
   // CHECK-DAG: %[[count:.*]] = phi i64
   // CHECK-DAG: %[[exit:.*]] = phi i1
   // CHECK: %[[cond:.*]] = icmp sle i64 %[[count]], %
@@ -73,10 +73,10 @@ func @x2(%lo : index, %up : index, %ok : i1) {
 func private @f3(i16)
 
 // FIROPT:   func @x2(%[[VAL_0:.*]]: index, %[[VAL_1:.*]]: index, %[[VAL_2:.*]]: i1) {
-// FIROPT:     %[[VAL_3:.*]] = constant 1 : index
+// FIROPT:     %[[VAL_3:.*]] = arith.constant 1 : index
 // FIROPT:     br ^bb1(%[[VAL_0]], %[[VAL_2]] : index, i1)
 // FIROPT:   ^bb1(%[[VAL_4:.*]]: index, %[[VAL_5:.*]]: i1):
-// FIROPT:     %[[VAL_6:.*]] = constant 0 : index
+// FIROPT:     %[[VAL_6:.*]] = arith.constant 0 : index
 // FIROPT:     %[[VAL_7:.*]] = cmpi slt, %[[VAL_6]], %[[VAL_3]] : index
 // FIROPT:     %[[VAL_8:.*]] = cmpi sle, %[[VAL_4]], %[[VAL_1]] : index
 // FIROPT:     %[[VAL_9:.*]] = cmpi slt, %[[VAL_3]], %[[VAL_6]] : index
@@ -100,8 +100,8 @@ func private @f3(i16)
 // do_loop with an extra loop-carried value
 // CHECK-LABEL: @x3
 func @x3(%lo : index, %up : index) -> i1 {
-  %c1 = constant 1 : index
-  %ok1 = constant true
+  %c1 = arith.constant 1 : index
+  %ok1 = arith.constant true
   // CHECK-DAG: %[[ok:.*]] = phi i1
   // CHECK-DAG: %[[count:.*]] = phi i64
   // CHECK: = icmp sgt i64 %[[count]], 0
@@ -117,20 +117,20 @@ func @x3(%lo : index, %up : index) -> i1 {
 // FIROPT-LABEL:   func @x3(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> i1 {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
-// FIROPT:           %[[VAL_3:.*]] = constant true
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
+// FIROPT:           %[[VAL_3:.*]] = arith.constant true
 // FIROPT:           %[[VAL_4:.*]] = subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_5:.*]] = addi %[[VAL_4]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_6:.*]] = divi_signed %[[VAL_5]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]], %[[VAL_6]] : index, i1, index)
 // FIROPT:         ^bb1(%[[VAL_7:.*]]: index, %[[VAL_8:.*]]: i1, %[[VAL_9:.*]]: index):
-// FIROPT:           %[[VAL_10:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_10:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_11:.*]] = cmpi sgt, %[[VAL_9]], %[[VAL_10]] : index
 // FIROPT:           cond_br %[[VAL_11]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_12:.*]] = fir.call @f2() : () -> i1
 // FIROPT:           %[[VAL_13:.*]] = addi %[[VAL_7]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_14:.*]] = constant 1 : index
+// FIROPT:           %[[VAL_14:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_15:.*]] = subi %[[VAL_9]], %[[VAL_14]] : index
 // FIROPT:           br ^bb1(%[[VAL_13]], %[[VAL_12]], %[[VAL_15]] : index, i1, index)
 // FIROPT:         ^bb3:
@@ -142,8 +142,8 @@ func @x3(%lo : index, %up : index) -> i1 {
 // iterate_while with an extra loop-carried value
 // CHECK-LABEL: @y3
 func @y3(%lo : index, %up : index) -> i1 {
-  %c1 = constant 1 : index
-  %ok1 = constant true
+  %c1 = arith.constant 1 : index
+  %ok1 = arith.constant true
   // CHECK: %[[ok4:.*]] = call i1 @f2()
   %ok4 = fir.call @f2() : () -> i1
   // CHECK-DAG: %[[count:.*]] = phi i64
@@ -167,12 +167,12 @@ func private @f4(i32) -> i1
 // FIROPT-LABEL:   func @y3(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> i1 {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
-// FIROPT:           %[[VAL_3:.*]] = constant true
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
+// FIROPT:           %[[VAL_3:.*]] = arith.constant true
 // FIROPT:           %[[VAL_4:.*]] = fir.call @f2() : () -> i1
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]], %[[VAL_4]] : index, i1, i1)
 // FIROPT:         ^bb1(%[[VAL_5:.*]]: index, %[[VAL_6:.*]]: i1, %[[VAL_7:.*]]: i1):
-// FIROPT:           %[[VAL_8:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_8:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_9:.*]] = cmpi slt, %[[VAL_8]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_10:.*]] = cmpi sle, %[[VAL_5]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_11:.*]] = cmpi slt, %[[VAL_2]], %[[VAL_8]] : index
@@ -198,7 +198,7 @@ func private @f4(i32) -> i1
 // CHECK-LABEL: @x4
 // CHECK-SAME: (i64 %[[lo:.*]],
 func @x4(%lo : index, %up : index) -> index {
-  %c1 = constant 1 : index
+  %c1 = arith.constant 1 : index
   // CHECK: %[[top:.*]] = add i64
   // CHECK-DAG: %[[i:.*]] = phi i64 {{.*}}[ %[[lo]],
   // CHECK-DAG: %[[count:.*]] = phi i64 {{.*}}[ %[[top]],
@@ -217,20 +217,20 @@ func @x4(%lo : index, %up : index) -> index {
 // FIROPT-LABEL:   func @x4(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> index {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_3:.*]] = subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_4:.*]] = addi %[[VAL_3]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_5:.*]] = divi_signed %[[VAL_4]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_5]] : index, index)
 // FIROPT:         ^bb1(%[[VAL_6:.*]]: index, %[[VAL_7:.*]]: index):
-// FIROPT:           %[[VAL_8:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_8:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_9:.*]] = cmpi sgt, %[[VAL_7]], %[[VAL_8]] : index
 // FIROPT:           cond_br %[[VAL_9]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_10:.*]] = fir.convert %[[VAL_6]] : (index) -> i32
 // FIROPT:           %[[VAL_11:.*]] = fir.call @f4(%[[VAL_10]]) : (i32) -> i1
 // FIROPT:           %[[VAL_12:.*]] = addi %[[VAL_6]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_13:.*]] = constant 1 : index
+// FIROPT:           %[[VAL_13:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_14:.*]] = subi %[[VAL_7]], %[[VAL_13]] : index
 // FIROPT:           br ^bb1(%[[VAL_12]], %[[VAL_14]] : index, index)
 // FIROPT:         ^bb3:
@@ -242,8 +242,8 @@ func @x4(%lo : index, %up : index) -> index {
 // iterate_while that returns the final value of both inductions
 // CHECK-LABEL: @y4
 func @y4(%lo : index, %up : index) -> index {
-  %c1 = constant 1 : index
-  %ok1 = constant true
+  %c1 = arith.constant 1 : index
+  %ok1 = arith.constant true
   // CHECK-DAG: %[[i:.*]] = phi i64 [
   // CHECK-DAG: %[[ok2:.*]] = phi i1 [
   // CHECK: icmp sle i64 %[[i]]
@@ -261,11 +261,11 @@ func @y4(%lo : index, %up : index) -> index {
 // FIROPT-LABEL:   func @y4(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> index {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
-// FIROPT:           %[[VAL_3:.*]] = constant true
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
+// FIROPT:           %[[VAL_3:.*]] = arith.constant true
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]] : index, i1)
 // FIROPT:         ^bb1(%[[VAL_4:.*]]: index, %[[VAL_5:.*]]: i1):
-// FIROPT:           %[[VAL_6:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_6:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_7:.*]] = cmpi slt, %[[VAL_6]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_8:.*]] = cmpi sle, %[[VAL_4]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_9:.*]] = cmpi slt, %[[VAL_2]], %[[VAL_6]] : index
@@ -292,9 +292,9 @@ func @y4(%lo : index, %up : index) -> index {
 // CHECK-LABEL: @x5
 // CHECK-SAME: (i64 %[[lo:.*]],
 func @x5(%lo : index, %up : index) -> index {
-  %c1 = constant 1 : index
+  %c1 = arith.constant 1 : index
   // CHECK: %[[top:.*]] = add i64
-  %s1 = constant 42 : i16
+  %s1 = arith.constant 42 : i16
   // CHECK-DAG: %[[i:.*]] = phi i64 {{.*}}[ %[[lo]],
   // CHECK-DAG: %[[count:.*]] = phi i64 {{.*}}[ %[[top]],
   // CHECK-DAG: %[[s:.*]] = phi i16
@@ -316,21 +316,21 @@ func @x5(%lo : index, %up : index) -> index {
 // FIROPT-LABEL:   func @x5(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> index {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
-// FIROPT:           %[[VAL_3:.*]] = constant 42 : i16
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
+// FIROPT:           %[[VAL_3:.*]] = arith.constant 42 : i16
 // FIROPT:           %[[VAL_4:.*]] = subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_5:.*]] = addi %[[VAL_4]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_6:.*]] = divi_signed %[[VAL_5]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]], %[[VAL_6]] : index, i16, index)
 // FIROPT:         ^bb1(%[[VAL_7:.*]]: index, %[[VAL_8:.*]]: i16, %[[VAL_9:.*]]: index):
-// FIROPT:           %[[VAL_10:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_10:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_11:.*]] = cmpi sgt, %[[VAL_9]], %[[VAL_10]] : index
 // FIROPT:           cond_br %[[VAL_11]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_12:.*]] = fir.call @f2() : () -> i1
 // FIROPT:           %[[VAL_13:.*]] = fir.convert %[[VAL_12]] : (i1) -> i16
 // FIROPT:           %[[VAL_14:.*]] = addi %[[VAL_7]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_15:.*]] = constant 1 : index
+// FIROPT:           %[[VAL_15:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_16:.*]] = subi %[[VAL_9]], %[[VAL_15]] : index
 // FIROPT:           br ^bb1(%[[VAL_14]], %[[VAL_13]], %[[VAL_16]] : index, i16, index)
 // FIROPT:         ^bb3:
@@ -345,9 +345,9 @@ func @x5(%lo : index, %up : index) -> index {
 // CHECK-LABEL: @y5
 // CHECK-SAME: (i64 %[[lo:.*]],
 func @y5(%lo : index, %up : index) -> index {
-  %c1 = constant 1 : index
-  %s1 = constant 42 : i16
-  %ok1 = constant true
+  %c1 = arith.constant 1 : index
+  %s1 = arith.constant 42 : i16
+  %ok1 = arith.constant true
   // CHECK-DAG: %[[i:.*]] = phi i64 {{.*}}[ %[[lo]],
   // CHECK-DAG: %[[ok2:.*]] = phi i1 {{.*}}[ true, 
   // CHECK-DAG: %[[s:.*]] = phi i16 {{.*}}[ 42,
@@ -362,7 +362,7 @@ func @y5(%lo : index, %up : index) -> index {
   }
   // CHECK: br i1 %[[ok2]],
   fir.if %v#1 {
-    %arg = constant 0 : i32
+    %arg = arith.constant 0 : i32
     // CHECK: call i1 @f4
     %ok4 = fir.call @f4(%arg) : (i32) -> i1
   }
@@ -375,12 +375,12 @@ func @y5(%lo : index, %up : index) -> index {
 // FIROPT-LABEL:   func @y5(
 // FIROPT-SAME:             %[[VAL_0:.*]]: index,
 // FIROPT-SAME:             %[[VAL_1:.*]]: index) -> index {
-// FIROPT:           %[[VAL_2:.*]] = constant 1 : index
-// FIROPT:           %[[VAL_3:.*]] = constant 42 : i16
-// FIROPT:           %[[VAL_4:.*]] = constant true
+// FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
+// FIROPT:           %[[VAL_3:.*]] = arith.constant 42 : i16
+// FIROPT:           %[[VAL_4:.*]] = arith.constant true
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_4]], %[[VAL_3]] : index, i1, i16)
 // FIROPT:         ^bb1(%[[VAL_5:.*]]: index, %[[VAL_6:.*]]: i1, %[[VAL_7:.*]]: i16):
-// FIROPT:           %[[VAL_8:.*]] = constant 0 : index
+// FIROPT:           %[[VAL_8:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_9:.*]] = cmpi slt, %[[VAL_8]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_10:.*]] = cmpi sle, %[[VAL_5]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_11:.*]] = cmpi slt, %[[VAL_2]], %[[VAL_8]] : index
@@ -398,7 +398,7 @@ func @y5(%lo : index, %up : index) -> index {
 // FIROPT:         ^bb3:
 // FIROPT:           cond_br %[[VAL_6]], ^bb4, ^bb5
 // FIROPT:         ^bb4:
-// FIROPT:           %[[VAL_20:.*]] = constant 0 : i32
+// FIROPT:           %[[VAL_20:.*]] = arith.constant 0 : i32
 // FIROPT:           %[[VAL_21:.*]] = fir.call @f4(%[[VAL_20]]) : (i32) -> i1
 // FIROPT:           br ^bb5
 // FIROPT:         ^bb5:

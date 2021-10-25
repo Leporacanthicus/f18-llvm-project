@@ -67,7 +67,7 @@ subroutine scalar_character_ref()
   type(c) :: some_c
   ! CHECK: %[[field:.*]] = fir.field_index ch, !fir.type<_QMdTc{ch:!fir.char<1,10>}>
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[alloc]], %[[field]] : (!fir.ref<!fir.type<_QMdTc{ch:!fir.char<1,10>}>>, !fir.field) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK-DAG: %[[c10:.*]] = constant 10 : index
+  ! CHECK-DAG: %[[c10:.*]] = arith.constant 10 : index
   ! CHECK-DAG: %[[conv:.*]] = fir.convert %[[coor]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<!fir.char<1,?>>
   ! CHECK: fir.emboxchar %[[conv]], %c10 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
   call char_bar(some_c%ch)

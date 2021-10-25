@@ -10,25 +10,25 @@ func @_QTtP.mem.size(%0 : i32, %1 : i16) -> index {
 }
 // CHECK-LINE: define i64 @_QTtP.f1.size(i32 %0, i16 %1)
 func @_QTtP.f1.size(%0 : i32, %1 : i16) -> index {
-  %2 = constant 4 : index
+  %2 = arith.constant 4 : index
   // CHECK: ret i64 4
   return %2 : index
 }
 // CHECK-LINE: define i64 @_QTtP.f2.size(i32 %0, i16 %1)
 func @_QTtP.f2.size(%0 : i32, %1 : i16) -> index {
-  %2 = constant 4 : index
+  %2 = arith.constant 4 : index
   // CHECK: ret i64 4
   return %2 : index
 }
 // CHECK-LINE: define i32 @_QTtP.f1.offset(i32 %0, i16 %1)
 func @_QTtP.f1.offset(%0 : i32, %1 : i16) -> i32 {
-  %2 = constant 0 : i32
+  %2 = arith.constant 0 : i32
   // CHECK: ret i32 0
   return %2 : i32
 }
 // CHECK-LINE: define i32 @_QTtP.f2.offset(i32 %0, i16 %1)
 func @_QTtP.f2.offset(%0 : i32, %1 : i16) -> i32 {
-  %2 = constant 4 : i32
+  %2 = arith.constant 4 : i32
   // CHECK: ret i32 4
   return %2 : i32
 }
@@ -52,7 +52,7 @@ func @_QQmain(%arg0 : i32, %arg1 : i16) {
   %0 = fir.alloca !fir.type<_QTt(p1:i32,p2:i16){f1:i32,f2:f32}>(%arg0, %arg1 : i32, i16) {name = "_QEvar"}
   %1 = fir.field_index f1, !fir.type<_QTt(p1:i32,p2:i16){f1:i32,f2:f32}>(%arg0, %arg1 : i32, i16)
   %2 = fir.coordinate_of %0, %1 : (!fir.ref<!fir.type<_QTt(p1:i32,p2:i16){f1:i32,f2:f32}>>, !fir.field) -> !fir.ref<i32>
-  %c4_i32 = constant 4 : i32
+  %c4_i32 = arith.constant 4 : i32
   fir.store %c4_i32 to %2 : !fir.ref<i32>
   return
 }
@@ -78,7 +78,7 @@ func @_QTt1P.f2.size(%0 : i32, %1 : i32) -> index {
 }
 // CHECK-LINE: define i32 @_QTt1P.f1.offset(i32 %0, i32 %1)
 func @_QTt1P.f1.offset(%0 : i32, %1 : i32) -> i32 {
-  %2 = constant 0 : i32
+  %2 = arith.constant 0 : i32
   return %2 : i32
 }
 // CHECK-LINE: define i32 @_QTt1P.f2.offset(i32 %0, i32 %1)

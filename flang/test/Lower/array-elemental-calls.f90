@@ -21,7 +21,7 @@ end function
 subroutine test_elem_by_ref(i, j)
   integer :: i(100), j(100)
   ! CHECK: %[[tmp:.*]] = fir.alloca f32
-  ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
+  ! CHECK: %[[cst:.*]] = arith.constant 4.200000e+01 : f32
   ! CHECK: fir.store %[[cst]] to %[[tmp]] : !fir.ref<f32>
 
   ! CHECK: fir.do_loop
@@ -39,7 +39,7 @@ subroutine test_elem_by_valueref(i, j)
   ! CHECK-DAG: %[[tmpA:.*]] = fir.alloca i32 {adapt.valuebyref}
   ! CHECK-DAG: %[[tmpB:.*]] = fir.alloca f32 {adapt.valuebyref}
   ! CHECK: %[[jload:.*]] = fir.array_load %[[arg1]]
-  ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
+  ! CHECK: %[[cst:.*]] = arith.constant 4.200000e+01 : f32
   ! CHECK: fir.store %[[cst]] to %[[tmpB]] : !fir.ref<f32>
 
   ! CHECK: fir.do_loop
@@ -69,14 +69,14 @@ subroutine test_loop_order(i, j)
   
   i = 42 + pure_func(j)
 ! CHECK:         %[[VAL_2:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
-! CHECK:         %[[VAL_3:.*]] = constant 42 : i32
-! CHECK:         %[[VAL_4:.*]] = constant 0 : index
+! CHECK:         %[[VAL_3:.*]] = arith.constant 42 : i32
+! CHECK:         %[[VAL_4:.*]] = arith.constant 0 : index
 ! CHECK:         %[[VAL_5:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_4]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
-! CHECK:         %[[VAL_6:.*]] = constant 1 : index
-! CHECK:         %[[VAL_7:.*]] = constant 0 : index
+! CHECK:         %[[VAL_6:.*]] = arith.constant 1 : index
+! CHECK:         %[[VAL_7:.*]] = arith.constant 0 : index
 ! CHECK:         %[[VAL_8:.*]] = subi %[[VAL_5]]#1, %[[VAL_6]] : index
 ! CHECK:         %[[VAL_9:.*]] = fir.do_loop %[[VAL_10:.*]] = %[[VAL_7]] to %[[VAL_8]] step %[[VAL_6]] unordered iter_args(%[[VAL_11:.*]] = %[[VAL_2]]) -> (!fir.array<?xi32>) {
-! CHECK:           %[[VAL_12:.*]] = constant 1 : index
+! CHECK:           %[[VAL_12:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_13:.*]] = addi %[[VAL_10]], %[[VAL_12]] : index
 ! CHECK:           %[[VAL_14:.*]] = fir.array_coor %[[VAL_1]] %[[VAL_13]] : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
 ! CHECK:           %[[VAL_15:.*]] = fir.call @_QPpure_func(%[[VAL_14]]) : (!fir.ref<i32>) -> i32
@@ -88,14 +88,14 @@ subroutine test_loop_order(i, j)
 
   i = 42 + impure_func(j)
 ! CHECK:         %[[VAL_19:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.array<?xi32>
-! CHECK:         %[[VAL_20:.*]] = constant 42 : i32
-! CHECK:         %[[VAL_21:.*]] = constant 0 : index
+! CHECK:         %[[VAL_20:.*]] = arith.constant 42 : i32
+! CHECK:         %[[VAL_21:.*]] = arith.constant 0 : index
 ! CHECK:         %[[VAL_22:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_21]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
-! CHECK:         %[[VAL_23:.*]] = constant 1 : index
-! CHECK:         %[[VAL_24:.*]] = constant 0 : index
+! CHECK:         %[[VAL_23:.*]] = arith.constant 1 : index
+! CHECK:         %[[VAL_24:.*]] = arith.constant 0 : index
 ! CHECK:         %[[VAL_25:.*]] = subi %[[VAL_22]]#1, %[[VAL_23]] : index
 ! CHECK:         %[[VAL_26:.*]] = fir.do_loop %[[VAL_27:.*]] = %[[VAL_24]] to %[[VAL_25]] step %[[VAL_23]] iter_args(%[[VAL_28:.*]] = %[[VAL_19]]) -> (!fir.array<?xi32>) {
-! CHECK:           %[[VAL_29:.*]] = constant 1 : index
+! CHECK:           %[[VAL_29:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_30:.*]] = addi %[[VAL_27]], %[[VAL_29]] : index
 ! CHECK:           %[[VAL_31:.*]] = fir.array_coor %[[VAL_1]] %[[VAL_30]] : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
 ! CHECK:           %[[VAL_32:.*]] = fir.call @_QPimpure_func(%[[VAL_31]]) : (!fir.ref<i32>) -> i32

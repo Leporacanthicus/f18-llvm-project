@@ -4,8 +4,8 @@
 
 // CHECK-LABEL: @add
 func @add(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.complex<8>) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
   %real1 = fir.extract_value %z1, [0 : index] : (!fir.complex<8>) -> f64
   %imag1 = fir.extract_value %z1, [1 : index] : (!fir.complex<8>) -> f64
   %real2 = fir.extract_value %z2, [0 : index] : (!fir.complex<8>) -> f64
@@ -23,8 +23,8 @@ func @add(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.compl
 
 // CHECK-LABEL: @sub
 func @sub(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.complex<8>) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
   %real1 = fir.extract_value %z1, [0 : index] : (!fir.complex<8>) -> f64
   %imag1 = fir.extract_value %z1, [1 : index] : (!fir.complex<8>) -> f64
   %real2 = fir.extract_value %z2, [0 : index] : (!fir.complex<8>) -> f64
@@ -42,8 +42,8 @@ func @sub(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.compl
 
 // CHECK-LABEL: @undefOpHiddenByBranch
 func @undefOpHiddenByBranch(%z: !fir.ref<!fir.complex<8>>, %b: i1) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
   cond_br %b, ^bb1, ^bb2
 ^bb1:  // pred: ^bb0
   %u1 = fir.undefined !fir.complex<8>
@@ -76,8 +76,8 @@ func private @bar2() -> !fir.complex<8>
 
 // CHECK-LABEL: @close_but_bad_pattern
 func @close_but_bad_pattern(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.complex<8>) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
   %real1 = fir.extract_value %z1, [0 : index] : (!fir.complex<8>) -> f64
   // extracting %c0 instead of %c1 
   %imag1 = fir.extract_value %z1, [0 : index] : (!fir.complex<8>) -> f64

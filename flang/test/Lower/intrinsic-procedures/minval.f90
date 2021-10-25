@@ -4,7 +4,7 @@
 !CHECK-SAME: %[[arg0:.*]]: !fir.box<!fir.array<?xi32>>) -> i32
 integer function minval_test(a)
   integer :: a(:)
-! CHECK-DAG:  %[[c0:.*]] = constant 0 : index
+! CHECK-DAG:  %[[c0:.*]] = arith.constant 0 : index
 ! CHECK-DAG:  %[[a2:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG:  %[[a4:.*]] = fir.convert %[[arg0]] : (!fir.box<!fir.array<?xi32>>) -> !fir.box<none>
 ! CHECK:  %[[a6:.*]] = fir.convert %[[c0]] : (index) -> i32
@@ -34,7 +34,7 @@ end function
 subroutine minval_test3(a,r)
   integer :: a(:,:)
   integer :: r(:)
-! CHECK-DAG:  %[[c2_i32:.*]] = constant 2 : i32
+! CHECK-DAG:  %[[c2_i32:.*]] = arith.constant 2 : i32
 ! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK:  %[[a1:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG:  %[[a6:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>

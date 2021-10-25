@@ -38,7 +38,7 @@ subroutine assign_substring1(str, rhs, lb, ub)
 
   ! Compute substring offset
   ! CHECK-DAG: %[[lbi:.*]] = fir.convert %[[lb]] : (i64) -> index
-  ! CHECK-DAG: %[[c1:.*]] = constant 1
+  ! CHECK-DAG: %[[c1:.*]] = arith.constant 1
   ! CHECK-DAG: %[[offset:.*]] = subi %[[lbi]], %[[c1]]
   ! CHECK-DAG: %[[str_cast:.*]] = fir.convert %[[str]]#0
   ! CHECK-DAG: %[[str_addr:.*]] = fir.coordinate_of %[[str_cast]], %[[offset]]
@@ -48,7 +48,7 @@ subroutine assign_substring1(str, rhs, lb, ub)
   ! CHECK-DAG: %[[ubi:.*]] = fir.convert %[[ub]] : (i64) -> index
   ! CHECK-DAG: %[[diff:.*]] = subi %[[ubi]], %[[lbi]]
   ! CHECK-DAG: %[[pre_lhs_len:.*]] = addi %[[diff]], %[[c1]]
-  ! CHECK-DAG: %[[c0:.*]] = constant 0
+  ! CHECK-DAG: %[[c0:.*]] = arith.constant 0
   ! CHECK-DAG: %[[cmp_len:.*]] = cmpi slt, %[[pre_lhs_len]], %[[c0]]
 
   ! CHECK-DAG: %[[lhs_len:.*]] = select %[[cmp_len]], %[[c0]], %[[pre_lhs_len]]

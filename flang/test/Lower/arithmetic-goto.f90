@@ -12,7 +12,7 @@ end
 
 ! CHECK-LABEL: func @_QPkagf
 function kagf(findex)
-  ! CHECK: %[[zero:.+]] = constant 0.0
+  ! CHECK: %[[zero:.+]] = arith.constant 0.0
   ! CHECK: %{{.+}} = cmpf olt, %{{.+}}, %[[zero]] : f32
   ! CHECK: cond_br %
   ! CHECK: %{{.+}} = cmpf ogt, %{{.+}}, %[[zero]] : f32

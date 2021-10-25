@@ -11,12 +11,12 @@ func private @bar1(!fir.box<!fir.array<?xf32>>)
 // CHECK-SAME: { float*, i64, i32, i8, i8, i8, i8, [2 x [3 x i64]] }* %[[INBOX:.*]])
 func @test_rebox_1(%arg0: !fir.box<!fir.array<?x?xf32>>) {
   // CHECK: %[[OUTBOX_ALLOC:.*]] = alloca { float*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }
-  %c2 = constant 2 : index
-  %c3 = constant 3 : index
-  %c4 = constant 4 : index
-  %c5 = constant 5 : index
-  %c6 = constant 6 : index
-  %c80 = constant 80 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %c4 = arith.constant 4 : index
+  %c5 = arith.constant 5 : index
+  %c6 = arith.constant 6 : index
+  %c80 = arith.constant 80 : index
   %undef = fir.undefined index
   %0 = fir.slice %c5, %undef, %undef, %c6, %c80, %c3 : (index, index, index, index, index, index) -> !fir.slice<2>
   %1 = fir.shift %c3, %c4 : (index, index) -> !fir.shift<2>
@@ -53,9 +53,9 @@ func private @bar_rebox_test2(!fir.box<!fir.array<?x?x!fir.char<1,?>>>)
 // CHECK-LABEL: define void @test_rebox_2(
 // CHECK-SAME: { i8*, i64, i32, i8, i8, i8, i8, [2 x [3 x i64]] }* %[[INBOX:.*]])
 func @test_rebox_2(%arg0: !fir.box<!fir.array<?x?x!fir.char<1,?>>>) {
-  %c1 = constant 1 : index
-  %c4 = constant 4 : index
-  %c30 = constant 30 : index
+  %c1 = arith.constant 1 : index
+  %c4 = arith.constant 4 : index
+  %c30 = arith.constant 30 : index
   %0 = fir.slice %c4, %c30, %c1, %c4, %c30, %c1 : (index, index, index, index, index, index) -> !fir.slice<2>
   // CHECK: %[[OUTBOX:.*]] = alloca { i8*, i64, i32, i8, i8, i8, i8, [2 x [3 x i64]] }
   // CHECK: %[[LEN_GEP:.*]] = getelementptr { i8*, i64, i32, i8, i8, i8, i8, [2 x [3 x i64]] }, { i8*, i64, i32, i8, i8, i8, i8, [2 x [3 x i64]] }* %[[INBOX]], i32 0, i32 1
@@ -81,10 +81,10 @@ func private @bar_rebox_test3(!fir.box<!fir.array<?x?x?xf32>>)
 // CHECK-SAME: { float*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[INBOX:.*]])
 func @test_rebox_3(%arg0: !fir.box<!fir.array<?xf32>>) {
   // CHECK: %[[OUTBOX_ALLOC:.*]] = alloca { float*, i64, i32, i8, i8, i8, i8, [3 x [3 x i64]] }
-  %c2 = constant 2 : index
-  %c3 = constant 3 : index
-  %c4 = constant 4 : index
-  %c5 = constant 5 : index
+  %c2 = arith.constant 2 : index
+  %c3 = arith.constant 3 : index
+  %c4 = arith.constant 4 : index
+  %c5 = arith.constant 5 : index
   %1 = fir.shape_shift %c2, %c3, %c3, %c4, %c4, %c5 : (index, index, index, index, index, index) -> !fir.shapeshift<3>
   // CHECK: %[[INSTRIDE_GEP:.*]] = getelementptr { float*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }, { float*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[INBOX]], i32 0, i32 7, i64 0, i32 2
   // CHECK: %[[INSTRIDE:.*]] = load i64, i64* %[[INSTRIDE_GEP]]

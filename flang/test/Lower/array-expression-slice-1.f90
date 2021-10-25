@@ -62,10 +62,10 @@ end program p
 ! CHECK-LABEL: func @_QPsub
 subroutine sub(a)
   character :: a(10)
-  ! CHECK-DAG: %[[ten:.*]] = constant 10 : index
-  ! CHECK-DAG: %[[one:.*]] = constant 1 : i64
-  ! CHECK-DAG: %[[five:.*]] = constant 5 : i64
-  ! CHECK-DAG: %[[two:.*]] = constant 2 : i64
+  ! CHECK-DAG: %[[ten:.*]] = arith.constant 10 : index
+  ! CHECK-DAG: %[[one:.*]] = arith.constant 1 : i64
+  ! CHECK-DAG: %[[five:.*]] = arith.constant 5 : i64
+  ! CHECK-DAG: %[[two:.*]] = arith.constant 2 : i64
   ! CHECK: %[[unboxchar:.*]]:2 = fir.unboxchar
   ! CHECK: %[[a_addr:.*]] = fir.convert %[[unboxchar]]#0 :
   ! CHECK-DAG: %[[shape10:.*]] = fir.shape %[[ten]] :

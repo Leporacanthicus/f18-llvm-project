@@ -15,7 +15,7 @@ subroutine concat_1(a, b)
   ! CHECK: %[[len:.*]] = addi %[[a]]#1, %[[b]]#1
   ! CHECK: %[[temp:.*]] = fir.alloca !fir.char<1,?>(%[[len]] : index)
 
-  ! CHECK-DAG: %[[c1:.*]] = constant 1
+  ! CHECK-DAG: %[[c1:.*]] = arith.constant 1
   ! CHECK-DAG: %[[a2:.*]] = fir.convert %[[a]]#1
   ! CHECK: %[[count:.*]] = muli %[[c1]], %[[a2]]
   ! CHECK-DAG: constant false
@@ -23,7 +23,7 @@ subroutine concat_1(a, b)
   ! CHECK-DAG: %[[from:.*]] = fir.convert %[[a]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[to]], %[[from]], %[[count]], %false) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
 
-  ! CHECK: %[[c1_0:.*]] = constant 1
+  ! CHECK: %[[c1_0:.*]] = arith.constant 1
   ! CHECK: %[[count2:.*]] = subi %[[len]], %[[c1_0]]
   ! CHECK: fir.do_loop %[[index2:.*]] = %[[a]]#1 to %[[count2]] step %[[c1_0]] {
     ! CHECK: %[[b_index:.*]] = subi %[[index2]], %[[a]]#1

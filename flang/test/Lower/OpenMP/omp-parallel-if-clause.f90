@@ -11,9 +11,9 @@
 
 !FIRDialect-LABEL: func @_QQmain() {
 !FIRDialect-DAG: %[[ALPHA:.*]] = fir.alloca i32 {{{.*}}uniq_name = "{{.*}}Ealpha"}
-!FIRDialect-DAG: %[[CONSTANT_4:.*]] = constant 4 : i32
+!FIRDialect-DAG: %[[CONSTANT_4:.*]] = arith.constant 4 : i32
 !FIRDialect-DAG: fir.store %[[CONSTANT_4]] to %[[ALPHA]] : !fir.ref<i32>
-!FIRDialect-DAG: %[[CONSTANT_0:.*]] = constant 0 : i32
+!FIRDialect-DAG: %[[CONSTANT_0:.*]] = arith.constant 0 : i32
 !FIRDialect-DAG: %[[LD_ALPHA:.*]] = fir.load %[[ALPHA]] : !fir.ref<i32>
 !FIRDialect:    %[[COND:.*]] = cmpi sle, %[[LD_ALPHA]], %[[CONSTANT_0]] : i32
 !FIRDialect:     omp.parallel if(%[[COND]] : i1) {

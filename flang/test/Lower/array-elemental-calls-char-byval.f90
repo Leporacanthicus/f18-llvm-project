@@ -20,10 +20,10 @@ contains
 subroutine foo1(i, j, c)
   integer :: i(10), j(10)
   character(*) :: c(10)
-! CHECK-DAG:   %[[VAL_0:.*]] = constant false
-! CHECK-DAG:   %[[VAL_1:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_2:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_3:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_0:.*]] = arith.constant false
+! CHECK-DAG:   %[[VAL_1:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_2:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_3:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_4:.*]]:2 = fir.unboxchar %[[VAL_5]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_6:.*]] = fir.convert %[[VAL_4]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
 ! CHECK:   %[[VAL_7:.*]] = fir.shape %[[VAL_1]] : (index) -> !fir.shape<1>
@@ -58,10 +58,10 @@ end subroutine
 subroutine foo2(i, j, c)
   integer :: i(10), j(10)
   character(*) :: c
-! CHECK-DAG:   %[[VAL_24:.*]] = constant false
-! CHECK-DAG:   %[[VAL_25:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_26:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_27:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_24:.*]] = arith.constant false
+! CHECK-DAG:   %[[VAL_25:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_26:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_27:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_28:.*]]:2 = fir.unboxchar %[[VAL_29]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
 ! CHECK:   %[[VAL_30:.*]] = fir.shape %[[VAL_25]] : (index) -> !fir.shape<1>
 ! CHECK:   %[[VAL_31:.*]] = fir.alloca !fir.char<1,?>(%[[VAL_28]]#1 : index) {bindc_name = ".chrtmp"}
@@ -92,9 +92,9 @@ end subroutine
 ! CHECK-SAME: %[[VAL_55:[^:]+]]: !fir.ref<!fir.array<10xi32>>)
 subroutine foo3(i, j)
   integer :: i(10), j(10)
-! CHECK-DAG:   %[[VAL_46:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_47:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_48:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_46:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_47:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_48:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_49:.*]] = fir.shape %[[VAL_46]] : (index) -> !fir.shape<1>
 ! CHECK:   br ^bb1(%[[VAL_47]], %[[VAL_46]] : index, index)
 ! CHECK: ^bb1(%[[VAL_50:.*]]: index, %[[VAL_51:.*]]: index):
@@ -126,11 +126,11 @@ end subroutine
 ! CHECK-SAME: %[[VAL_74:[^:]+]]: !fir.ref<!fir.array<10xi32>>)
 subroutine foo4(i, j)
   integer :: i(10), j(10)
-! CHECK-DAG:   %[[VAL_67:.*]] = constant 0 : i64
-! CHECK-DAG:   %[[VAL_68:.*]] = constant false
-! CHECK-DAG:   %[[VAL_69:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_70:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_71:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_67:.*]] = arith.constant 0 : i64
+! CHECK-DAG:   %[[VAL_68:.*]] = arith.constant false
+! CHECK-DAG:   %[[VAL_69:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_70:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_71:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_72:.*]] = fir.shape %[[VAL_69]] : (index) -> !fir.shape<1>
 ! CHECK:   %[[VAL_73:.*]] = fir.coordinate_of %[[VAL_74]], %[[VAL_67]] : (!fir.ref<!fir.array<10xi32>>, i64) -> !fir.ref<i32>
 ! CHECK:   %[[VAL_75:.*]] = fir.load %[[VAL_73]] : !fir.ref<i32>
@@ -171,11 +171,11 @@ end subroutine
 ! CHECK-SAME: %[[VAL_113:[^:]+]]: !fir.ref<!fir.array<10xi32>>)
 subroutine foo5(i, j)
   integer :: i(10), j(10)
-! CHECK-DAG:   %[[VAL_95:.*]] = constant 5 : index
-! CHECK-DAG:   %[[VAL_96:.*]] = constant false
-! CHECK-DAG:   %[[VAL_97:.*]] = constant 10 : index
-! CHECK-DAG:   %[[VAL_98:.*]] = constant 0 : index
-! CHECK-DAG:   %[[VAL_99:.*]] = constant 1 : index
+! CHECK-DAG:   %[[VAL_95:.*]] = arith.constant 5 : index
+! CHECK-DAG:   %[[VAL_96:.*]] = arith.constant false
+! CHECK-DAG:   %[[VAL_97:.*]] = arith.constant 10 : index
+! CHECK-DAG:   %[[VAL_98:.*]] = arith.constant 0 : index
+! CHECK-DAG:   %[[VAL_99:.*]] = arith.constant 1 : index
 ! CHECK:   %[[VAL_100:.*]] = fir.shape %[[VAL_97]] : (index) -> !fir.shape<1>
 ! CHECK:   %[[VAL_101:.*]] = fir.address_of(@{{.*}}) : !fir.ref<!fir.char<1,5>>
 ! CHECK:   %[[VAL_102:.*]] = fir.alloca !fir.char<1,5> {bindc_name = ".chrtmp"}

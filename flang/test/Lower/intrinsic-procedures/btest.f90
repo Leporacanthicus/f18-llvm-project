@@ -7,7 +7,7 @@ function btest_test(i, j)
   ! CHECK-DAG: %[[i:[0-9]+]] = fir.load %arg0 : !fir.ref<i32>
   ! CHECK-DAG: %[[j:[0-9]+]] = fir.load %arg1 : !fir.ref<i32>
   ! CHECK-DAG: %[[VAL_5:.*]] = shift_right_unsigned %[[i]], %[[j]] : i32
-  ! CHECK-DAG: %[[VAL_6:.*]] = constant 1 : i32
+  ! CHECK-DAG: %[[VAL_6:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_7:.*]] = and %[[VAL_5]], %[[VAL_6]] : i32
   ! CHECK: %[[VAL_8:.*]] = fir.convert %[[VAL_7]] : (i32) -> !fir.logical<4>
   ! CHECK: fir.store %[[VAL_8]] to %[[result]] : !fir.ref<!fir.logical<4>>

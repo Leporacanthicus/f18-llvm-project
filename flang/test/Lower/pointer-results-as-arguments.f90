@@ -51,7 +51,7 @@ end subroutine
 
 ! CHECK-LABEL: test_null
 subroutine test_null()
-! CHECK: %[[VAL_8:.*]] = constant 0 : index
+! CHECK: %[[VAL_8:.*]] = arith.constant 0 : index
 ! CHECK: %[[VAL_9:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x?xf32>>>
 ! CHECK: %[[VAL_10:.*]] = fir.zero_bits !fir.ptr<!fir.array<?x?xf32>>
 ! CHECK: %[[VAL_11:.*]] = fir.shape %[[VAL_8]], %[[VAL_8]] : (index, index) -> !fir.shape<2>
@@ -63,7 +63,7 @@ end subroutine
 
 ! CHECK-LABEL: test_null_mold
 subroutine test_null_mold()
-! CHECK: %[[VAL_13:.*]] = constant 0 : index
+! CHECK: %[[VAL_13:.*]] = arith.constant 0 : index
 ! CHECK: %[[VAL_14:.*]] = fir.alloca !fir.box<!fir.ptr<!fir.array<?x?xf32>>>
 ! CHECK: %[[VAL_15:.*]] = fir.zero_bits !fir.ptr<!fir.array<?x?xf32>>
 ! CHECK: %[[VAL_16:.*]] = fir.shape %[[VAL_13]], %[[VAL_13]] : (index, index) -> !fir.shape<2>

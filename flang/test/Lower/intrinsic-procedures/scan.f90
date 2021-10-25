@@ -14,7 +14,7 @@ integer function scan_test(s1, s2)
 ! CHECK-DAG: %[[cBoxNone2:.*]] = fir.convert %[[cBox2]] : (!fir.box<!fir.char<1,?>>) -> !fir.box<none>
 ! CHECK-DAG: %[[backOptBox:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG: %[[backBox:.*]] = fir.convert %[[backOptBox]] : (!fir.box<i1>) -> !fir.box<none>
-! CHECK-DAG: %[[kindConstant:.*]] = constant 4 : i32
+! CHECK-DAG: %[[kindConstant:.*]] = arith.constant 4 : i32
 ! CHECK-DAG: %[[resBox:.*]] = fir.convert %[[tmpBox:.*]] : (!fir.ref<!fir.box<!fir.heap<i32>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK: fir.call @{{.*}}Scan(%[[resBox]], %[[cBoxNone]], %[[cBoxNone2]], %[[backBox]], %[[kindConstant]], {{.*}}) : (!fir.ref<!fir.box<none>>, !fir.box<none>, !fir.box<none>, !fir.box<none>, i32, !fir.ref<i8>, i32) -> none
   scan_test = scan(s1, s2, kind=4)

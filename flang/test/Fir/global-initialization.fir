@@ -1,7 +1,7 @@
 // RUN: tco --fir-to-llvm-ir %s | FileCheck %s
 
 fir.global internal @_QEmask : !fir.array<32xi32> {
-  %c0_i32 = constant 1 : i32
+  %c0_i32 = arith.constant 1 : i32
   %0 = fir.undefined !fir.array<32xi32>
   %2 = fir.insert_on_range %0, %c0_i32, [0 : index, 31 : index] : (!fir.array<32xi32>, i32) -> !fir.array<32xi32>
   fir.has_value %2 : !fir.array<32xi32>
@@ -15,7 +15,7 @@ fir.global internal @_QEmask : !fir.array<32xi32> {
 // CHECK: }
 
 fir.global internal @_QEmultiarray : !fir.array<32x32xi32> {
-  %c0_i32 = constant 1 : i32
+  %c0_i32 = arith.constant 1 : i32
   %0 = fir.undefined !fir.array<32x32xi32>
   %2 = fir.insert_on_range %0, %c0_i32, [0 : index, 31 : index, 0 : index, 31 : index] : (!fir.array<32x32xi32>, i32) -> !fir.array<32x32xi32>
   fir.has_value %2 : !fir.array<32x32xi32>
@@ -29,7 +29,7 @@ fir.global internal @_QEmultiarray : !fir.array<32x32xi32> {
 // CHECK: }
 
 fir.global internal @_QEmasklogical : !fir.array<32768x!fir.logical<4>> {
-  %true = constant true
+  %true = arith.constant true
   %0 = fir.undefined !fir.array<32768x!fir.logical<4>>
   %1 = fir.convert %true : (i1) -> !fir.logical<4>
   %2 = fir.insert_on_range %0, %1, [0 : index, 32767 : index] : (!fir.array<32768x!fir.logical<4>>, !fir.logical<4>) -> !fir.array<32768x!fir.logical<4>>
@@ -45,8 +45,8 @@ fir.global internal @_QEmasklogical : !fir.array<32768x!fir.logical<4>> {
 // CHECK: }
 
 fir.global internal @_QElookforme : !fir.type<_QTt{i:!fir.array<500xi32>,j:!fir.array<500xi32>}> {
-  %c2_i32 = constant 2 : i32
-  %c52_i32 = constant 52 : i32
+  %c2_i32 = arith.constant 2 : i32
+  %c52_i32 = arith.constant 52 : i32
   %0 = fir.undefined !fir.type<_QTt{i:!fir.array<500xi32>,j:!fir.array<500xi32>}>
   %1 = fir.undefined !fir.array<500xi32>
   %2 = fir.insert_on_range %1, %c2_i32, [0 : index, 499 : index] : (!fir.array<500xi32>, i32) -> !fir.array<500xi32>

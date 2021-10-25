@@ -9,7 +9,7 @@ real function test_stmt_0(x)
   func(arg) = arg + 0.123456
 
   ! CHECK-DAG: %[[x:.*]] = fir.load %arg0
-  ! CHECK-DAG: %[[cst:.*]] = constant 1.234560e-01
+  ! CHECK-DAG: %[[cst:.*]] = arith.constant 1.234560e-01
   ! CHECK: %[[eval:.*]] = addf %[[x]], %[[cst]]
   ! CHECK: fir.store %[[eval]] to %[[resmem:.*]] : !fir.ref<f32>
   test_stmt_0 = func(x)
@@ -47,7 +47,7 @@ real function test_stmt_1(x, a)
 
   b = 5
 
-  ! CHECK-DAG: %[[cst_8:.*]] = constant 8.000000e+00
+  ! CHECK-DAG: %[[cst_8:.*]] = arith.constant 8.000000e+00
   ! CHECK-DAG: fir.store %[[cst_8]] to %[[tmp1:.*]] : !fir.ref<f32>
   ! CHECK-DAG: %[[foocall1:.*]] = fir.call @_QPfoo(%[[tmp1]])
   ! CHECK-DAG: %[[aload1:.*]] = fir.load %arg1
@@ -91,7 +91,7 @@ integer function test_stmt_character(c, j)
    integer :: i, j, func, argj
    character(10) :: c, argc
    ! CHECK-DAG: %[[unboxed:.*]]:2 = fir.unboxchar %arg0 :
-   ! CHECK-DAG: %[[c10:.*]] = constant 10 :
+   ! CHECK-DAG: %[[c10:.*]] = arith.constant 10 :
    ! CHECK: %[[c:.*]] = fir.emboxchar %[[unboxed]]#0, %[[c10]] 
 
    func(argc, argj) = len_trim(argc, 4) + argj

@@ -157,24 +157,24 @@ end subroutine
 ! CHECK-LABEL: func @_QPtest_char(
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.box<!fir.array<?x!fir.char<1,10>>>) {
 subroutine test_char(x)
-  ! CHECK: %[[VAL_1:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_2:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_1:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_2:.*]] = arith.constant 0 : index
   ! CHECK: %[[VAL_3:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_2]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>, index) -> (index, index, index)
   ! CHECK: %[[VAL_4:.*]] = fir.allocmem !fir.array<?x!fir.char<1,10>>, %[[VAL_3]]#1 {uniq_name = ".copyinout"}
   ! CHECK: %[[VAL_5:.*]] = fir.shape %[[VAL_3]]#1 : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_6:.*]] = fir.array_load %[[VAL_4]](%[[VAL_5]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
   ! CHECK: %[[VAL_7:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK: %[[VAL_8:.*]] = constant 1 : index
-  ! CHECK: %[[VAL_9:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_8:.*]] = arith.constant 1 : index
+  ! CHECK: %[[VAL_9:.*]] = arith.constant 0 : index
   ! CHECK: %[[VAL_10:.*]] = subi %[[VAL_3]]#1, %[[VAL_8]] : index
   ! CHECK: %[[VAL_11:.*]] = fir.do_loop %[[VAL_12:.*]] = %[[VAL_9]] to %[[VAL_10]] step %[[VAL_8]] unordered iter_args(%[[VAL_13:.*]] = %[[VAL_6]]) -> (!fir.array<?x!fir.char<1,10>>) {
   ! CHECK: %[[VAL_14:.*]] = fir.array_access %[[VAL_7]], %[[VAL_12]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
   ! CHECK: %[[VAL_15:.*]] = fir.array_access %[[VAL_13]], %[[VAL_12]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK: %[[VAL_16:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_17:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_16:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_17:.*]] = arith.constant 1 : i64
   ! CHECK: %[[VAL_18:.*]] = fir.convert %[[VAL_16]] : (index) -> i64
   ! CHECK: %[[VAL_19:.*]] = muli %[[VAL_17]], %[[VAL_18]] : i64
-  ! CHECK: %[[VAL_20:.*]] = constant false
+  ! CHECK: %[[VAL_20:.*]] = arith.constant false
   ! CHECK: %[[VAL_21:.*]] = fir.convert %[[VAL_15]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_22:.*]] = fir.convert %[[VAL_14]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_21]], %[[VAL_22]], %[[VAL_19]], %[[VAL_20]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
@@ -186,21 +186,21 @@ subroutine test_char(x)
   ! CHECK: %[[VAL_26:.*]] = fir.emboxchar %[[VAL_25]], %[[VAL_1]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
   ! CHECK: fir.call @_QPbar_char(%[[VAL_26]]) : (!fir.boxchar<1>) -> ()
   ! CHECK: %[[VAL_27:.*]] = fir.array_load %[[VAL_0]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK: %[[VAL_28:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_28:.*]] = arith.constant 0 : index
   ! CHECK: %[[VAL_29:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_28]] : (!fir.box<!fir.array<?x!fir.char<1,10>>>, index) -> (index, index, index)
   ! CHECK: %[[VAL_30:.*]] = fir.shape %[[VAL_3]]#1 : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_31:.*]] = fir.array_load %[[VAL_4]](%[[VAL_30]]) : (!fir.heap<!fir.array<?x!fir.char<1,10>>>, !fir.shape<1>) -> !fir.array<?x!fir.char<1,10>>
-  ! CHECK: %[[VAL_32:.*]] = constant 1 : index
-  ! CHECK: %[[VAL_33:.*]] = constant 0 : index
+  ! CHECK: %[[VAL_32:.*]] = arith.constant 1 : index
+  ! CHECK: %[[VAL_33:.*]] = arith.constant 0 : index
   ! CHECK: %[[VAL_34:.*]] = subi %[[VAL_29]]#1, %[[VAL_32]] : index
   ! CHECK: %[[VAL_35:.*]] = fir.do_loop %[[VAL_36:.*]] = %[[VAL_33]] to %[[VAL_34]] step %[[VAL_32]] unordered iter_args(%[[VAL_37:.*]] = %[[VAL_27]]) -> (!fir.array<?x!fir.char<1,10>>) {
   ! CHECK: %[[VAL_38:.*]] = fir.array_access %[[VAL_31]], %[[VAL_36]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
   ! CHECK: %[[VAL_39:.*]] = fir.array_access %[[VAL_37]], %[[VAL_36]] : (!fir.array<?x!fir.char<1,10>>, index) -> !fir.ref<!fir.char<1,10>>
-  ! CHECK: %[[VAL_40:.*]] = constant 10 : index
-  ! CHECK: %[[VAL_41:.*]] = constant 1 : i64
+  ! CHECK: %[[VAL_40:.*]] = arith.constant 10 : index
+  ! CHECK: %[[VAL_41:.*]] = arith.constant 1 : i64
   ! CHECK: %[[VAL_42:.*]] = fir.convert %[[VAL_40]] : (index) -> i64
   ! CHECK: %[[VAL_43:.*]] = muli %[[VAL_41]], %[[VAL_42]] : i64
-  ! CHECK: %[[VAL_44:.*]] = constant false
+  ! CHECK: %[[VAL_44:.*]] = arith.constant false
   ! CHECK: %[[VAL_45:.*]] = fir.convert %[[VAL_39]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_46:.*]] = fir.convert %[[VAL_38]] : (!fir.ref<!fir.char<1,10>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[VAL_45]], %[[VAL_46]], %[[VAL_43]], %[[VAL_44]]) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()

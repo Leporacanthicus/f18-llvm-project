@@ -94,7 +94,7 @@ END FUNCTION real16
 REAL(16) FUNCTION real16b(x0, x1)
   REAL(16) :: x0
   REAL(16) :: x1
-  ! CHECK-DAG: %[[v0:.+]] = constant 4.0{{.*}} : f128
+  ! CHECK-DAG: %[[v0:.+]] = arith.constant 4.0{{.*}} : f128
   ! CHECK-DAG: %[[v1:.+]] = fir.load %arg0 : !fir.ref<f128>
   ! CHECK-DAG: %[[v2:.+]] = fir.load %arg1 : !fir.ref<f128>
   ! CHECK: %[[v3:.+]] = addf %[[v1]], %[[v2]] : f128

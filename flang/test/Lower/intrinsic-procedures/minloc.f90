@@ -6,7 +6,7 @@
 subroutine minloc_test(arr,res)
   integer :: arr(:)
   integer :: res(:)
-! CHECK-DAG: %[[c4:.*]] = constant 4 : index
+! CHECK-DAG: %[[c4:.*]] = arith.constant 4 : index
 ! CHECK-DAG: %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK-DAG: %[[a1:.*]] = fir.absent !fir.box<i1>
 ! CHECK-DAG: %[[a6:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
@@ -26,7 +26,7 @@ subroutine minloc_test2(arr,res,d)
   integer :: arr(:)
   integer :: res(:)
   integer :: d
-! CHECK-DAG:  %[[c4:.*]] = constant 4 : index
+! CHECK-DAG:  %[[c4:.*]] = arith.constant 4 : index
 ! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<i32>>
 ! CHECK-DAG:  %[[a1:.*]] = fir.load %arg2 : !fir.ref<i32>
 ! CHECK-DAG:  %[[a2:.*]] = fir.absent !fir.box<i1>

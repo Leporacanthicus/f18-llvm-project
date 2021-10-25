@@ -7,7 +7,7 @@
 subroutine dim_testr(x, y, z)
 ! CHECK: %[[VAL_3:.*]] = fir.load %[[VAL_0]] : !fir.ref<f32>
 ! CHECK: %[[VAL_4:.*]] = fir.load %[[VAL_1]] : !fir.ref<f32>
-! CHECK: %[[VAL_5:.*]] = constant 0.000000e+00 : f32
+! CHECK: %[[VAL_5:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK: %[[VAL_6:.*]] = subf %[[VAL_3]], %[[VAL_4]] : f32
 ! CHECK: %[[VAL_7:.*]] = cmpf ogt, %[[VAL_6]], %[[VAL_5]] : f32
 ! CHECK: %[[VAL_8:.*]] = select %[[VAL_7]], %[[VAL_6]], %[[VAL_5]] : f32
@@ -24,7 +24,7 @@ end subroutine
 subroutine dim_testi(i, j, k)
 ! CHECK: %[[VAL_3:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
 ! CHECK: %[[VAL_4:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
-! CHECK: %[[VAL_5:.*]] = constant 0 : i32
+! CHECK: %[[VAL_5:.*]] = arith.constant 0 : i32
 ! CHECK: %[[VAL_6:.*]] = subi %[[VAL_3]], %[[VAL_4]] : i32
 ! CHECK: %[[VAL_7:.*]] = cmpi sgt, %[[VAL_6]], %[[VAL_5]] : i32
 ! CHECK: %[[VAL_8:.*]] = select %[[VAL_7]], %[[VAL_6]], %[[VAL_5]] : i32

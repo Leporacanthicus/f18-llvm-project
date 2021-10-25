@@ -9,7 +9,7 @@ func @x() -> !fir.char<1,3> {
 
 // CHECK-LABEL: define x86_fp80 @y()
 func @y() -> !fir.real<10> {
- %c1 = constant 42.4 :f32
+ %c1 = arith.constant 42.4 :f32
  %0 = fir.convert %c1 : (f32) -> !fir.real<10>
   // CHECK: ret x86_fp80 0xK4004A9999A0000000000
   // TODO: What's that number?
@@ -18,7 +18,7 @@ func @y() -> !fir.real<10> {
 
 // CHECK-LABEL: define i16 @z()
 func @z() -> !fir.logical<2> {
-  %1 = constant true
+  %1 = arith.constant true
   %0 = fir.convert %1 : (i1) -> !fir.logical<2>
  // CHECK-LABEL: ret i16 -1
  // TODO: Why is it -1?

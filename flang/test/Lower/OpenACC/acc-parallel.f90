@@ -39,7 +39,7 @@ subroutine acc_parallel
   !$acc parallel async(1)
   !$acc end parallel
 
-!CHECK:      [[ASYNC1:%.*]] = constant 1 : i32
+!CHECK:      [[ASYNC1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel async([[ASYNC1]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -62,7 +62,7 @@ subroutine acc_parallel
   !$acc parallel wait(1)
   !$acc end parallel
 
-!CHECK:      [[WAIT1:%.*]] = constant 1 : i32
+!CHECK:      [[WAIT1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel wait([[WAIT1]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -70,8 +70,8 @@ subroutine acc_parallel
   !$acc parallel wait(1, 2)
   !$acc end parallel
 
-!CHECK:      [[WAIT2:%.*]] = constant 1 : i32
-!CHECK:      [[WAIT3:%.*]] = constant 2 : i32
+!CHECK:      [[WAIT2:%.*]] = arith.constant 1 : i32
+!CHECK:      [[WAIT3:%.*]] = arith.constant 2 : i32
 !CHECK:      acc.parallel wait([[WAIT2]]: i32, [[WAIT3]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -88,7 +88,7 @@ subroutine acc_parallel
   !$acc parallel num_gangs(1)
   !$acc end parallel
 
-!CHECK:      [[NUMGANGS1:%.*]] = constant 1 : i32
+!CHECK:      [[NUMGANGS1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel num_gangs([[NUMGANGS1]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -104,7 +104,7 @@ subroutine acc_parallel
   !$acc parallel num_workers(10)
   !$acc end parallel
 
-!CHECK:      [[NUMWORKERS1:%.*]] = constant 10 : i32
+!CHECK:      [[NUMWORKERS1:%.*]] = arith.constant 10 : i32
 !CHECK:      acc.parallel num_workers([[NUMWORKERS1]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -120,7 +120,7 @@ subroutine acc_parallel
   !$acc parallel vector_length(128)
   !$acc end parallel
 
-!CHECK:      [[VECTORLENGTH1:%.*]] = constant 128 : i32
+!CHECK:      [[VECTORLENGTH1:%.*]] = arith.constant 128 : i32
 !CHECK:      acc.parallel vector_length([[VECTORLENGTH1]]: i32) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -136,7 +136,7 @@ subroutine acc_parallel
   !$acc parallel if(.TRUE.)
   !$acc end parallel
 
-!CHECK:      [[IF1:%.*]] = constant true
+!CHECK:      [[IF1:%.*]] = arith.constant true
 !CHECK:      acc.parallel if([[IF1]]) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}
@@ -153,7 +153,7 @@ subroutine acc_parallel
   !$acc parallel self(.TRUE.)
   !$acc end parallel
 
-!CHECK:      [[SELF1:%.*]] = constant true
+!CHECK:      [[SELF1:%.*]] = arith.constant true
 !CHECK:      acc.parallel self([[SELF1]]) {
 !CHECK:        acc.yield
 !CHECK-NEXT: }{{$}}

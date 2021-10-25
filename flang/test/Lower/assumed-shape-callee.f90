@@ -12,9 +12,9 @@
 subroutine test_assumed_shape_1(x)
   integer, contiguous :: x(:)
   ! CHECK: %[[addr:.*]] = fir.box_addr %arg0 : (!fir.box<!fir.array<?xi32>>) -> !fir.ref<!fir.array<?xi32>>
-  ! CHECK: %[[c0:.*]] = constant 0 : index
+  ! CHECK: %[[c0:.*]] = arith.constant 0 : index
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %arg0, %[[c0]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
-  ! CHECK: %[[c1:.*]] = constant 1 : index
+  ! CHECK: %[[c1:.*]] = arith.constant 1 : index
 
   print *, x
   ! Test extent/lower bound use in the IO statement
@@ -43,13 +43,13 @@ subroutine test_assumed_shape_3(x)
   integer, contiguous :: x(2:, 3:, 42:)
   ! CHECK: fir.box_addr
   ! CHECK: fir.box_dim
-  ! CHECK: %[[c2_i64:.*]] = constant 2 : i64
+  ! CHECK: %[[c2_i64:.*]] = arith.constant 2 : i64
   ! CHECK: %[[c2:.*]] = fir.convert %[[c2_i64]] : (i64) -> index
   ! CHECK: fir.box_dim
-  ! CHECK: %[[c3_i64:.*]] = constant 3 : i64
+  ! CHECK: %[[c3_i64:.*]] = arith.constant 3 : i64
   ! CHECK: %[[c3:.*]] = fir.convert %[[c3_i64]] : (i64) -> index
   ! CHECK: fir.box_dim
-  ! CHECK: %[[c42_i64:.*]] = constant 42 : i64
+  ! CHECK: %[[c42_i64:.*]] = arith.constant 42 : i64
   ! CHECK: %[[c42:.*]] = fir.convert %[[c42_i64]] : (i64) -> index
 
   print *, x
@@ -63,7 +63,7 @@ subroutine test_assumed_shape_char(c)
   ! CHECK: %[[addr:.*]] = fir.box_addr %arg0 : (!fir.box<!fir.array<?x!fir.char<1,10>>>) -> !fir.ref<!fir.array<?x!fir.char<1,10>>>
 
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %arg0, %c0 : (!fir.box<!fir.array<?x!fir.char<1,10>>>, index) -> (index, index, index)
-  ! CHECK: %[[c1:.*]] = constant 1 : index
+  ! CHECK: %[[c1:.*]] = arith.constant 1 : index
 
   print *, c
   ! CHECK: %[[shape:.*]] = fir.shape_shift %[[c1]], %[[dims]]#1 : (index, index) -> !fir.shapeshift<1>
@@ -78,7 +78,7 @@ subroutine test_assumed_shape_char_2(c)
   ! CHECK: %[[len:.*]] = fir.box_elesize %arg0 : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
 
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %arg0, %c0 : (!fir.box<!fir.array<?x!fir.char<1,?>>>, index) -> (index, index, index)
-  ! CHECK: %[[c1:.*]] = constant 1 : index
+  ! CHECK: %[[c1:.*]] = arith.constant 1 : index
 
   print *, c
   ! CHECK: %[[shape:.*]] = fir.shape_shift %[[c1]], %[[dims]]#1 : (index, index) -> !fir.shapeshift<1>

@@ -25,7 +25,7 @@ func @foo(%a : !fir.complex<4>, %b : !fir.complex<4>, %c : !fir.complex<4>, %d :
 
 // LLVMIR-LABEL: define float @real_part(<2 x float> %0)
 func @real_part(%a : !fir.complex<4>) -> f32 {
-  %0 = constant 0 : i32
+  %0 = arith.constant 0 : i32
   // LLVMIR: extractvalue
   %1 = fir.extract_value %a, [0 : i32] : (!fir.complex<4>) -> f32
   return %1 : f32
@@ -33,7 +33,7 @@ func @real_part(%a : !fir.complex<4>) -> f32 {
 
 // LLVMIR-LABEL: define <2 x float> @conj(<2 x float> %
 func @conj(%a : !fir.complex<4>) -> !fir.complex<4> {
-  %0 = constant 1 : i32
+  %0 = arith.constant 1 : i32
   // LLVMIR: extractvalue
   %1 = fir.extract_value %a, [1 : i32] : (!fir.complex<4>) -> f32
   // LLVMIR: fneg float
@@ -63,11 +63,11 @@ func @main() -> i32 {
   %4 = fir.alloca !fir.complex<4>
 
   %5 = fir.undefined !fir.complex<4>
-  %c0 = constant 0 : i32
-  %c1 = constant 1 : i32
+  %c0 = arith.constant 0 : i32
+  %c1 = arith.constant 1 : i32
 
-  %f0 = constant 4.0 : f32
-  %f1 = constant 52.5 : f32
+  %f0 = arith.constant 4.0 : f32
+  %f1 = arith.constant 52.5 : f32
   %6 = fir.insert_value %5, %f0, [0 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   %7 = fir.insert_value %6, %f1, [1 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   fir.store %7 to %0 : !fir.ref<!fir.complex<4>>
@@ -76,20 +76,20 @@ func @main() -> i32 {
   %9 = fir.call @conj(%8) : (!fir.complex<4>) -> !fir.complex<4>
   fir.store %9 to %1 : !fir.ref<!fir.complex<4>>
 
-  %a0 = constant 95.65 : f32
-  %a1 = constant 234.1 : f32
+  %a0 = arith.constant 95.65 : f32
+  %a1 = arith.constant 234.1 : f32
   %a2 = fir.insert_value %5, %a0, [0 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   %a3 = fir.insert_value %a2, %a1, [1 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   fir.store %a3 to %2 : !fir.ref<!fir.complex<4>>
 
-  %b0 = constant 33.0 : f32
-  %b1 = constant 87.69 : f32
+  %b0 = arith.constant 33.0 : f32
+  %b1 = arith.constant 87.69 : f32
   %b2 = fir.insert_value %5, %b0, [0 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   %b3 = fir.insert_value %b2, %b1, [1 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   fir.store %b3 to %3 : !fir.ref<!fir.complex<4>>
 
-  %d0 = constant 791.0 : f32
-  %d1 = constant 3.5923 : f32
+  %d0 = arith.constant 791.0 : f32
+  %d1 = arith.constant 3.5923 : f32
   %d2 = fir.insert_value %5, %d0, [0 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   %d3 = fir.insert_value %d2, %d1, [1 : i32] : (!fir.complex<4>, f32) -> !fir.complex<4>
   fir.store %d3 to %4 : !fir.ref<!fir.complex<4>>

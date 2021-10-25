@@ -6,9 +6,9 @@
 #arr_len = affine_map<()[j1,k1] -> (k1 - j1 + 1)>
 
 func @loop_with_load_and_store(%a1: !arr_d1, %a2: !arr_d1, %a3: !arr_d1) {
-  %c1 = constant 1 : index
-  %c0 = constant 0 : index
-  %len = constant 100 : index
+  %c1 = arith.constant 1 : index
+  %c0 = arith.constant 0 : index
+  %len = arith.constant 100 : index
   %dims = fir.shape %len : (index) -> !fir.shape<1>
   %siz = affine.apply #arr_len()[%c1,%len]
   %t1 = fir.alloca !fir.array<?xf32>, %siz
@@ -47,8 +47,8 @@ func @loop_with_load_and_store(%a1: !arr_d1, %a2: !arr_d1, %a3: !arr_d1) {
 }
 
 // CHECK:  func @loop_with_load_and_store(%[[VAL_0:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_1:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_2:.*]]: !fir.ref<!fir.array<?xf32>>) {
-// CHECK:    %[[VAL_3:.*]] = constant 1 : index
-// CHECK:    %[[VAL_4:.*]] = constant 100 : index
+// CHECK:    %[[VAL_3:.*]] = arith.constant 1 : index
+// CHECK:    %[[VAL_4:.*]] = arith.constant 100 : index
 // CHECK:    %[[VAL_5:.*]] = fir.shape %[[VAL_4]] : (index) -> !fir.shape<1>
 // CHECK:    %[[VAL_6:.*]] = affine.apply #map0(){{\[}}%[[VAL_3]], %[[VAL_4]]]
 // CHECK:    %[[VAL_7:.*]] = fir.alloca !fir.array<?xf32>, %[[VAL_6]]
@@ -79,10 +79,10 @@ func @loop_with_load_and_store(%a1: !arr_d1, %a2: !arr_d1, %a3: !arr_d1) {
 #arr_len = affine_map<()[j1,k1] -> (k1 - j1 + 1)>
 
 func @loop_with_if(%a: !arr_d1, %v: f32) {
-  %c0 = constant 0 : index
-  %c1 = constant 1 : index
-  %c2 = constant 2 : index
-  %len = constant 100 : index
+  %c0 = arith.constant 0 : index
+  %c1 = arith.constant 1 : index
+  %c2 = arith.constant 2 : index
+  %len = arith.constant 100 : index
   %dims = fir.shape %len : (index) -> !fir.shape<1>
 
   fir.do_loop %i = %c1 to %len step %c1 {
@@ -108,10 +108,10 @@ func @loop_with_if(%a: !arr_d1, %v: f32) {
 }
 
 // CHECK: func @loop_with_if(%[[VAL_0:.*]]: !fir.ref<!fir.array<?xf32>>, %[[VAL_1:.*]]: f32) {
-// CHECK:   %[[VAL_2:.*]] = constant 0 : index
-// CHECK:   %[[VAL_3:.*]] = constant 1 : index
-// CHECK:   %[[VAL_4:.*]] = constant 2 : index
-// CHECK:   %[[VAL_5:.*]] = constant 100 : index
+// CHECK:   %[[VAL_2:.*]] = arith.constant 0 : index
+// CHECK:   %[[VAL_3:.*]] = arith.constant 1 : index
+// CHECK:   %[[VAL_4:.*]] = arith.constant 2 : index
+// CHECK:   %[[VAL_5:.*]] = arith.constant 100 : index
 // CHECK:   %[[VAL_6:.*]] = fir.shape %[[VAL_5]] : (index) -> !fir.shape<1>
 // CHECK:   %[[VAL_7:.*]] = fir.convert %[[VAL_0]] : (!fir.ref<!fir.array<?xf32>>) -> memref<?xf32>
 // CHECK:   affine.for %[[VAL_8:.*]] = %[[VAL_3]] to #map0(){{\[}}%[[VAL_5]]] {

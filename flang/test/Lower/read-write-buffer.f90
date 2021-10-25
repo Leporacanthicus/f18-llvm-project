@@ -4,8 +4,8 @@
 ! Format (Fortran 2018 12.6.2.2 point 3)
 ! CHECK-LABEL: func @_QPtest_array_format
 subroutine test_array_format
-  ! CHECK-DAG: %[[c2:.*]] = constant 2 : index
-  ! CHECK-DAG: %[[c10:.*]] = constant 10 : index
+  ! CHECK-DAG: %[[c2:.*]] = arith.constant 2 : index
+  ! CHECK-DAG: %[[c10:.*]] = arith.constant 10 : index
   ! CHECK-DAG: %[[mem:.*]] = fir.alloca !fir.array<2x!fir.char<1,10>>
   character(10) :: array(2)
   array(1) ="(15HThis i"

@@ -10,9 +10,9 @@ function mvbits_test(from, frompos, len, to, topos)
   ! CHECK-DAG: %[[topos:.*]] = fir.load %arg4 : !fir.ref<i32>
   integer :: from, frompos, len, to, topos
   integer :: mvbits_test
-  ! CHECK: %[[VAL_11:.*]] = constant 0 : i32
-  ! CHECK: %[[VAL_12:.*]] = constant -1 : i32
-  ! CHECK: %[[VAL_13:.*]] = constant 32 : i32
+  ! CHECK: %[[VAL_11:.*]] = arith.constant 0 : i32
+  ! CHECK: %[[VAL_12:.*]] = arith.constant -1 : i32
+  ! CHECK: %[[VAL_13:.*]] = arith.constant 32 : i32
   ! CHECK: %[[VAL_14:.*]] = subi %[[VAL_13]], %[[len]] : i32
   ! CHECK: %[[VAL_15:.*]] = shift_right_unsigned %[[VAL_12]], %[[VAL_14]] : i32
   ! CHECK: %[[VAL_16:.*]] = shift_left %[[VAL_15]], %[[topos]] : i32
@@ -47,20 +47,20 @@ subroutine mvbits_array_test(from, frompos, len, to, topos)
   ! CHECK:         %[[VAL_6:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
   ! CHECK:         %[[VAL_7:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
   ! CHECK:         %[[VAL_8:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
-  ! CHECK:         %[[VAL_9:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_9:.*]] = arith.constant 0 : index
   ! CHECK:         %[[VAL_10:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_9]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
-  ! CHECK:         %[[VAL_11:.*]] = constant 1 : index
-  ! CHECK:         %[[VAL_12:.*]] = constant 0 : index
+  ! CHECK:         %[[VAL_11:.*]] = arith.constant 1 : index
+  ! CHECK:         %[[VAL_12:.*]] = arith.constant 0 : index
   ! CHECK:         %[[VAL_13:.*]] = subi %[[VAL_10]]#1, %[[VAL_11]] : index
   ! CHECK:         fir.do_loop %[[VAL_14:.*]] = %[[VAL_12]] to %[[VAL_13]] step %[[VAL_11]] {
   ! CHECK:           %[[VAL_15:.*]] = fir.array_fetch %[[VAL_5]], %[[VAL_14]] : (!fir.array<?xi32>, index) -> i32
-  ! CHECK:           %[[VAL_16:.*]] = constant 1 : index
+  ! CHECK:           %[[VAL_16:.*]] = arith.constant 1 : index
   ! CHECK:           %[[VAL_17:.*]] = addi %[[VAL_14]], %[[VAL_16]] : index
   ! CHECK:           %[[VAL_18:.*]] = fir.array_coor %[[VAL_3]] %[[VAL_17]] : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
   ! CHECK:           %[[VAL_19:.*]] = fir.load %[[VAL_18]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_20:.*]] = constant 0 : i32
-  ! CHECK:           %[[VAL_21:.*]] = constant -1 : i32
-  ! CHECK:           %[[VAL_22:.*]] = constant 32 : i32
+  ! CHECK:           %[[VAL_20:.*]] = arith.constant 0 : i32
+  ! CHECK:           %[[VAL_21:.*]] = arith.constant -1 : i32
+  ! CHECK:           %[[VAL_22:.*]] = arith.constant 32 : i32
   ! CHECK:           %[[VAL_23:.*]] = subi %[[VAL_22]], %[[VAL_7]] : i32
   ! CHECK:           %[[VAL_24:.*]] = shift_right_unsigned %[[VAL_21]], %[[VAL_23]] : i32
   ! CHECK:           %[[VAL_25:.*]] = shift_left %[[VAL_24]], %[[VAL_8]] : i32

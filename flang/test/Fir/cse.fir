@@ -56,7 +56,7 @@ func @foo(%arg0: !fir.ref<f32>) -> f32 {
   %0 = fir.alloca f32 {name = "x"}
   %1 = fir.load %arg0 : !fir.ref<f32>
   fir.store %1 to %0 : !fir.ref<f32>
-  %cst = constant 0.000000e+00 : f32
+  %cst = arith.constant 0.000000e+00 : f32
   // CHECK: load float, float* %[[var]],
   %2 = fir.load %0 : !fir.ref<f32>
   %3 = cmpf olt, %2, %cst : f32
@@ -66,7 +66,7 @@ func @foo(%arg0: !fir.ref<f32>) -> f32 {
     %8 = negf %7 : f32
     fir.store %8 to %0 : !fir.ref<f32>
   }
-  %cst_0 = constant 1.000000e+00 : f32
+  %cst_0 = arith.constant 1.000000e+00 : f32
   // CHECK: load float, float* %[[var]]
   %4 = fir.load %0 : !fir.ref<f32>
   %5 = addf %4, %cst_0 : f32

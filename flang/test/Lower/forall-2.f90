@@ -70,25 +70,25 @@ end subroutine forall_pointer_assign
 ! CHECK-LABEL: func @_QPslice_with_explicit_iters() {
 subroutine slice_with_explicit_iters
   ! CHECK:         %[[VAL_0:.*]] = fir.alloca i32 {adapt.valuebyref, bindc_name = "i"}
-  ! CHECK:         %[[VAL_1:.*]] = constant 10 : index
-  ! CHECK:         %[[VAL_2:.*]] = constant 10 : index
+  ! CHECK:         %[[VAL_1:.*]] = arith.constant 10 : index
+  ! CHECK:         %[[VAL_2:.*]] = arith.constant 10 : index
   ! CHECK:         %[[VAL_3:.*]] = fir.alloca !fir.array<10x10xi32> {bindc_name = "a", uniq_name = "_QFslice_with_explicit_itersEa"}
-  ! CHECK:         %[[VAL_4:.*]] = constant 1 : i32
+  ! CHECK:         %[[VAL_4:.*]] = arith.constant 1 : i32
   ! CHECK:         %[[VAL_5:.*]] = fir.convert %[[VAL_4]] : (i32) -> index
-  ! CHECK:         %[[VAL_6:.*]] = constant 5 : i32
+  ! CHECK:         %[[VAL_6:.*]] = arith.constant 5 : i32
   ! CHECK:         %[[VAL_7:.*]] = fir.convert %[[VAL_6]] : (i32) -> index
-  ! CHECK:         %[[VAL_8:.*]] = constant 1 : index
+  ! CHECK:         %[[VAL_8:.*]] = arith.constant 1 : index
   ! CHECK:         %[[VAL_9:.*]] = fir.shape %[[VAL_1]], %[[VAL_2]] : (index, index) -> !fir.shape<2>
   ! CHECK:         %[[VAL_10:.*]] = fir.array_load %[[VAL_3]](%[[VAL_9]]) : (!fir.ref<!fir.array<10x10xi32>>, !fir.shape<2>) -> !fir.array<10x10xi32>
   ! CHECK:         %[[VAL_11:.*]] = fir.do_loop %[[VAL_12:.*]] = %[[VAL_5]] to %[[VAL_7]] step %[[VAL_8]] unordered iter_args(%[[VAL_13:.*]] = %[[VAL_10]]) -> (!fir.array<10x10xi32>) {
   ! CHECK:           %[[VAL_14:.*]] = fir.convert %[[VAL_12]] : (index) -> i32
   ! CHECK:           fir.store %[[VAL_14]] to %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK:           %[[VAL_15:.*]] = constant 1 : i64
+  ! CHECK:           %[[VAL_15:.*]] = arith.constant 1 : i64
   ! CHECK:           %[[VAL_16:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
   ! CHECK:           %[[VAL_17:.*]] = fir.convert %[[VAL_16]] : (i32) -> i64
-  ! CHECK:           %[[VAL_18:.*]] = constant 1 : i64
+  ! CHECK:           %[[VAL_18:.*]] = arith.constant 1 : i64
   ! CHECK:           %[[VAL_19:.*]] = fir.convert %[[VAL_18]] : (i64) -> index
-  ! CHECK:           %[[VAL_20:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_20:.*]] = arith.constant 0 : index
   ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_15]] : (i64) -> index
   ! CHECK:           %[[VAL_22:.*]] = fir.convert %[[VAL_17]] : (i64) -> index
   ! CHECK:           %[[VAL_23:.*]] = subi %[[VAL_22]], %[[VAL_21]] : index
@@ -96,16 +96,16 @@ subroutine slice_with_explicit_iters
   ! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_19]] : index
   ! CHECK:           %[[VAL_26:.*]] = cmpi sgt, %[[VAL_25]], %[[VAL_20]] : index
   ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_20]] : index
-  ! CHECK:           %[[VAL_28:.*]] = constant 1 : index
-  ! CHECK:           %[[VAL_29:.*]] = constant 0 : index
+  ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index
+  ! CHECK:           %[[VAL_29:.*]] = arith.constant 0 : index
   ! CHECK:           %[[VAL_30:.*]] = subi %[[VAL_27]], %[[VAL_28]] : index
   ! CHECK:           %[[VAL_31:.*]] = fir.do_loop %[[VAL_32:.*]] = %[[VAL_29]] to %[[VAL_30]] step %[[VAL_28]] unordered iter_args(%[[VAL_33:.*]] = %[[VAL_13]]) -> (!fir.array<10x10xi32>) {
   ! CHECK:             %[[VAL_34:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-  ! CHECK:             %[[VAL_35:.*]] = constant 0 : i32
+  ! CHECK:             %[[VAL_35:.*]] = arith.constant 0 : i32
   ! CHECK:             %[[VAL_36:.*]] = subi %[[VAL_35]], %[[VAL_34]] : i32
-  ! CHECK:             %[[VAL_37:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_37:.*]] = arith.constant 1 : i64
   ! CHECK:             %[[VAL_38:.*]] = fir.convert %[[VAL_37]] : (i64) -> index
-  ! CHECK:             %[[VAL_39:.*]] = constant 1 : i64
+  ! CHECK:             %[[VAL_39:.*]] = arith.constant 1 : i64
   ! CHECK:             %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (i64) -> index
   ! CHECK:             %[[VAL_41:.*]] = muli %[[VAL_32]], %[[VAL_40]] : index
   ! CHECK:             %[[VAL_42:.*]] = addi %[[VAL_38]], %[[VAL_41]] : index

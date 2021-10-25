@@ -76,9 +76,9 @@ subroutine s(i,j,k,ii,jj,kk,a1,a2,a3,a4,a5,a6,a7)
 end subroutine s
 
 ! CHECK-LABEL: fir.global @_QBblock
-! CHECK: %[[VAL_1:.*]] = constant 1.000000e+00 : f32
-! CHECK: %[[VAL_2:.*]] = constant 2.400000e+00 : f32
-! CHECK: %[[VAL_3:.*]] = constant 0.000000e+00 : f32
+! CHECK: %[[VAL_1:.*]] = arith.constant 1.000000e+00 : f32
+! CHECK: %[[VAL_2:.*]] = arith.constant 2.400000e+00 : f32
+! CHECK: %[[VAL_3:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK: %[[VAL_4:.*]] = fir.undefined tuple<!fir.array<5x5xf32>>
 ! CHECK: %[[VAL_5:.*]] = fir.undefined !fir.array<5x5xf32>
 ! CHECK: %[[VAL_6:.*]] = fir.insert_on_range %[[VAL_5]], %[[VAL_1]], [0 : index, 1 : index, 0 : index, 0 : index] : (!fir.array<5x5xf32>, f32) -> !fir.array<5x5xf32>
@@ -110,25 +110,25 @@ end subroutine range
 
 ! a0 array constructor
 ! CHECK: fir.global internal @_QQro.10xi4.{{.*}} constant : !fir.array<10xi32> {
-  ! CHECK-DAG: %[[c1_i32:.*]] = constant 1 : i32
-  ! CHECK-DAG: %[[c2_i32:.*]] = constant 2 : i32
-  ! CHECK-DAG: %[[c3_i32:.*]] = constant 3 : i32
+  ! CHECK-DAG: %[[c1_i32:.*]] = arith.constant 1 : i32
+  ! CHECK-DAG: %[[c2_i32:.*]] = arith.constant 2 : i32
+  ! CHECK-DAG: %[[c3_i32:.*]] = arith.constant 3 : i32
   ! CHECK: %[[r1:.*]] = fir.insert_value %{{.*}}, %{{.*}}, [0 : index] :
   ! CHECK: %[[r2:.*]] = fir.insert_value %[[r1]], %{{.*}}, [1 : index] :
   ! CHECK: %[[r3:.*]] = fir.insert_on_range %[[r2]], %[[c3_i32]], [2 : index, 9 : index] :
 
 ! a1 array constructor
 ! CHECK: fir.global internal @_QQro.2x3xr4.{{.*}} constant : !fir.array<2x3xf32> {
-  ! CHECK-DAG: %cst = constant {{.*}} : f32
+  ! CHECK-DAG: %cst = arith.constant {{.*}} : f32
   ! CHECK: %{{.*}} = fir.insert_on_range %{{[0-9]+}}, %cst, [0 : index, 1 : index, 0 : index, 2 : index] :
 
 ! a2 array constructor
 ! CHECK: fir.global internal @_QQro.3x4xi4.{{.*}} constant : !fir.array<3x4xi32> {
-  ! CHECK-DAG: %[[c1_i32:.*]] = constant 1 : i32
-  ! CHECK-DAG: %[[c3_i32:.*]] = constant 3 : i32
-  ! CHECK-DAG: %[[c5_i32:.*]] = constant 5 : i32
-  ! CHECK-DAG: %[[c8_i32:.*]] = constant 8 : i32
-  ! CHECK-DAG: %[[c9_i32:.*]] = constant 9 : i32
+  ! CHECK-DAG: %[[c1_i32:.*]] = arith.constant 1 : i32
+  ! CHECK-DAG: %[[c3_i32:.*]] = arith.constant 3 : i32
+  ! CHECK-DAG: %[[c5_i32:.*]] = arith.constant 5 : i32
+  ! CHECK-DAG: %[[c8_i32:.*]] = arith.constant 8 : i32
+  ! CHECK-DAG: %[[c9_i32:.*]] = arith.constant 9 : i32
   ! CHECK: %[[r1:.*]] = fir.insert_value %{{.*}}, %{{.*}}, [0 : index, 0 : index] :
   ! CHECK: %[[r2:.*]] = fir.insert_on_range %[[r1]], %[[c3_i32]], [1 : index, 2 : index, 0 : index, 0 : index] :
   ! CHECK: %[[r3:.*]] = fir.insert_value %[[r2]], %{{.*}}, [0 : index, 1 : index] :
@@ -138,9 +138,9 @@ end subroutine range
 
 ! CHECK-LABEL rangeGlobal
 subroutine rangeGlobal()
-  ! CHECK-DAG: %[[c1_i32:.*]] = constant 1 : i32
-  ! CHECK-DAG: %[[c2_i32:.*]] = constant 2 : i32
-  ! CHECK-DAG: %[[c3_i32:.*]] = constant 3 : i32
+  ! CHECK-DAG: %[[c1_i32:.*]] = arith.constant 1 : i32
+  ! CHECK-DAG: %[[c2_i32:.*]] = arith.constant 2 : i32
+  ! CHECK-DAG: %[[c3_i32:.*]] = arith.constant 3 : i32
   ! CHECK: %{{.*}} = fir.insert_on_range %{{.*}}, %[[c1_i32]], [0 : index, 1 : index] :
   ! CHECK: %{{.*}} = fir.insert_on_range %{{.*}}, %[[c2_i32]], [2 : index, 3 : index] :
   ! CHECK: %{{.*}} = fir.insert_on_range %{{.*}}, %[[c3_i32]], [4 : index, 5 : index] :

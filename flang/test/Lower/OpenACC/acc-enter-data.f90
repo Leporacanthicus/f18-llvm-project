@@ -17,7 +17,7 @@ subroutine acc_enter_data
 !CHECK: acc.enter_data create([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
   !$acc enter data create(a) if(.true.)
-!CHECK: [[IF1:%.*]] = constant true
+!CHECK: [[IF1:%.*]] = arith.constant true
 !CHECK: acc.enter_data if([[IF1]]) create([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
   !$acc enter data create(a) if(ifCondition)
@@ -44,7 +44,7 @@ subroutine acc_enter_data
 !CHECK: acc.enter_data create([[A]] : !fir.ref<!fir.array<10x10xf32>>) attributes {async, wait}
 
   !$acc enter data create(a) async(1)
-!CHECK: [[ASYNC1:%.*]] = constant 1 : i32
+!CHECK: [[ASYNC1:%.*]] = arith.constant 1 : i32
 !CHECK: acc.enter_data async([[ASYNC1]] : i32) create([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc enter data create(a) async(async)
@@ -52,18 +52,18 @@ subroutine acc_enter_data
 !CHECK: acc.enter_data async([[ASYNC2]] : i32) create([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc enter data create(a) wait(1)
-!CHECK: [[WAIT1:%.*]] = constant 1 : i32
+!CHECK: [[WAIT1:%.*]] = arith.constant 1 : i32
 !CHECK: acc.enter_data wait([[WAIT1]] : i32) create([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc enter data create(a) wait(queues: 1, 2)
-!CHECK: [[WAIT2:%.*]] = constant 1 : i32
-!CHECK: [[WAIT3:%.*]] = constant 2 : i32
+!CHECK: [[WAIT2:%.*]] = arith.constant 1 : i32
+!CHECK: [[WAIT3:%.*]] = arith.constant 2 : i32
 !CHECK: acc.enter_data wait([[WAIT2]], [[WAIT3]] : i32, i32) create([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc enter data create(a) wait(devnum: 1: queues: 1, 2)
-!CHECK: [[WAIT4:%.*]] = constant 1 : i32
-!CHECK: [[WAIT5:%.*]] = constant 2 : i32
-!CHECK: [[WAIT6:%.*]] = constant 1 : i32
+!CHECK: [[WAIT4:%.*]] = arith.constant 1 : i32
+!CHECK: [[WAIT5:%.*]] = arith.constant 2 : i32
+!CHECK: [[WAIT6:%.*]] = arith.constant 1 : i32
 !CHECK: acc.enter_data wait_devnum([[WAIT6]] : i32) wait([[WAIT4]], [[WAIT5]] : i32, i32) create([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
 end subroutine acc_enter_data

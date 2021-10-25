@@ -101,7 +101,7 @@ end subroutine
 subroutine char_explicit_cst(n)
   integer :: n
   character(10), allocatable :: c
-  ! CHECK-DAG: %[[cLen:.*]] = constant 10 : index
+  ! CHECK-DAG: %[[cLen:.*]] = arith.constant 10 : index
   ! CHECK-DAG: %[[cAddrVar:.*]] = fir.alloca !fir.heap<!fir.char<1,10>> {{{.*}}uniq_name = "_QFchar_explicit_cstEc.addr"}
   ! CHECK-NOT: "_QFchar_explicit_cstEc.len"
   allocate(c)

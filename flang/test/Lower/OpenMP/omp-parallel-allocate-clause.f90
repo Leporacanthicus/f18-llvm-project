@@ -21,9 +21,9 @@ subroutine allocate_clause(arg1, arg2)
 use omp_lib
         integer :: x, y, z, a, b, c, d, e, f, g, h
 
-!FIRDialect-DAG: %[[LARGE:.*]] = constant 2 : i32
-!FIRDialect-DAG: %[[DEFAULT:.*]] = constant 1 : i32
-!FIRDialect-DAG: %[[CONSTANT:.*]] = constant 3 : i32
+!FIRDialect-DAG: %[[LARGE:.*]] = arith.constant 2 : i32
+!FIRDialect-DAG: %[[DEFAULT:.*]] = arith.constant 1 : i32
+!FIRDialect-DAG: %[[CONSTANT:.*]] = arith.constant 3 : i32
 
 !FIRDialect: omp.parallel private(%[[X]] : !fir.ref<i32>, %[[Y]] :
 !fir.ref<i32>, %[[Z]] : !fir.ref<i32>, %[[A]] : !fir.ref<i32>, %[[B]] :
@@ -43,7 +43,7 @@ use omp_lib
         print*, x, y, z
 !$OMP END PARALLEL
 
-!FIRDialect-DAG: %[[DEFAULT2:.*]] = constant 1 : i32
+!FIRDialect-DAG: %[[DEFAULT2:.*]] = arith.constant 1 : i32
 !FIRDialect: omp.parallel private(%[[E]] : !fir.ref<i32>, %[[F]] :
 !fir.ref<i32>) allocate(%[[DEFAULT2]] : i32 -> %[[E]] :
 !fir.ref<i32>, %[[DEFAULT2]] : i32 -> %[[F]] : !fir.ref<i32>) {
@@ -55,7 +55,7 @@ use omp_lib
         print*, x, y, z
 !$OMP END PARALLEL
 
-!FIRDialect-DAG: %[[LOWLAT:.*]] = constant 5 : i32
+!FIRDialect-DAG: %[[LOWLAT:.*]] = arith.constant 5 : i32
 !FIRDialect: omp.parallel private(%[[G]] : !fir.ref<i32>, %[[H]] :
 !fir.ref<i32>) allocate(%[[LOWLAT]] : i32 -> %[[G]] :
 !fir.ref<i32>, %[[LOWLAT]] : i32 -> %[[H]] : !fir.ref<i32>) {

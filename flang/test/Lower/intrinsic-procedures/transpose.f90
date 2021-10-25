@@ -8,7 +8,7 @@ subroutine transpose_test(mat)
    call bar_transpose_test(transpose(mat))
 ! CHECK:  %[[sourceBox:.*]] = fir.embox %[[source]]({{.*}}) : (!fir.ref<!fir.array<2x3xf32>>, !fir.shape<2>) -> !fir.box<!fir.array<2x3xf32>>
 ! CHECK:  %[[zeroArray:.*]] = fir.zero_bits !fir.heap<!fir.array<?x?xf32>
-! CHECK:  %[[c0:.*]] = constant 0 : index
+! CHECK:  %[[c0:.*]] = arith.constant 0 : index
 ! CHECK:  %[[shapeResult:.*]] = fir.shape %[[c0]], %[[c0]] : (index, index) -> !fir.shape<2>
 ! CHECK:  %[[resultBox:.*]] = fir.embox %[[zeroArray]](%[[shapeResult]]) : (!fir.heap<!fir.array<?x?xf32>>, !fir.shape<2>) -> !fir.box<!fir.heap<!fir.array<?x?xf32>>>
 ! CHECK:  fir.store %[[resultBox]] to %[[resultDescr]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x?xf32>>>>

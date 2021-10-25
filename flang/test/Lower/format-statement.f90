@@ -6,8 +6,8 @@ subroutine formatAssign(flag1, flag2, flag3)
     integer :: label
     logical :: flag1, flag2, flag3
 
-    ! CHECK-DAG: %[[ONE:.*]] = constant 100 : i32
-    ! CHECK-DAG: %[[TWO:.*]] = constant 200 : i32
+    ! CHECK-DAG: %[[ONE:.*]] = arith.constant 100 : i32
+    ! CHECK-DAG: %[[TWO:.*]] = arith.constant 200 : i32
     ! CHECK: %{{.*}} = select %{{.*}}, %[[ONE]], %[[TWO]] : i32
     if (flag1) then
        assign 100 to label

@@ -15,7 +15,7 @@ subroutine acc_update
 !CHECK: acc.update host([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
   !$acc update host(a) if(.true.)
-!CHECK: [[IF1:%.*]] = constant true
+!CHECK: [[IF1:%.*]] = arith.constant true
 !CHECK: acc.update if([[IF1]]) host([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
   !$acc update host(a) if(ifCondition)
@@ -39,7 +39,7 @@ subroutine acc_update
 !CHECK: acc.update host([[A]] : !fir.ref<!fir.array<10x10xf32>>) attributes {async, wait}
 
   !$acc update host(a) async(1)
-!CHECK: [[ASYNC1:%.*]] = constant 1 : i32
+!CHECK: [[ASYNC1:%.*]] = arith.constant 1 : i32
 !CHECK: acc.update async([[ASYNC1]] : i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc update host(a) async(async)
@@ -47,26 +47,26 @@ subroutine acc_update
 !CHECK: acc.update async([[ASYNC2]] : i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc update host(a) wait(1)
-!CHECK: [[WAIT1:%.*]] = constant 1 : i32
+!CHECK: [[WAIT1:%.*]] = arith.constant 1 : i32
 !CHECK: acc.update wait([[WAIT1]] : i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc update host(a) wait(queues: 1, 2)
-!CHECK: [[WAIT2:%.*]] = constant 1 : i32
-!CHECK: [[WAIT3:%.*]] = constant 2 : i32
+!CHECK: [[WAIT2:%.*]] = arith.constant 1 : i32
+!CHECK: [[WAIT3:%.*]] = arith.constant 2 : i32
 !CHECK: acc.update wait([[WAIT2]], [[WAIT3]] : i32, i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc update host(a) wait(devnum: 1: queues: 1, 2)
-!CHECK: [[WAIT4:%.*]] = constant 1 : i32
-!CHECK: [[WAIT5:%.*]] = constant 2 : i32
-!CHECK: [[WAIT6:%.*]] = constant 1 : i32
+!CHECK: [[WAIT4:%.*]] = arith.constant 1 : i32
+!CHECK: [[WAIT5:%.*]] = arith.constant 2 : i32
+!CHECK: [[WAIT6:%.*]] = arith.constant 1 : i32
 !CHECK: acc.update wait_devnum([[WAIT6]] : i32) wait([[WAIT4]], [[WAIT5]] : i32, i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>)
 
   !$acc update host(a) device_type(1, 2)
-!CHECK: [[DEVTYPE1:%.*]] = constant 1 : i32
-!CHECK: [[DEVTYPE2:%.*]] = constant 2 : i32
+!CHECK: [[DEVTYPE1:%.*]] = arith.constant 1 : i32
+!CHECK: [[DEVTYPE2:%.*]] = arith.constant 2 : i32
 !CHECK: acc.update device_type([[DEVTYPE1]], [[DEVTYPE2]] : i32, i32) host([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 
   !$acc update host(a) device_type(*)
-!CHECK: [[DEVTYPE3:%.*]] = constant -1 : index
+!CHECK: [[DEVTYPE3:%.*]] = arith.constant -1 : index
 !CHECK: acc.update device_type([[DEVTYPE3]] : index) host([[A]] : !fir.ref<!fir.array<10x10xf32>>){{$}}
 end subroutine acc_update

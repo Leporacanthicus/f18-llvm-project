@@ -16,7 +16,7 @@ subroutine acc_data
   !$acc data if(.TRUE.) copy(a)
   !$acc end data
 
-!CHECK:      [[IF1:%.*]] = constant true
+!CHECK:      [[IF1:%.*]] = arith.constant true
 !CHECK:      acc.data if([[IF1]]) copy([[A]] : !fir.ref<!fir.array<10x10xf32>>)  {
 !CHECK:        acc.terminator
 !CHECK-NEXT: }{{$}}

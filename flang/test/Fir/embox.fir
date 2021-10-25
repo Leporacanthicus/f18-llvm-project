@@ -16,10 +16,10 @@ func @_QPtest_slice() {
 // CHECK: [i64 0, i64 5, i64 8]] }, i32* %[[a3]], 0, 
 // CHECK:  store { i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] } %[[a4]], { i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[a1]], align 8
 // CHECK:  call void @_QPtest_callee({ i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[a1]]), 
-  %c20 = constant 20 : index
-  %c1_i64 = constant 1 : i64
-  %c10_i64 = constant 10 : i64
-  %c2_i64 = constant 2 : i64
+  %c20 = arith.constant 20 : index
+  %c1_i64 = arith.constant 1 : i64
+  %c10_i64 = arith.constant 10 : i64
+  %c2_i64 = arith.constant 2 : i64
   %0 = fir.alloca !fir.array<20xi32> {bindc_name = "x", uniq_name = "_QFtest_sliceEx"}
   %1 = fir.shape %c20 : (index) -> !fir.shape<1>
   %2 = fir.slice %c1_i64, %c10_i64, %c2_i64 : (i64, i64, i64) -> !fir.slice<1>
@@ -43,10 +43,10 @@ func @_QPtest_dt_slice() {
 // CHECK: [i64 0, i64 5, i64 mul (i64 ptrtoint (i32* getelementptr (i32, i32* null, i32 1) to i64), i64 4)]] }, i32* %[[a4]], 0, 
 // CHECK: store { i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] } %[[a5]], { i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[a1]], align 8,
 // CHECK:  call void @_QPtest_dt_callee({ i32*, i64, i32, i8, i8, i8, i8, [1 x [3 x i64]] }* %[[a1]]),
-  %c20 = constant 20 : index
-  %c1_i64 = constant 1 : i64
-  %c10_i64 = constant 10 : i64
-  %c2_i64 = constant 2 : i64
+  %c20 = arith.constant 20 : index
+  %c1_i64 = arith.constant 1 : i64
+  %c10_i64 = arith.constant 10 : i64
+  %c2_i64 = arith.constant 2 : i64
   %0 = fir.alloca i32 {bindc_name = "v", uniq_name = "_QFtest_dt_sliceEv"}
   %1 = fir.alloca !fir.array<20x!fir.type<_QFtest_dt_sliceTt{i:i32,j:i32}>> {bindc_name = "x", uniq_name = "_QFtest_dt_sliceEx"}
   %2 = fir.field_index i, !fir.type<_QFtest_dt_sliceTt{i:i32,j:i32}>

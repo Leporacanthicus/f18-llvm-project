@@ -18,7 +18,7 @@ subroutine test_passing_char_array
   character(len=3) :: x(4)
   call sub_taking_a_char_array(x)
   ! CHECK-DAG: %[[xarray:.*]] = fir.alloca !fir.array<4x!fir.char<1,3>>
-  ! CHECK-DAG: %[[c3:.*]] = constant 3 : index
+  ! CHECK-DAG: %[[c3:.*]] = arith.constant 3 : index
   ! CHECK-DAG: %[[xbuff:.*]] = fir.convert %[[xarray]] : (!fir.ref<!fir.array<4x!fir.char<1,3>>>) -> !fir.ref<!fir.char<1,?>>
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[xbuff]], %[[c3]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
   ! CHECK: fir.call @_QPsub_taking_a_char_array(%[[boxchar]]) : (!fir.boxchar<1>) -> () 

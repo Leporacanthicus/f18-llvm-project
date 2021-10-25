@@ -24,9 +24,9 @@ program wsloop_dynamic
 !LLVMIR: omp_parallel:                                     ; preds = %0
 !LLVMIR:   @__kmpc_fork_call
 !$OMP DO SCHEDULE(dynamic)
-!FIRDialect:     %[[WS_LB:.*]] = constant 1 : i32
-!FIRDialect:     %[[WS_UB:.*]] = constant 9 : i32
-!FIRDialect:     %[[WS_STEP:.*]] = constant 1 : i32
+!FIRDialect:     %[[WS_LB:.*]] = arith.constant 1 : i32
+!FIRDialect:     %[[WS_UB:.*]] = arith.constant 9 : i32
+!FIRDialect:     %[[WS_STEP:.*]] = arith.constant 1 : i32
 !FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(dynamic, none) nowait inclusive
 
 !LLVMIRDialect-DAG:  %[[WS_UB:.*]] = llvm.mlir.constant(9 : i32) : i32

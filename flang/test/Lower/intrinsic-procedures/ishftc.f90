@@ -6,10 +6,10 @@ function ishftc_test(i, j, k)
   ! CHECK-DAG: %[[i:.*]] = fir.load %arg0 : !fir.ref<i32>
   ! CHECK-DAG: %[[j:.*]] = fir.load %arg1 : !fir.ref<i32>
   ! CHECK-DAG: %[[k:.*]] = fir.load %arg2 : !fir.ref<i32>
-  ! CHECK-DAG: %[[VAL_7:.*]] = constant 32 : i32
-  ! CHECK-DAG: %[[VAL_8:.*]] = constant 0 : i32
-  ! CHECK-DAG: %[[VAL_9:.*]] = constant -1 : i32
-  ! CHECK-DAG: %[[VAL_10:.*]] = constant 31 : i32
+  ! CHECK-DAG: %[[VAL_7:.*]] = arith.constant 32 : i32
+  ! CHECK-DAG: %[[VAL_8:.*]] = arith.constant 0 : i32
+  ! CHECK-DAG: %[[VAL_9:.*]] = arith.constant -1 : i32
+  ! CHECK-DAG: %[[VAL_10:.*]] = arith.constant 31 : i32
   ! CHECK: %[[VAL_11:.*]] = shift_right_signed %[[j]], %[[VAL_10]] : i32
   ! CHECK: %[[VAL_12:.*]] = xor %[[j]], %[[VAL_11]] : i32
   ! CHECK: %[[VAL_13:.*]] = subi %[[VAL_12]], %[[VAL_11]] : i32

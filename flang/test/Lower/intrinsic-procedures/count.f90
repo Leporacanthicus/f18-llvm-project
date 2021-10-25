@@ -5,7 +5,7 @@
 subroutine count_test1(rslt, mask)
   integer :: rslt
   logical :: mask(:)
-! CHECK-DAG:  %[[c1:.*]] = constant 0 : index
+! CHECK-DAG:  %[[c1:.*]] = arith.constant 0 : index
 ! CHECK-DAG:  %[[a2:.*]] = fir.convert %[[arg1]] : (!fir.box<!fir.array<?x!fir.logical<4>>>) -> !fir.box<none>
 ! CHECK:  %[[a4:.*]] = fir.convert %[[c1]] : (index) -> i32
   rslt = count(mask)
@@ -17,8 +17,8 @@ end subroutine
 subroutine test_count2(rslt, mask)
   integer :: rslt(:)
   logical :: mask(:,:)
-! CHECK-DAG:  %[[c1_i32:.*]] = constant 1 : i32
-! CHECK-DAG:  %[[c4:.*]] = constant 4 : index
+! CHECK-DAG:  %[[c1_i32:.*]] = arith.constant 1 : i32
+! CHECK-DAG:  %[[c4:.*]] = arith.constant 4 : index
 ! CHECK-DAG:  %[[a0:.*]] = fir.alloca !fir.box<!fir.heap<!fir.array<?xi32>>>
 ! CHECK:  %[[a5:.*]] = fir.convert %[[a0]] : (!fir.ref<!fir.box<!fir.heap<!fir.array<?xi32>>>>) -> !fir.ref<!fir.box<none>>
 ! CHECK:  %[[a6:.*]] = fir.convert %[[arg1]] : (!fir.box<!fir.array<?x?x!fir.logical<4>>>) -> !fir.box<none>
@@ -35,7 +35,7 @@ end subroutine
 subroutine test_count3(rslt, mask)
   integer :: rslt
   logical :: mask(:)
-! CHECK-DAG:  %[[c0:.*]] = constant 0 : index
+! CHECK-DAG:  %[[c0:.*]] = arith.constant 0 : index
 ! CHECK-DAG:  %[[a1:.*]] = fir.convert %[[arg1]] : (!fir.box<!fir.array<?x!fir.logical<4>>>) -> !fir.box<none>
 ! CHECK:  %[[a3:.*]] = fir.convert %[[c0]] : (index) -> i32
   call bar(count(mask, kind=2))

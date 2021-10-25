@@ -15,7 +15,7 @@ subroutine test1(a, b)
 
   !  Look at PARAMETER case
   ! CHECK: %{{.*}} = fir.address_of(@_QQro.4xi4.6a6af0eea868c84da59807d34f7e1a86) : !fir.ref<!fir.array<4xi32>>
-  b = constant_array
+  b = arith.constant_array
 end subroutine test1
 
 !  Dynamic array ctor with constant extent.
@@ -106,7 +106,7 @@ subroutine test4(a, b, n1, m1)
   !  Dynamic array ctor with dynamic extent using implied do loops.
   ! CHECK-DAG: fir.alloca index {bindc_name = ".buff.pos"}
   ! CHECK-DAG: fir.alloca index {bindc_name = ".buff.size"}
-  ! CHECK-DAG: %[[c32:.*]] = constant 32 : index
+  ! CHECK-DAG: %[[c32:.*]] = arith.constant 32 : index
   ! CHECK: fir.allocmem f32, %[[c32]]
   ! CHECK: fir.call @_QPf1(%{{.*}}) : (!fir.ref<i32>) -> i32
   ! CHECK: fir.call @_QPf2(%arg2) : (!fir.ref<i32>) -> i32

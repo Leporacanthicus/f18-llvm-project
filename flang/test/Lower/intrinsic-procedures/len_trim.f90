@@ -4,9 +4,9 @@
 integer function len_trim_test(c)
   character(*) :: c
   ltrim = len_trim(c)
-  ! CHECK-DAG: %[[c0:.*]] = constant 0 : index
-  ! CHECK-DAG: %[[c1:.*]] = constant 1 : index
-  ! CHECK-DAG: %[[cm1:.*]] = constant -1 : index
+  ! CHECK-DAG: %[[c0:.*]] = arith.constant 0 : index
+  ! CHECK-DAG: %[[c1:.*]] = arith.constant 1 : index
+  ! CHECK-DAG: %[[cm1:.*]] = arith.constant -1 : index
   ! CHECK-DAG: %[[lastChar:.*]] = subi {{.*}}, %[[c1]]
   ! CHECK: %[[iterateResult:.*]]:2 = fir.iterate_while (%[[index:.*]] = %[[lastChar]] to %[[c0]] step %[[cm1]]) and ({{.*}}) iter_args({{.*}}) {
     ! CHECK: %[[addr:.*]] = fir.coordinate_of {{.*}}, %[[index]]

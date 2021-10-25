@@ -15,7 +15,7 @@ contains
 ! CHECK-SAME: %[[box:.*]]: !fir.ref<!fir.box<!fir.heap<f32>>>) {
 subroutine test_simple_scalar(x)
   real, allocatable  :: x
-  ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
+  ! CHECK: %[[cst:.*]] = arith.constant 4.200000e+01 : f32
   ! CHECK: %[[boxLoad:.*]] = fir.load %[[box]] : !fir.ref<!fir.box<!fir.heap<f32>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[boxLoad]] : (!fir.box<!fir.heap<f32>>) -> !fir.heap<f32>
   ! CHECK: %[[addrCast:.*]] = fir.convert %[[addr]] : (!fir.heap<f32>) -> i64
@@ -37,7 +37,7 @@ end subroutine
 subroutine test_simple_local_scalar()
   real, allocatable  :: x
   ! CHECK: %[[x:.*]] = fir.alloca !fir.heap<f32> {uniq_name = "_QMalloc_assignFtest_simple_local_scalarEx.addr"}
-  ! CHECK: %[[cst:.*]] = constant 4.200000e+01 : f32
+  ! CHECK: %[[cst:.*]] = arith.constant 4.200000e+01 : f32
   ! CHECK: %[[xAddr:.*]] = fir.load %[[x]] : !fir.ref<!fir.heap<f32>>
   ! CHECK: %[[xCast:.*]] = fir.convert %[[xAddr]] : (!fir.heap<f32>) -> i64
   ! CHECK: %[[isAlloc:.*]] = cmpi ne, %[[xCast]], %c0{{.*}} : i64

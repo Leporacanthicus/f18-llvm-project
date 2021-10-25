@@ -4,7 +4,7 @@
 func @set_all_n(%n : index, %x : i32) {
   %aTmp = fir.alloca i32, %n
   %aMem = fir.convert %aTmp : (!fir.ref<i32>) -> !fir.ref<!fir.array<?xi32>>
-  %c1 = constant 1 : index
+  %c1 = arith.constant 1 : index
   %aDim = fir.shape %n : (index) -> !fir.shape<1>
   %a = fir.embox %aMem(%aDim) : (!fir.ref<!fir.array<?xi32>>, !fir.shape<1>) -> !fir.box<!fir.array<?xi32>>
   // CHECK-DAG: %[[IV:.*]] = phi i64

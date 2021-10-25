@@ -10,15 +10,15 @@
 ! CHECK:         omp.parallel {
 ! CHECK:           %[[VAL_0:.*]] = fir.alloca i32 {bindc_name = "j", pinned}
 ! CHECK:           %[[VAL_1:.*]] = fir.alloca i32 {bindc_name = "x", pinned, uniq_name = "_QFmultiple_private_fixEx"}
-! CHECK:           %[[VAL_2:.*]] = constant 1 : i32
+! CHECK:           %[[VAL_2:.*]] = arith.constant 1 : i32
 ! CHECK:           %[[VAL_3:.*]] = fir.load %[[VAL_4:.*]] : !fir.ref<i32>
-! CHECK:           %[[VAL_5:.*]] = constant 1 : i32
+! CHECK:           %[[VAL_5:.*]] = arith.constant 1 : i32
 ! CHECK:           omp.wsloop (%[[VAL_6:.*]]) : i32 = (%[[VAL_2]]) to (%[[VAL_3]]) step (%[[VAL_5]]) inclusive {
-! CHECK:             %[[VAL_7:.*]] = constant 1 : i32
+! CHECK:             %[[VAL_7:.*]] = arith.constant 1 : i32
 ! CHECK:             %[[VAL_8:.*]] = fir.convert %[[VAL_7]] : (i32) -> index
 ! CHECK:             %[[VAL_9:.*]] = fir.load %[[VAL_4]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_10:.*]] = fir.convert %[[VAL_9]] : (i32) -> index
-! CHECK:             %[[VAL_11:.*]] = constant 1 : index
+! CHECK:             %[[VAL_11:.*]] = arith.constant 1 : index
 ! CHECK:             %[[VAL_12:.*]] = fir.do_loop %[[VAL_13:.*]] = %[[VAL_8]] to %[[VAL_10]] step %[[VAL_11]] -> index {
 ! CHECK:               %[[VAL_14:.*]] = fir.convert %[[VAL_13]] : (index) -> i32
 ! CHECK:               fir.store %[[VAL_14]] to %[[VAL_0]] : !fir.ref<i32>

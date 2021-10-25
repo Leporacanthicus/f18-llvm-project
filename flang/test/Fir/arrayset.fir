@@ -2,9 +2,9 @@
 
 // CHECK-LABEL: define void @x([10 x float]* %0)
 func @x(%arr : !fir.ref<!fir.array<10xf32>>) {
-  %1 = constant 0 : index
-  %2 = constant 9 : index
-  %stepvar = constant 1 : index
+  %1 = arith.constant 0 : index
+  %2 = arith.constant 9 : index
+  %stepvar = arith.constant 1 : index
   // CHECK: alloca [10 x float], i64 1
   %a = fir.alloca !fir.array<10xf32>
   fir.do_loop %iv = %1 to %2 step %stepvar unordered {

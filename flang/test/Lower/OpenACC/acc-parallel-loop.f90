@@ -61,7 +61,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[ASYNC1:%.*]] = constant 1 : i32
+!CHECK:      [[ASYNC1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel async([[ASYNC1]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -102,7 +102,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[WAIT1:%.*]] = constant 1 : i32
+!CHECK:      [[WAIT1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel wait([[WAIT1]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -116,8 +116,8 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[WAIT2:%.*]] = constant 1 : i32
-!CHECK:      [[WAIT3:%.*]] = constant 2 : i32
+!CHECK:      [[WAIT2:%.*]] = arith.constant 1 : i32
+!CHECK:      [[WAIT3:%.*]] = arith.constant 2 : i32
 !CHECK:      acc.parallel wait([[WAIT2]]: i32, [[WAIT3]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -146,7 +146,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[NUMGANGS1:%.*]] = constant 1 : i32
+!CHECK:      [[NUMGANGS1:%.*]] = arith.constant 1 : i32
 !CHECK:      acc.parallel num_gangs([[NUMGANGS1]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -174,7 +174,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[NUMWORKERS1:%.*]] = constant 10 : i32
+!CHECK:      [[NUMWORKERS1:%.*]] = arith.constant 10 : i32
 !CHECK:      acc.parallel num_workers([[NUMWORKERS1]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -202,7 +202,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[VECTORLENGTH1:%.*]] = constant 128 : i32
+!CHECK:      [[VECTORLENGTH1:%.*]] = arith.constant 128 : i32
 !CHECK:      acc.parallel vector_length([[VECTORLENGTH1]]: i32) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -230,7 +230,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[IF1:%.*]] = constant true
+!CHECK:      [[IF1:%.*]] = arith.constant true
 !CHECK:      acc.parallel if([[IF1]]) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -259,7 +259,7 @@ subroutine acc_parallel_loop
     a(i) = b(i)
   END DO
 
-!CHECK:      [[SELF1:%.*]] = constant true
+!CHECK:      [[SELF1:%.*]] = arith.constant true
 !CHECK:      acc.parallel self([[SELF1]]) {
 !CHECK:        acc.loop {
 !CHECK:          fir.do_loop
@@ -483,7 +483,7 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[GANGNUM1:%.*]] = constant 8 : i32
+!CHECK:        [[GANGNUM1:%.*]] = arith.constant 8 : i32
 !CHECK-NEXT:   acc.loop gang(num=[[GANGNUM1]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield
@@ -536,7 +536,7 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[CONSTANT128:%.*]] = constant 128 : i32
+!CHECK:        [[CONSTANT128:%.*]] = arith.constant 128 : i32
 !CHECK:        acc.loop vector([[CONSTANT128]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield
@@ -577,7 +577,7 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[WORKER128:%.*]] = constant 128 : i32
+!CHECK:        [[WORKER128:%.*]] = arith.constant 128 : i32
 !CHECK:        acc.loop worker([[WORKER128]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield
@@ -627,7 +627,7 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[TILESIZE:%.*]] = constant 2 : i32
+!CHECK:        [[TILESIZE:%.*]] = arith.constant 2 : i32
 !CHECK:        acc.loop tile([[TILESIZE]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield
@@ -641,7 +641,7 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[TILESIZEM1:%.*]] = constant -1 : i32
+!CHECK:        [[TILESIZEM1:%.*]] = arith.constant -1 : i32
 !CHECK:        acc.loop tile([[TILESIZEM1]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield
@@ -657,8 +657,8 @@ subroutine acc_parallel_loop
   END DO
 
 !CHECK:      acc.parallel {
-!CHECK:        [[TILESIZE1:%.*]] = constant 2 : i32
-!CHECK:        [[TILESIZE2:%.*]] = constant 2 : i32
+!CHECK:        [[TILESIZE1:%.*]] = arith.constant 2 : i32
+!CHECK:        [[TILESIZE2:%.*]] = arith.constant 2 : i32
 !CHECK:        acc.loop tile([[TILESIZE1]]: i32, [[TILESIZE2]]: i32) {
 !CHECK:          fir.do_loop
 !CHECK:          acc.yield

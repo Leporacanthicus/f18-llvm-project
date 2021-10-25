@@ -58,7 +58,7 @@ module tinit
   ! Test scalar with default init
   type(t0) :: at0
 ! CHECK-LABEL: fir.global @_QMtinitEat0 : !fir.type<_QMtinitTt0{k:i32}> {
-  ! CHECK: %[[VAL_0:.*]] = constant 66 : i32
+  ! CHECK: %[[VAL_0:.*]] = arith.constant 66 : i32
   ! CHECK: %[[VAL_1:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_2:.*]] = fir.insert_value %[[VAL_1]], %[[VAL_0]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: fir.has_value %[[VAL_2]] : !fir.type<_QMtinitTt0{k:i32}>
@@ -66,7 +66,7 @@ module tinit
   ! Test array with default init
   type(t0) :: bt0(100)
 ! CHECK-LABEL: @_QMtinitEbt0 : !fir.array<100x!fir.type<_QMtinitTt0{k:i32}>> {
-  ! CHECK: %[[VAL_3:.*]] = constant 66 : i32
+  ! CHECK: %[[VAL_3:.*]] = arith.constant 66 : i32
   ! CHECK: %[[VAL_4:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_5:.*]] = fir.insert_value %[[VAL_4]], %[[VAL_3]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_6:.*]] = fir.undefined !fir.array<100x!fir.type<_QMtinitTt0{k:i32}>>
@@ -76,7 +76,7 @@ module tinit
   ! Test default init overridden by explicit init
   type(t0) :: ct0 = t0(42)
 ! CHECK-LABEL: fir.global @_QMtinitEct0 : !fir.type<_QMtinitTt0{k:i32}> {
-  ! CHECK: %[[VAL_8:.*]] = constant 42 : i32
+  ! CHECK: %[[VAL_8:.*]] = arith.constant 42 : i32
   ! CHECK: %[[VAL_9:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_10:.*]] = fir.insert_value %[[VAL_9]], %[[VAL_8]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: fir.has_value %[[VAL_10]] : !fir.type<_QMtinitTt0{k:i32}>
@@ -84,11 +84,11 @@ module tinit
   ! Test a non trivial derived type mixing all sorts of default initialization
   type(t1) :: dt1
 ! CHECK-LABEL: @_QMtinitEdt1 : !fir.type<_QMtinitTt1{{.*}}> {
-  ! CHECK-DAG: %[[VAL_11:.*]] = constant 42 : i32
-  ! CHECK-DAG: %[[VAL_12:.*]] = constant 100 : index
-  ! CHECK-DAG: %[[VAL_13:.*]] = constant 0 : index
-  ! CHECK-DAG: %[[VAL_14:.*]] = constant 33 : i32
-  ! CHECK-DAG: %[[VAL_15:.*]] = constant 66 : i32
+  ! CHECK-DAG: %[[VAL_11:.*]] = arith.constant 42 : i32
+  ! CHECK-DAG: %[[VAL_12:.*]] = arith.constant 100 : index
+  ! CHECK-DAG: %[[VAL_13:.*]] = arith.constant 0 : index
+  ! CHECK-DAG: %[[VAL_14:.*]] = arith.constant 33 : i32
+  ! CHECK-DAG: %[[VAL_15:.*]] = arith.constant 66 : i32
   ! CHECK: %[[VAL_16:.*]] = fir.undefined !fir.type<_QMtinitTt1{{.*}}>
   ! CHECK: %[[VAL_17:.*]] = fir.insert_value %[[VAL_16]], %[[VAL_11]], ["i", !fir.type<_QMtinitTt1{{.*}}>] : (!fir.type<_QMtinitTt1{{.*}}>, i32) -> !fir.type<_QMtinitTt1{{.*}}>
   ! CHECK: %[[VAL_18:.*]] = fir.undefined i32
@@ -119,7 +119,7 @@ module tinit
   ! Test a type extending other type with a default init
   type(textendst0) :: etextendst0
 ! CHECK-LABEL: @_QMtinitEetextendst0 : !fir.type<_QMtinitTtextendst0{k:i32,l:i32}> {
-  ! CHECK: %[[VAL_42:.*]] = constant 66 : i32
+  ! CHECK: %[[VAL_42:.*]] = arith.constant 66 : i32
   ! CHECK: %[[VAL_43:.*]] = fir.undefined !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>
   ! CHECK: %[[VAL_44:.*]] = fir.insert_value %[[VAL_43]], %[[VAL_42]], ["k", !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>] : (!fir.type<_QMtinitTtextendst0{k:i32,l:i32}>, i32) -> !fir.type<_QMtinitTtextendst0{k:i32,l:i32}>
   ! CHECK: %[[VAL_45:.*]] = fir.undefined i32
@@ -133,7 +133,7 @@ subroutine saved()
   use tinit
   type(t0), save :: savedt0
 ! CHECK-LABEL: fir.global internal @_QFsavedEsavedt0 : !fir.type<_QMtinitTt0{k:i32}> {
-  ! CHECK: %[[VAL_47:.*]] = constant 66 : i32
+  ! CHECK: %[[VAL_47:.*]] = arith.constant 66 : i32
   ! CHECK: %[[VAL_48:.*]] = fir.undefined !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: %[[VAL_49:.*]] = fir.insert_value %[[VAL_48]], %[[VAL_47]], ["k", !fir.type<_QMtinitTt0{k:i32}>] : (!fir.type<_QMtinitTt0{k:i32}>, i32) -> !fir.type<_QMtinitTt0{k:i32}>
   ! CHECK: fir.has_value %[[VAL_49]] : !fir.type<_QMtinitTt0{k:i32}>
@@ -146,8 +146,8 @@ subroutine eqv()
   integer :: i(2)
   equivalence (somet, i)
 ! CHECK-LABEL: fir.global internal @_QFeqvEi : !fir.array<2xi32> {
-  ! CHECK-DAG: %[[VAL_50:.*]] = constant 2 : i32
-  ! CHECK-DAG: %[[VAL_51:.*]] = constant 3 : i32
+  ! CHECK-DAG: %[[VAL_50:.*]] = arith.constant 2 : i32
+  ! CHECK-DAG: %[[VAL_51:.*]] = arith.constant 3 : i32
   ! CHECK: %[[VAL_52:.*]] = fir.undefined !fir.array<2xi32>
   ! CHECK: %[[VAL_53:.*]] = fir.insert_value %[[VAL_52]], %[[VAL_50]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
   ! CHECK: %[[VAL_54:.*]] = fir.insert_value %[[VAL_53]], %[[VAL_51]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
@@ -160,8 +160,8 @@ subroutine eqv_explicit_init()
   integer :: i(2) = [4, 5]
   equivalence (somet, i)
 ! CHECK-LABEL: fir.global internal @_QFeqv_explicit_initEi : !fir.array<2xi32> {
-  ! CHECK-DAG: %[[VAL_57:.*]] = constant 4 : i32
-  ! CHECK-DAG: %[[VAL_58:.*]] = constant 5 : i32
+  ! CHECK-DAG: %[[VAL_57:.*]] = arith.constant 4 : i32
+  ! CHECK-DAG: %[[VAL_58:.*]] = arith.constant 5 : i32
   ! CHECK: %[[VAL_59:.*]] = fir.undefined !fir.array<2xi32>
   ! CHECK: %[[VAL_60:.*]] = fir.insert_value %[[VAL_59]], %[[VAL_57]], [0 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
   ! CHECK: %[[VAL_61:.*]] = fir.insert_value %[[VAL_60]], %[[VAL_58]], [1 : index] : (!fir.array<2xi32>, i32) -> !fir.array<2xi32>
@@ -173,7 +173,7 @@ subroutine eqv_same_default_init()
   type(tseq), save :: somet1(2), somet2
   equivalence (somet1(1), somet2)
 ! CHECK-LABEL: fir.global internal @_QFeqv_same_default_initEsomet1 : !fir.array<2xi64> {
-  ! CHECK: %[[VAL_62:.*]] = constant 12884901890 : i64
+  ! CHECK: %[[VAL_62:.*]] = arith.constant 12884901890 : i64
   ! CHECK: %[[VAL_63:.*]] = fir.undefined !fir.array<2xi64>
   ! CHECK: %[[VAL_64:.*]] = fir.insert_on_range %[[VAL_63]], %[[VAL_62]], [0 : index, 1 : index] : (!fir.array<2xi64>, i64) -> !fir.array<2xi64>
   ! CHECK: fir.has_value %[[VAL_64]] : !fir.array<2xi64>
@@ -193,10 +193,10 @@ subroutine eqv_full_overlaps_with_explicit_init()
   equivalence (somet, link(2))
   equivalence (j, link(3))
 ! CHECK-LABEL: fir.global internal @_QFeqv_full_overlaps_with_explicit_initEi : !fir.array<4xi32> {
-  ! CHECK-DAG: %[[VAL_73:.*]] = constant 5 : i32
-  ! CHECK-DAG: %[[VAL_74:.*]] = constant 6 : i32
-  ! CHECK-DAG: %[[VAL_75:.*]] = constant 7 : i32
-  ! CHECK-DAG: %[[VAL_76:.*]] = constant 8 : i32
+  ! CHECK-DAG: %[[VAL_73:.*]] = arith.constant 5 : i32
+  ! CHECK-DAG: %[[VAL_74:.*]] = arith.constant 6 : i32
+  ! CHECK-DAG: %[[VAL_75:.*]] = arith.constant 7 : i32
+  ! CHECK-DAG: %[[VAL_76:.*]] = arith.constant 8 : i32
   ! CHECK-DAG: %[[VAL_77:.*]] = fir.undefined !fir.array<4xi32>
   ! CHECK-DAG: %[[VAL_78:.*]] = fir.insert_value %[[VAL_77]], %[[VAL_73]], [0 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
   ! CHECK-DAG: %[[VAL_79:.*]] = fir.insert_value %[[VAL_78]], %[[VAL_74]], [1 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
@@ -222,10 +222,10 @@ subroutine eqv_partial_overlaps_with_explicit_init()
   equivalence (somet, link(2))
   equivalence (j, link(4))
 ! CHECK-LABEL: fir.global internal @_QFeqv_partial_overlaps_with_explicit_initEi : !fir.array<4xi32>
-   ! CHECK-DAG: %[[VAL_82:.*]] = constant 5 : i32
-   ! CHECK-DAG: %[[VAL_83:.*]] = constant 6 : i32
-   ! CHECK-DAG: %[[VAL_84:.*]] = constant 3 : i32
-   ! CHECK-DAG: %[[VAL_85:.*]] = constant 7 : i32
+   ! CHECK-DAG: %[[VAL_82:.*]] = arith.constant 5 : i32
+   ! CHECK-DAG: %[[VAL_83:.*]] = arith.constant 6 : i32
+   ! CHECK-DAG: %[[VAL_84:.*]] = arith.constant 3 : i32
+   ! CHECK-DAG: %[[VAL_85:.*]] = arith.constant 7 : i32
    ! CHECK: %[[VAL_86:.*]] = fir.undefined !fir.array<4xi32>
    ! CHECK: %[[VAL_87:.*]] = fir.insert_value %[[VAL_86]], %[[VAL_82]], [0 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
    ! CHECK: %[[VAL_88:.*]] = fir.insert_value %[[VAL_87]], %[[VAL_83]], [1 : index] : (!fir.array<4xi32>, i32) -> !fir.array<4xi32>
