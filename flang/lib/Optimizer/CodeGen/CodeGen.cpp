@@ -315,7 +315,7 @@ struct AddrOfOpConversion : public FIROpConversion<fir::AddrOfOp> {
                   mlir::ConversionPatternRewriter &rewriter) const override {
     auto ty = convertType(addr.getType());
     rewriter.replaceOpWithNewOp<mlir::LLVM::AddressOfOp>(
-        addr, ty, addr.symbol().getRootReference());
+        addr, ty, addr.symbol().getRootReference().getValue());
     return success();
   }
 };
