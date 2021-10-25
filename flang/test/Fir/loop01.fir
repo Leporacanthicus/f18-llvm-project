@@ -60,7 +60,7 @@ func @x2(%lo : index, %up : index, %ok : i1) {
   // CHECK-DAG: %[[count:.*]] = phi i64
   // CHECK-DAG: %[[exit:.*]] = phi i1
   // CHECK: %[[cond:.*]] = icmp sle i64 %[[count]], %
-  // CHECK: %[[and:.*]] = arith.andi i1 %[[exit]], %[[cond]]
+  // CHECK: %[[and:.*]] = and i1 %[[exit]], %[[cond]]
   // CHECK: br i1 %[[and]]
   %unused = fir.iterate_while (%i = %lo to %up step %c1) and (%ok1 = %ok) {
     %ok2 = fir.call @f2() : () -> i1
@@ -150,13 +150,13 @@ func @y3(%lo : index, %up : index) -> i1 {
   // CHECK-DAG: %[[ok3:.*]] = phi i1 {{.*}}[ true
   // CHECK-DAG: %[[j:.*]] = phi i1 {{.*}}[ %[[ok4]]
   // CHECK: %[[prev:.*]] = icmp sle i64 %[[count]],
-  // CHECK: = arith.andi i1 %[[ok3]], %[[prev]]
+  // CHECK: = and i1 %[[ok3]], %[[prev]]
   %ok2:2 = fir.iterate_while (%i = %lo to %up step %c1) and (%ok3 = %ok1) iter_args(%j = %ok4) -> i1 {
     %ok = fir.call @f2() : () -> i1
     fir.result %ok3, %ok : i1, i1
     // CHECK: = add i64 %[[count]], 1
   }
-  // CHECK: %[[result:.*]] = arith.andi i1 %[[ok3]], %[[j]]
+  // CHECK: %[[result:.*]] = and i1 %[[ok3]], %[[j]]
   %andok = arith.andi %ok2#0, %ok2#1 : i1
   // CHECK: ret i1 %[[result]]
   return %andok : i1
