@@ -2291,7 +2291,7 @@ struct CoordinateOpConversion
     if (val) {
       if (auto *defop = val.getDefiningOp()) {
         if (auto constOp = dyn_cast<mlir::arith::ConstantIntOp>(defop))
-          return constOp.getValue();
+          return constOp.value();
         if (auto llConstOp = dyn_cast<mlir::LLVM::ConstantOp>(defop))
           if (auto attr = llConstOp.value().dyn_cast<mlir::IntegerAttr>())
             return attr.getValue().getSExtValue();
