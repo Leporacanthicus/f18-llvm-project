@@ -363,7 +363,7 @@ struct AllocaOpConversion : public FIROpConversion<fir::AllocaOp> {
       } else if (auto recTy = scalarType.dyn_cast<fir::RecordType>()) {
         auto memSizeFn = getDependentTypeMemSizeFn(recTy, alloc, rewriter);
         auto attr = rewriter.getNamedAttr("callee",
-                                          rewriter.getSymbolRefAttr(memSizeFn));
+                                           mlir::SymbolRefAttr::get(memSizeFn));
         auto call = rewriter.create<mlir::LLVM::CallOp>(
             loc, ity, lenParams, llvm::ArrayRef<mlir::NamedAttribute>{attr});
         size = call.getResult(0);
@@ -441,7 +441,7 @@ struct AllocMemOpConversion : public FIROpConversion<fir::AllocMemOp> {
     for (auto opnd : operands)
       size = rewriter.create<mlir::LLVM::MulOp>(
           loc, ity, size, integerCast(loc, rewriter, ity, opnd));
-    heap->setAttr("callee", rewriter.getSymbolRefAttr(mallocFunc));
+    heap->setAttr("callee",  mlir::SymbolRefAttr::get(mallocFunc));
     auto malloc = rewriter.create<mlir::LLVM::CallOp>(
         loc, getVoidPtrType(heap.getContext()), size, heap->getAttrs());
     rewriter.replaceOpWithNewOp<mlir::LLVM::BitcastOp>(heap, ty,
@@ -492,7 +492,7 @@ struct FreeMemOpConversion : public FIROpConversion<fir::FreeMemOp> {
     auto loc = freemem.getLoc();
     auto bitcast = rewriter.create<mlir::LLVM::BitcastOp>(
         freemem.getLoc(), voidPtrTy(), operands[0]);
-    freemem->setAttr("callee", rewriter.getSymbolRefAttr(freeFunc));
+    freemem->setAttr("callee", mlir::SymbolRefAttr::get(freeFunc));
     rewriter.create<mlir::LLVM::CallOp>(
         loc, mlir::LLVM::LLVMVoidType::get(freemem.getContext()),
         mlir::ValueRange{bitcast}, freemem->getAttrs());
