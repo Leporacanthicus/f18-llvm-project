@@ -12,7 +12,7 @@ fir.global @g_i2 : i32 {
   fir.has_value %1 : i32
 }
 
-// CHECK: @g_ci5 = arith.constant i32 5
+// CHECK: @g_ci5 = constant i32 5
 fir.global @g_ci5 constant : i32 {
   %c = arith.constant 5 : i32
   fir.has_value %c : i32
