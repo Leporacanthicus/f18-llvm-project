@@ -271,11 +271,11 @@ public:
         rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt, step, zero);
     auto compl3 =
         rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sle, upperBound, iv);
-    auto cmp0 = rewriter.create<mlir::AndOp>(loc, compl0, compl1);
-    auto cmp1 = rewriter.create<mlir::AndOp>(loc, compl2, compl3);
-    auto cmp2 = rewriter.create<mlir::OrOp>(loc, cmp0, cmp1);
+    auto cmp0 = rewriter.create<mlir::arith::AndOp>(loc, compl0, compl1);
+    auto cmp1 = rewriter.create<mlir::arith::AndOp>(loc, compl2, compl3);
+    auto cmp2 = rewriter.create<mlir::arith::OrOp>(loc, cmp0, cmp1);
     // Remember to AND in the early-exit bool.
-    auto comparison = rewriter.create<mlir::AndOp>(loc, iterateVar, cmp2);
+    auto comparison = rewriter.create<mlir::arith::AndOp>(loc, iterateVar, cmp2);
     rewriter.create<mlir::CondBranchOp>(loc, comparison, firstBodyBlock,
                                         llvm::ArrayRef<mlir::Value>(), endBlock,
                                         llvm::ArrayRef<mlir::Value>());
