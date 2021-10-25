@@ -91,6 +91,10 @@ public:
     return getI64Type();
   }
 
+  mlir::SymbolRefAttr getSymbolRefAttr(llvm::StringRef str) {
+    return mlir::SymbolRefAttr::get(getContext(), str);
+  }
+
   /// Get the mlir real type that implements fortran REAL(kind).
   mlir::Type getRealType(int kind);
 
