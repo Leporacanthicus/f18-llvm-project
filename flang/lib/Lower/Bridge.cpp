@@ -1014,7 +1014,7 @@ private:
         auto diff1 = builder->create<mlir::arith::SubIOp>(loc, upperValue, lowerValue);
         auto diff2 = builder->create<mlir::arith::AddIOp>(loc, diff1, info.stepValue);
         tripCount =
-            builder->create<mlir::SignedDivIOp>(loc, diff2, info.stepValue);
+            builder->create<mlir::arith::SignedDivIOp>(loc, diff2, info.stepValue);
       }
       if (forceLoopToExecuteOnce) { // minimum tripCount is 1
         auto one = builder->createIntegerConstant(loc, controlType, 1);

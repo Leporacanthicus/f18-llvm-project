@@ -810,7 +810,7 @@ public:
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
   GENBIN(Multiply, Real, mlir::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
-  GENBIN(Divide, Integer, mlir::SignedDivIOp)
+  GENBIN(Divide, Integer, mlir::arith::SignedDivIOp)
   GENBIN(Divide, Real, mlir::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 
@@ -2966,7 +2966,7 @@ private:
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
   GENBIN(Multiply, Real, mlir::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
-  GENBIN(Divide, Integer, mlir::SignedDivIOp)
+  GENBIN(Divide, Integer, mlir::arith::SignedDivIOp)
   GENBIN(Divide, Real, mlir::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 
@@ -4046,7 +4046,7 @@ public:
       for (auto doLoop : loopStack[i]) {
         auto m = builder.create<mlir::arith::SubIOp>(loc, doLoop.getInductionVar(),
                                               doLoop.lowerBound());
-        auto n = builder.create<mlir::SignedDivIOp>(loc, m, doLoop.step());
+        auto n = builder.create<mlir::arith::SignedDivIOp>(loc, m, doLoop.step());
         auto one = builder.createIntegerConstant(loc, n.getType(), 1);
         offsets.push_back(builder.create<mlir::arith::AddIOp>(loc, n, one));
       }
@@ -4793,7 +4793,7 @@ public:
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
   GENBIN(Multiply, Real, mlir::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
-  GENBIN(Divide, Integer, mlir::SignedDivIOp)
+  GENBIN(Divide, Integer, mlir::arith::SignedDivIOp)
   GENBIN(Divide, Real, mlir::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 

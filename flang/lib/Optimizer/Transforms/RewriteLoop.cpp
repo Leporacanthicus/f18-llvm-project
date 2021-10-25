@@ -68,7 +68,7 @@ using OpRewritePattern::OpRewritePattern;
     auto diff = rewriter.create<mlir::arith::SubIOp>(loc, high, low);
     auto distance = rewriter.create<mlir::arith::AddIOp>(loc, diff, step);
     mlir::Value iters =
-        rewriter.create<mlir::SignedDivIOp>(loc, distance, step);
+        rewriter.create<mlir::arith::SignedDivIOp>(loc, distance, step);
 
     if (forceLoopToExecuteOnce) {
       auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);

@@ -711,7 +711,7 @@ fir::factory::CharacterExprHelper::readLengthFromBox(mlir::Value box) {
   auto width = bits / 8;
   if (width > 1) {
     auto widthVal = builder.createIntegerConstant(loc, lenTy, width);
-    return builder.create<mlir::SignedDivIOp>(loc, size, widthVal);
+    return builder.create<mlir::arith::SignedDivIOp>(loc, size, widthVal);
   }
   return size;
 }
