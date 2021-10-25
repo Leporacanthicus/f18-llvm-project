@@ -106,7 +106,8 @@ public:
                   mlir::PatternRewriter &rewriter) const override {
     auto result = fir::NameUniquer::deconstruct(op.symbol().getRootReference().getValue());
     if (fir::NameUniquer::isExternalFacingUniquedName(result)) {
-      auto newName = rewriter.getSymbolRefAttr(mangleExternalName(result));
+      auto newName =
+          SymbolRefAttr::get(op.getContext(), mangleExternalName(result));
       rewriter.replaceOpWithNewOp<fir::AddrOfOp>(op, op.resTy().getType(),
                                                  newName);
     }
