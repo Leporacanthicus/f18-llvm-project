@@ -83,7 +83,7 @@ public:
     mlir::Value icast =
         (fromBits >= toBits)
             ? rewriter.create<fir::ConvertOp>(loc, toTy, load).getResult()
-            : rewriter.create<mlir::ZeroExtendIOp>(loc, toTy, load).getResult();
+            : rewriter.create<mlir::arith::ExtUIOp>(loc, toTy, load).getResult();
     rewriter.replaceOpWithNewOp<fir::StoreOp>(conv, icast, toi);
     rewriter.restoreInsertionPoint(insPt);
     return mlir::success();
