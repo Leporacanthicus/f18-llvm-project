@@ -2107,7 +2107,7 @@ mlir::Value IntrinsicLibrary::genDim(mlir::Type resultType,
   auto zero = builder.createRealZeroConstant(loc, resultType);
   auto diff = builder.create<mlir::arith::SubFOp>(loc, args[0], args[1]);
   auto cmp =
-      builder.create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OGT, diff, zero);
+      builder.create<mlir::arith::CmpFOp>(loc, mlir::arith::CmpFPredicate::OGT, diff, zero);
   return builder.create<mlir::SelectOp>(loc, cmp, diff, zero);
 }
 
@@ -2592,11 +2592,11 @@ mlir::Value IntrinsicLibrary::genModulo(mlir::Type resultType,
   // Real case
   auto remainder = builder.create<mlir::RemFOp>(loc, args[0], args[1]);
   auto zero = builder.createRealZeroConstant(loc, remainder.getType());
-  auto remainderIsNotZero = builder.create<mlir::CmpFOp>(
+  auto remainderIsNotZero = builder.create<mlir::arith::CmpFOp>(
       loc, mlir::arith::CmpFPredicate::UNE, remainder, zero);
-  auto aLessThanZero = builder.create<mlir::CmpFOp>(
+  auto aLessThanZero = builder.create<mlir::arith::CmpFOp>(
       loc, mlir::arith::CmpFPredicate::OLT, args[0], zero);
-  auto pLessThanZero = builder.create<mlir::CmpFOp>(
+  auto pLessThanZero = builder.create<mlir::arith::CmpFOp>(
       loc, mlir::arith::CmpFPredicate::OLT, args[1], zero);
   auto argSignDifferent =
       builder.create<mlir::XOrOp>(loc, aLessThanZero, pLessThanZero);
@@ -2964,7 +2964,7 @@ mlir::Value IntrinsicLibrary::genSign(mlir::Type resultType,
   // TODO: Requirements when second argument is +0./0.
   auto zero = builder.createRealZeroConstant(loc, resultType);
   auto neg = builder.create<mlir::NegFOp>(loc, abs);
-  auto cmp = builder.create<mlir::CmpFOp>(loc, mlir::arith::CmpFPredicate::OLT,
+  auto cmp = builder.create<mlir::arith::CmpFOp>(loc, mlir::arith::CmpFPredicate::OLT,
                                           args[1], zero);
   return builder.create<mlir::SelectOp>(loc, cmp, neg, abs);
 }
@@ -3171,26 +3171,26 @@ static mlir::Value createExtremumCompare(mlir::Location loc,
       // Return the number if one of the inputs is NaN and the other is
       // a number.
       auto leftIsResult =
-          builder.create<mlir::CmpFOp>(loc, orderedCmp, left, right);
-      auto rightIsNan = builder.create<mlir::CmpFOp>(
+          builder.create<mlir::arith::CmpFOp>(loc, orderedCmp, left, right);
+      auto rightIsNan = builder.create<mlir::arith::CmpFOp>(
           loc, mlir::arith::CmpFPredicate::UNE, right, right);
       result = builder.create<mlir::OrOp>(loc, leftIsResult, rightIsNan);
     } else if constexpr (behavior == ExtremumBehavior::IeeeMinMaximum) {
       // Always return NaNs if one the input is NaNs
       auto leftIsResult =
-          builder.create<mlir::CmpFOp>(loc, orderedCmp, left, right);
-      auto leftIsNan = builder.create<mlir::CmpFOp>(
+          builder.create<mlir::arith::CmpFOp>(loc, orderedCmp, left, right);
+      auto leftIsNan = builder.create<mlir::arith::CmpFOp>(
           loc, mlir::arith::CmpFPredicate::UNE, left, left);
       result = builder.create<mlir::OrOp>(loc, leftIsResult, leftIsNan);
     } else if constexpr (behavior == ExtremumBehavior::MinMaxss) {
       // If the left is a NaN, return the right whatever it is.
-      result = builder.create<mlir::CmpFOp>(loc, orderedCmp, left, right);
+      result = builder.create<mlir::arith::CmpFOp>(loc, orderedCmp, left, right);
     } else if constexpr (behavior == ExtremumBehavior::PgfortranLlvm) {
       // If one of the operand is a NaN, return left whatever it is.
       static constexpr auto unorderedCmp = extremum == Extremum::Max
                                                ? mlir::arith::CmpFPredicate::UGT
                                                : mlir::arith::CmpFPredicate::ULT;
-      result = builder.create<mlir::CmpFOp>(loc, unorderedCmp, left, right);
+      result = builder.create<mlir::arith::CmpFOp>(loc, unorderedCmp, left, right);
     } else {
       // TODO: ieeeMinNum/ieeeMaxNum
       static_assert(behavior == ExtremumBehavior::IeeeMinMaxNum,
