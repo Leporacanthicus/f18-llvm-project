@@ -31,8 +31,8 @@ func @sub(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>, %z2 : !fir.compl
   %imag2 = fir.extract_value %z2, [1 : index] : (!fir.complex<8>) -> f64
 
   // CHECK-LABEL: fir.subc
-  %real = subf %real1, %real2 : f64
-  %imag = subf %imag1, %imag2 : f64
+  %real = arith.subf %real1, %real2 : f64
+  %imag = arith.subf %imag1, %imag2 : f64
   %undef = fir.undefined !fir.complex<8>
   %insert_real = fir.insert_value %undef, %real, [0 : index] : (!fir.complex<8>, f64) -> !fir.complex<8>
   %insert_imag = fir.insert_value %insert_real, %imag, [1 : index] : (!fir.complex<8>, f64) -> !fir.complex<8>
@@ -83,10 +83,10 @@ func @close_but_bad_pattern(%z: !fir.ref<!fir.complex<8>>, %z1 : !fir.complex<8>
   %imag1 = fir.extract_value %z1, [0 : index] : (!fir.complex<8>) -> f64
   %real2 = fir.extract_value %z2, [0 : index] : (!fir.complex<8>) -> f64
   %imag2 = fir.extract_value %z2, [1 : index] : (!fir.complex<8>) -> f64
+  // CHECK: arith.subf
   // CHECK: subf
-  // CHECK: subf
-  %real = subf %real1, %real2 : f64
-  %imag = subf %imag1, %imag2 : f64
+  %real = arith.subf %real1, %real2 : f64
+  %imag = arith.subf %imag1, %imag2 : f64
   %undef = fir.undefined !fir.complex<8>
   // CHECK: %[[insert1:.*]] = fir.insert_value %{{.*}}, %{{.*}}, [0
   // CHECK: %[[insert2:.*]] = fir.insert_value %[[insert1]], %{{.*}}, [1

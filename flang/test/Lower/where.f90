@@ -182,7 +182,7 @@
   ! CHECK: %[[VAL_165:.*]] = fir.convert %[[VAL_164]] : (!fir.logical<4>) -> i1
   ! CHECK: %[[VAL_166:.*]] = fir.if %[[VAL_165]] -> (!fir.array<10xf32>) {
   ! CHECK: %[[VAL_167:.*]] = fir.array_fetch %[[VAL_147]], %[[VAL_153]] : (!fir.array<10xf32>, index) -> f32
-  ! CHECK: %[[VAL_168:.*]] = subf %[[VAL_167]], %[[VAL_148]] : f32
+  ! CHECK: %[[VAL_168:.*]] = arith.subf %[[VAL_167]], %[[VAL_148]] : f32
   ! CHECK: %[[VAL_169:.*]] = fir.array_update %[[VAL_154]], %[[VAL_168]], %[[VAL_153]] : (!fir.array<10xf32>, f32, index) -> !fir.array<10xf32>
   ! CHECK: fir.result %[[VAL_169]] : !fir.array<10xf32>
   ! CHECK: } else {
@@ -221,7 +221,7 @@
   ! CHECK: fir.result %[[VAL_185]] : !fir.array<10xf32>
   ! CHECK: } else {
   ! CHECK: %[[VAL_198:.*]] = fir.array_fetch %[[VAL_178]], %[[VAL_184]] : (!fir.array<10xf32>, index) -> f32
-  ! CHECK: %[[VAL_199:.*]] = divf %[[VAL_198]], %[[VAL_179]] : f32
+  ! CHECK: %[[VAL_199:.*]] = arith.divf %[[VAL_198]], %[[VAL_179]] : f32
   ! CHECK: %[[VAL_200:.*]] = fir.array_update %[[VAL_185]], %[[VAL_199]], %[[VAL_184]] : (!fir.array<10xf32>, f32, index) -> !fir.array<10xf32>
   ! CHECK: fir.result %[[VAL_200]] : !fir.array<10xf32>
   ! CHECK: }

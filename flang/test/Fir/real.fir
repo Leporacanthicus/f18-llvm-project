@@ -27,11 +27,11 @@ func @foo(%a : f128, %b : f128, %c : f128, %d : f128, %e : f128) -> f128 {
   // CHECK: fmul fp128
   %2 = arith.mulf %1, %c : f128
   // CHECK: fsub fp128
-  %3 = subf %2, %d : f128
+  %3 = arith.subf %2, %d : f128
   // CHECK: fdiv fp128
-  %4 = divf %3, %e : f128
+  %4 = arith.divf %3, %e : f128
   // CHECK: frem fp128
-  %5 = remf %4, %a : f128
+  %5 = arith.remf %4, %a : f128
   return %5 : f128
 }
 
@@ -42,10 +42,10 @@ func @foop(%a : f80, %b : f80, %c : f80, %d : f80, %e : f80) -> f80 {
   // CHECK: fmul x86_fp80
   %2 = arith.mulf %1, %c : f80
   // CHECK: fsub x86_fp80
-  %3 = subf %2, %d : f80
+  %3 = arith.subf %2, %d : f80
   // CHECK: fdiv x86_fp80
-  %4 = divf %3, %e : f80
+  %4 = arith.divf %3, %e : f80
   // CHECK: frem x86_fp80
-  %5 = remf %4, %a : f80
+  %5 = arith.remf %4, %a : f80
   return %5 : f80
 }

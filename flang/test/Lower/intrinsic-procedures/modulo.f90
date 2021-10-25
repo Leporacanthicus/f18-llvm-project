@@ -6,7 +6,7 @@ subroutine modulo_testr(r, a, p)
   real(8) :: r, a, p
   ! CHECK-DAG: %[[a:.*]] = fir.load %[[arg1]] : !fir.ref<f64>
   ! CHECK-DAG: %[[p:.*]] = fir.load %[[arg2]] : !fir.ref<f64>
-  ! CHECK-DAG: %[[rem:.*]] = remf %[[a]], %[[p]] : f64
+  ! CHECK-DAG: %[[rem:.*]] = arith.remf %[[a]], %[[p]] : f64
   ! CHECK-DAG: %[[zero:.*]] = arith.constant 0.000000e+00 : f64
   ! CHECK-DAG: %[[remNotZero:.*]] = arith.cmpf une, %[[rem]], %[[zero]] : f64
   ! CHECK-DAG: %[[aNeg:.*]] = arith.cmpf olt, %[[a]], %[[zero]] : f64

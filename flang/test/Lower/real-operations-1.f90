@@ -98,7 +98,7 @@ REAL(16) FUNCTION real16b(x0, x1)
   ! CHECK-DAG: %[[v1:.+]] = fir.load %arg0 : !fir.ref<f128>
   ! CHECK-DAG: %[[v2:.+]] = fir.load %arg1 : !fir.ref<f128>
   ! CHECK: %[[v3:.+]] = arith.addf %[[v1]], %[[v2]] : f128
-  ! CHECK: %[[v4:.+]] = subf %[[v3]], %[[v0]] : f128
+  ! CHECK: %[[v4:.+]] = arith.subf %[[v3]], %[[v0]] : f128
   real16b = x0 + x1 - 4.0_16
   ! CHECK: return %{{.*}} : f128
 END FUNCTION real16b
