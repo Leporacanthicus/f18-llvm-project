@@ -783,6 +783,7 @@ static void printWsLoopOp(OpAsmPrinter &p, WsLoopOp op) {
     p << "schedule";
     printScheduleClause(p, sched.getValue(), op.schedule_modifiers(),
                         op.simd_modifier(), op.schedule_chunk_var());
+    p << " ";
   }
 
   if (auto collapse = op.collapse_val())
