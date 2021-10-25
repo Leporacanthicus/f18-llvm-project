@@ -104,7 +104,7 @@ INTEGER(4) :: x0
 INTEGER(4) :: x1
 ! CHECK-DAG:[[reg1:%[0-9]+]] = fir.load %arg0
 ! CHECK-DAG:[[reg2:%[0-9]+]] = fir.load %arg1
-! CHECK:divi_signed [[reg1]], [[reg2]] : i32
+! CHECK:arith.divsi [[reg1]], [[reg2]] : i32
 div9_test = x0 / x1
 END FUNCTION
 

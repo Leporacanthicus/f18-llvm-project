@@ -124,11 +124,11 @@ end subroutine
 ! CHECK-LABEL: func @_QPlhs_char_section(
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>>>) {
 subroutine lhs_char_section(a)
-  ! CHECK: %[[VAL_1:.*]] = arith.constant 5 : index
-  ! CHECK: %[[VAL_2:.*]] = arith.constant false
-  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
+  ! CHECK-DAG: %[[VAL_1:.*]] = arith.constant 5 : index
+  ! CHECK-DAG: %[[VAL_2:.*]] = arith.constant false
+  ! CHECK-DAG: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK-DAG: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK-DAG: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]] = fir.field_index c, !fir.type<_QFlhs_char_sectionTt{c:!fir.char<1,5>}>
   ! CHECK: %[[VAL_7:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_8:.*]] = fir.slice %[[VAL_5]], %[[VAL_3]], %[[VAL_5]] path %[[VAL_6]] : (index, index, index, !fir.field) -> !fir.slice<1>
@@ -160,10 +160,10 @@ end subroutine
 ! CHECK-SAME:    %[[VAL_0:.*]]: !fir.ref<!fir.array<10x!fir.type<_QFrhs_char_sectionTt{c:!fir.char<1,10>}>>>,
 ! CHECK-SAME:    %[[VAL_1:.*]]: !fir.boxchar<1>) {
 subroutine rhs_char_section(a, c)
-  ! CHECK: %[[VAL_2:.*]] = arith.constant false
-  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
+  ! CHECK-DAG: %[[VAL_2:.*]] = arith.constant false
+  ! CHECK-DAG: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK-DAG: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK-DAG: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_1]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,10>>>
   ! CHECK: %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>
