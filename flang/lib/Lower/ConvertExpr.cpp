@@ -770,7 +770,7 @@ public:
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Negate<Fortran::evaluate::Type<
                       Fortran::common::TypeCategory::Real, KIND>> &op) {
-    return builder.create<mlir::NegFOp>(getLoc(), genunbox(op.left()));
+    return builder.create<mlir::arith::NegFOp>(getLoc(), genunbox(op.left()));
   }
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Negate<Fortran::evaluate::Type<
@@ -808,10 +808,10 @@ public:
   GENBIN(Subtract, Real, mlir::arith::SubFOp)
   GENBIN(Subtract, Complex, fir::SubcOp)
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
-  GENBIN(Multiply, Real, mlir::MulFOp)
+  GENBIN(Multiply, Real, mlir::arith::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
   GENBIN(Divide, Integer, mlir::arith::DivSIOp)
-  GENBIN(Divide, Real, mlir::DivFOp)
+  GENBIN(Divide, Real, mlir::arith::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 
   template <Fortran::common::TypeCategory TC, int KIND>
@@ -926,7 +926,7 @@ public:
     auto logical = genunbox(op.left());
     auto one = genBoolConstant(true);
     auto val = builder.createConvert(getLoc(), builder.getI1Type(), logical);
-    return builder.create<mlir::XOrOp>(getLoc(), val, one);
+    return builder.create<mlir::arith::XOrIOp>(getLoc(), val, one);
   }
 
   template <int KIND>
@@ -2935,7 +2935,7 @@ private:
   ExtValue
   gen(const Fortran::evaluate::Negate<
       Fortran::evaluate::Type<Fortran::common::TypeCategory::Real, KIND>> &x) {
-    return genNegate<mlir::NegFOp>(x);
+    return genNegate<mlir::arith::NegFOp>(x);
   }
   template <int KIND>
   ExtValue gen(const Fortran::evaluate::Negate<Fortran::evaluate::Type<
@@ -2964,10 +2964,10 @@ private:
   GENBIN(Subtract, Real, mlir::arith::SubFOp)
   GENBIN(Subtract, Complex, fir::SubcOp)
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
-  GENBIN(Multiply, Real, mlir::MulFOp)
+  GENBIN(Multiply, Real, mlir::arith::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
   GENBIN(Divide, Integer, mlir::arith::DivSIOp)
-  GENBIN(Divide, Real, mlir::DivFOp)
+  GENBIN(Divide, Real, mlir::arith::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 
   template <Fortran::common::TypeCategory TC, int KIND>
@@ -3089,7 +3089,7 @@ private:
     auto logical = gen(x.left());
     auto truth = builder.createBool(loc, true);
     auto val = builder.createConvert(loc, i1Ty, fir::getBase(logical));
-    return builder.create<mlir::XOrOp>(loc, val, truth);
+    return builder.create<mlir::arith::XOrIOp>(loc, val, truth);
   }
 
   template <typename OP, typename A>
@@ -4747,7 +4747,7 @@ public:
     auto loc = getLoc();
     auto f = genarr(x.left());
     return [=](IterSpace iters) -> ExtValue {
-      return builder.create<mlir::NegFOp>(loc, fir::getBase(f(iters)));
+      return builder.create<mlir::arith::NegFOp>(loc, fir::getBase(f(iters)));
     };
   }
   template <int KIND>
@@ -4791,10 +4791,10 @@ public:
   GENBIN(Subtract, Real, mlir::arith::SubFOp)
   GENBIN(Subtract, Complex, fir::SubcOp)
   GENBIN(Multiply, Integer, mlir::arith::MulIOp)
-  GENBIN(Multiply, Real, mlir::MulFOp)
+  GENBIN(Multiply, Real, mlir::arith::MulFOp)
   GENBIN(Multiply, Complex, fir::MulcOp)
   GENBIN(Divide, Integer, mlir::arith::DivSIOp)
-  GENBIN(Divide, Real, mlir::DivFOp)
+  GENBIN(Divide, Real, mlir::arith::DivFOp)
   GENBIN(Divide, Complex, fir::DivcOp)
 
   template <Fortran::common::TypeCategory TC, int KIND>
@@ -5987,7 +5987,7 @@ public:
     return [=](IterSpace iters) -> ExtValue {
       auto logical = fir::getBase(lambda(iters));
       auto val = builder.createConvert(loc, i1Ty, logical);
-      return builder.create<mlir::XOrOp>(loc, val, truth);
+      return builder.create<mlir::arith::XOrIOp>(loc, val, truth);
     };
   }
   template <typename OP, typename A>

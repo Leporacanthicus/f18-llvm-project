@@ -646,7 +646,7 @@ private:
     stmtCtx.finalize();
     auto cond = builder->createConvert(loc, builder->getI1Type(), condExpr);
     if (negate)
-      cond = builder->create<mlir::XOrOp>(
+      cond = builder->create<mlir::arith::XOrIOp>(
           loc, cond, builder->createIntegerConstant(loc, cond.getType(), 1));
     return cond;
   }
@@ -1007,7 +1007,7 @@ private:
       if (info.hasRealControl) {
         auto diff1 = builder->create<mlir::arith::SubFOp>(loc, upperValue, lowerValue);
         auto diff2 = builder->create<mlir::arith::AddFOp>(loc, diff1, info.stepValue);
-        tripCount = builder->create<mlir::DivFOp>(loc, diff2, info.stepValue);
+        tripCount = builder->create<mlir::arith::DivFOp>(loc, diff2, info.stepValue);
         controlType = builder->getIndexType();
         tripCount = builder->createConvert(loc, controlType, tripCount);
       } else {
