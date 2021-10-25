@@ -120,7 +120,7 @@ struct SelectTypeOpConversion : public FIROpConversion<SelectTypeOp> {
     // testing if the runtime type of the selector is a derived type or one of
     // that derived type's subtypes.
     auto cmp = rewriter.create<fir::CallOp>(
-        loc, fty, rewriter.getSymbolRefAttr(funName), actuals);
+        loc, fty, mlir::SymbolRefAttr::get(rewriter, funName), actuals);
     auto *thisBlock = rewriter.getInsertionBlock();
     auto *newBlock = createBlock(rewriter, dest);
     rewriter.setInsertionPointToEnd(thisBlock);
