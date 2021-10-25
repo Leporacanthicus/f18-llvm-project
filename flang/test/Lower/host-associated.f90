@@ -70,7 +70,7 @@ contains
     ! CHECK: %[[bb:.*]] = fir.load %[[b]] : !fir.ref<!fir.ptr<f32>>
     ! CHECK-DAG: %[[bd:.*]] = fir.load %[[bb]] : !fir.ptr<f32>
     ! CHECK-DAG: %[[ad:.*]] = fir.load %[[aa]] : !fir.ptr<f32>
-    ! CHECK: %{{.*}} = cmpf ogt, %[[ad]], %[[bd]] : f32
+    ! CHECK: %{{.*}} = arith.cmpf ogt, %[[ad]], %[[bd]] : f32
     if (a > b) then
        b = b + 2.0
     end if

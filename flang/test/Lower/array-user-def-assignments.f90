@@ -81,7 +81,7 @@ subroutine test_intrinsic(x)
 ! CHECK:         %[[VAL_16:.*]] = arith.subi %[[VAL_6]], %[[VAL_14]] : index
 ! CHECK:         %[[VAL_17:.*]] = fir.do_loop %[[VAL_18:.*]] = %[[VAL_15]] to %[[VAL_16]] step %[[VAL_14]] unordered iter_args(%[[VAL_19:.*]] = %[[VAL_4]]) -> (!fir.array<100xf32>) {
 ! CHECK:           %[[VAL_20:.*]] = fir.array_fetch %[[VAL_12]], %[[VAL_18]] : (!fir.array<100xf32>, index) -> f32
-! CHECK:           %[[VAL_21:.*]] = cmpf olt, %[[VAL_20]], %[[VAL_13]] : f32
+! CHECK:           %[[VAL_21:.*]] = arith.cmpf olt, %[[VAL_20]], %[[VAL_13]] : f32
 ! CHECK:           %[[VAL_22:.*]]:2 = fir.array_modify %[[VAL_19]], %[[VAL_18]] : (!fir.array<100xf32>, index) -> (!fir.ref<f32>, !fir.array<100xf32>)
 ! CHECK:           %[[VAL_23:.*]] = fir.convert %[[VAL_21]] : (i1) -> !fir.logical<4>
 ! CHECK:           fir.store %[[VAL_23]] to %[[VAL_1]] : !fir.ref<!fir.logical<4>>
@@ -266,7 +266,7 @@ subroutine test_in_forall_2(x, y)
 ! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i64) -> index
 ! CHECK:           %[[VAL_21:.*]] = fir.array_fetch %[[VAL_13]], %[[VAL_20]] {Fortran.offsets} : (!fir.array<10xf32>, index) -> f32
 ! CHECK:           %[[VAL_22:.*]] = arith.constant 0.000000e+00 : f32
-! CHECK:           %[[VAL_23:.*]] = cmpf olt, %[[VAL_21]], %[[VAL_22]] : f32
+! CHECK:           %[[VAL_23:.*]] = arith.cmpf olt, %[[VAL_21]], %[[VAL_22]] : f32
 ! CHECK:           %[[VAL_24:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
 ! CHECK:           %[[VAL_25:.*]] = fir.convert %[[VAL_24]] : (i32) -> i64
 ! CHECK:           %[[VAL_26:.*]] = fir.convert %[[VAL_25]] : (i64) -> index
@@ -386,7 +386,7 @@ subroutine test_intrinsic_where_2(x, y, l)
   ! CHECK: %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (!fir.logical<4>) -> i1
   ! CHECK: %[[VAL_41:.*]] = fir.if %[[VAL_40]] -> (!fir.array<10xf32>) {
   ! CHECK: %[[VAL_42:.*]] = fir.array_fetch %[[VAL_28]], %[[VAL_34]] : (!fir.array<10xf32>, index) -> f32
-  ! CHECK: %[[VAL_43:.*]] = cmpf olt, %[[VAL_42]], %[[VAL_29]] : f32
+  ! CHECK: %[[VAL_43:.*]] = arith.cmpf olt, %[[VAL_42]], %[[VAL_29]] : f32
   ! CHECK: %[[VAL_44:.*]]:2 = fir.array_modify %[[VAL_35]], %[[VAL_34]] : (!fir.array<10xf32>, index) -> (!fir.ref<f32>, !fir.array<10xf32>)
   ! CHECK: %[[VAL_45:.*]] = fir.convert %[[VAL_43]] : (i1) -> !fir.logical<4>
   ! CHECK: fir.store %[[VAL_45]] to %[[VAL_3]] : !fir.ref<!fir.logical<4>>

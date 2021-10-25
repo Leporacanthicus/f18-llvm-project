@@ -157,7 +157,7 @@ subroutine test_forall_construct(a,b)
   ! CHECK:             %[[VAL_48:.*]] = fir.coordinate_of %[[VAL_1]], %[[VAL_43]], %[[VAL_47]] : (!fir.box<!fir.array<?x?xf32>>, i64, i64) -> !fir.ref<f32>
   ! CHECK:             %[[VAL_49:.*]] = fir.load %[[VAL_48]] : !fir.ref<f32>
   ! CHECK:             %[[VAL_50:.*]] = arith.constant 0.000000e+00 : f32
-  ! CHECK:             %[[VAL_51:.*]] = cmpf ogt, %[[VAL_49]], %[[VAL_50]] : f32
+  ! CHECK:             %[[VAL_51:.*]] = arith.cmpf ogt, %[[VAL_49]], %[[VAL_50]] : f32
   ! CHECK:             %[[VAL_52:.*]] = fir.if %[[VAL_51]] -> (!fir.array<?x?xf32>) {
   ! CHECK:               %[[VAL_53:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
   ! CHECK:               %[[VAL_54:.*]] = fir.convert %[[VAL_53]] : (i32) -> i64
@@ -668,7 +668,7 @@ subroutine test_nested_forall_where(a,b)
   ! CHECK: %[[VAL_149:.*]] = arith.subi %[[VAL_125]], %[[VAL_147]] : index
   ! CHECK: %[[VAL_150:.*]] = fir.do_loop %[[VAL_151:.*]] = %[[VAL_148]] to %[[VAL_149]] step %[[VAL_147]] unordered iter_args(%[[VAL_152:.*]] = %[[VAL_130]]) -> (!fir.array<?xi8>) {
   ! CHECK: %[[VAL_153:.*]] = fir.array_fetch %[[VAL_118]], %[[VAL_151]] : (!fir.array<100xf32>, index) -> f32
-  ! CHECK: %[[VAL_154:.*]] = cmpf ogt, %[[VAL_153]], %[[VAL_119]] : f32
+  ! CHECK: %[[VAL_154:.*]] = arith.cmpf ogt, %[[VAL_153]], %[[VAL_119]] : f32
   ! CHECK: %[[VAL_155:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_156:.*]] = fir.coordinate_of %[[VAL_102]], %[[VAL_155]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_157:.*]] = fir.load %[[VAL_156]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
@@ -855,7 +855,7 @@ subroutine test_nested_forall_where(a,b)
   ! CHECK: %[[VAL_331:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_332:.*]] = arith.addi %[[VAL_316]], %[[VAL_331]] : index
   ! CHECK: %[[VAL_333:.*]] = fir.array_fetch %[[VAL_257]], %[[VAL_326]], %[[VAL_329]], %[[VAL_330]], %[[VAL_332]] {Fortran.offsets} : (!fir.array<?x?x!fir.type<_QFtest_nested_forall_whereTt{data:!fir.array<100xf32>}>>, index, index, !fir.field, index) -> f32
-  ! CHECK: %[[VAL_334:.*]] = negf %[[VAL_333]] : f32
+  ! CHECK: %[[VAL_334:.*]] = arith.negf %[[VAL_333]] : f32
   ! CHECK: %[[VAL_335:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
   ! CHECK: %[[VAL_336:.*]] = fir.convert %[[VAL_335]] : (i32) -> i64
   ! CHECK: %[[VAL_337:.*]] = fir.convert %[[VAL_336]] : (i64) -> index

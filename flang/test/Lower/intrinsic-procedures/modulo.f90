@@ -8,9 +8,9 @@ subroutine modulo_testr(r, a, p)
   ! CHECK-DAG: %[[p:.*]] = fir.load %[[arg2]] : !fir.ref<f64>
   ! CHECK-DAG: %[[rem:.*]] = remf %[[a]], %[[p]] : f64
   ! CHECK-DAG: %[[zero:.*]] = arith.constant 0.000000e+00 : f64
-  ! CHECK-DAG: %[[remNotZero:.*]] = cmpf une, %[[rem]], %[[zero]] : f64
-  ! CHECK-DAG: %[[aNeg:.*]] = cmpf olt, %[[a]], %[[zero]] : f64
-  ! CHECK-DAG: %[[pNeg:.*]] = cmpf olt, %[[p]], %[[zero]] : f64
+  ! CHECK-DAG: %[[remNotZero:.*]] = arith.cmpf une, %[[rem]], %[[zero]] : f64
+  ! CHECK-DAG: %[[aNeg:.*]] = arith.cmpf olt, %[[a]], %[[zero]] : f64
+  ! CHECK-DAG: %[[pNeg:.*]] = arith.cmpf olt, %[[p]], %[[zero]] : f64
   ! CHECK-DAG: %[[signDifferent:.*]] = xor %[[aNeg]], %[[pNeg]] : i1
   ! CHECK-DAG: %[[mustAddP:.*]] = and %[[remNotZero]], %[[signDifferent]] : i1
   ! CHECK-DAG: %[[remPlusP:.*]] = arith.addf %[[rem]], %[[p]] : f64
