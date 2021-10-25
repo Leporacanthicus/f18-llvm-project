@@ -116,7 +116,7 @@ subroutine allocatable_to_assumed_optional_array(x)
   ! CHECK: %[[xboxload:.*]] = fir.load %[[arg0]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
   ! CHECK: %[[xptr:.*]] = fir.box_addr %[[xboxload]] : (!fir.box<!fir.heap<!fir.array<?xf32>>>) -> !fir.heap<!fir.array<?xf32>>
   ! CHECK: %[[xaddr:.*]] = fir.convert %[[xptr]] : (!fir.heap<!fir.array<?xf32>>) -> i64
-  ! CHECK: %[[isAlloc:.*]] = cmpi ne, %[[xaddr]], %c0{{.*}} : i64
+  ! CHECK: %[[isAlloc:.*]] = arith.cmpi ne, %[[xaddr]], %c0{{.*}} : i64
   ! CHECK: %[[absent:.*]] = fir.absent !fir.box<!fir.array<?xf32>>
   ! CHECK: %[[embox:.*]] = fir.embox %{{.*}}
   ! CHECK: %[[actual:.*]] = select %[[isAlloc]], %[[embox]], %[[absent]] : !fir.box<!fir.array<?xf32>>
@@ -127,7 +127,7 @@ end subroutine
 ! CHECK-LABEL: func @_QMoptPalloc_component_to_optional_assumed_shape
 subroutine alloc_component_to_optional_assumed_shape(x)
   type(t) :: x(100)
-  ! CHECK-DAG: %[[isAlloc:.*]] = cmpi ne
+  ! CHECK-DAG: %[[isAlloc:.*]] = arith.cmpi ne
   ! CHECK-DAG: %[[absent:.*]] = fir.absent !fir.box<!fir.array<?xf32>>
   ! CHECK: %[[select:.*]] = select %[[isAlloc]], %{{.*}}, %[[absent]] : !fir.box<!fir.array<?xf32>>
   ! CHECK: fir.call @_QMoptPassumed_shape(%[[select]])

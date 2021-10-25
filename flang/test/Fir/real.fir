@@ -23,9 +23,9 @@ func @bar(%a : f16, %b : f32, %c : f64, %d : f80, %e : f128) -> f80 {
 // CHECK-LABEL: @foo
 func @foo(%a : f128, %b : f128, %c : f128, %d : f128, %e : f128) -> f128 {
   // CHECK: fadd fp128
-  %1 = addf %a, %b : f128
+  %1 = arith.addf %a, %b : f128
   // CHECK: fmul fp128
-  %2 = mulf %1, %c : f128
+  %2 = arith.mulf %1, %c : f128
   // CHECK: fsub fp128
   %3 = subf %2, %d : f128
   // CHECK: fdiv fp128
@@ -38,9 +38,9 @@ func @foo(%a : f128, %b : f128, %c : f128, %d : f128, %e : f128) -> f128 {
 // CHECK-LABEL: @foop
 func @foop(%a : f80, %b : f80, %c : f80, %d : f80, %e : f80) -> f80 {
   // CHECK: fadd x86_fp80
-  %1 = addf %a, %b : f80
+  %1 = arith.addf %a, %b : f80
   // CHECK: fmul x86_fp80
-  %2 = mulf %1, %c : f80
+  %2 = arith.mulf %1, %c : f80
   // CHECK: fsub x86_fp80
   %3 = subf %2, %d : f80
   // CHECK: fdiv x86_fp80

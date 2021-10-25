@@ -97,12 +97,12 @@ subroutine test_array_remap(p, x)
   real, pointer :: p(:, :)
   ! CHECK-DAG: %[[c2_idx:.*]] = fir.convert %c2{{.*}} : (i64) -> index
   ! CHECK-DAG: %[[c11_idx:.*]] = fir.convert %c11{{.*}} : (i64) -> index
-  ! CHECK-DAG: %[[diff0:.*]] = subi %[[c11_idx]], %[[c2_idx]] : index
-  ! CHECK-DAG: %[[ext0:.*]] = addi %[[diff0:.*]], %c1{{.*}} : index
+  ! CHECK-DAG: %[[diff0:.*]] = arith.subi %[[c11_idx]], %[[c2_idx]] : index
+  ! CHECK-DAG: %[[ext0:.*]] = arith.addi %[[diff0:.*]], %c1{{.*}} : index
   ! CHECK-DAG: %[[c3_idx:.*]] = fir.convert %c3{{.*}} : (i64) -> index
   ! CHECK-DAG: %[[c12_idx:.*]] = fir.convert %c12{{.*}} : (i64) -> index
-  ! CHECK-DAG: %[[diff1:.*]] = subi %[[c12_idx]], %[[c3_idx]] : index
-  ! CHECK-DAG: %[[ext1:.*]] = addi %[[diff1]], %c1{{.*}} : index
+  ! CHECK-DAG: %[[diff1:.*]] = arith.subi %[[c12_idx]], %[[c3_idx]] : index
+  ! CHECK-DAG: %[[ext1:.*]] = arith.addi %[[diff1]], %c1{{.*}} : index
   ! CHECK-DAG: %[[addrCast:.*]] = fir.convert %[[x]] : (!fir.ref<!fir.array<100xf32>>) -> !fir.ref<!fir.array<?x?xf32>>
   ! CHECK: %[[shape:.*]] = fir.shape_shift %c2{{.*}}, %[[ext0]], %c3{{.*}}, %[[ext1]]
   ! CHECK: %[[box:.*]] = fir.embox %[[addrCast]](%[[shape]]) : (!fir.ref<!fir.array<?x?xf32>>, !fir.shapeshift<2>) -> !fir.box<!fir.ptr<!fir.array<?x?xf32>>>
@@ -118,9 +118,9 @@ subroutine test_array_char_remap(p, x)
   character(*), target :: x(100)
   character(:), pointer :: p(:, :)
   ! CHECK: subi
-  ! CHECK: %[[ext0:.*]] = addi
+  ! CHECK: %[[ext0:.*]] = arith.addi
   ! CHECK: subi
-  ! CHECK: %[[ext1:.*]] = addi
+  ! CHECK: %[[ext1:.*]] = arith.addi
   ! CHECK: %[[shape:.*]] = fir.shape_shift %c2{{.*}}, %[[ext0]], %c3{{.*}}, %[[ext1]]
   ! CHECK: %[[box:.*]] = fir.embox %{{.*}}(%[[shape]]) typeparams %[[unbox]]#1 : (!fir.ref<!fir.array<?x?x!fir.char<1,?>>>, !fir.shapeshift<2>, index) -> !fir.box<!fir.ptr<!fir.array<?x?x!fir.char<1,?>>>>
   ! CHECK: fir.store %[[box]] to %[[p]]
@@ -200,9 +200,9 @@ subroutine test_array_non_contig_remap(p, x)
   real, target :: x(:)
   real, pointer :: p(:, :)
   ! CHECK: subi
-  ! CHECK: %[[ext0:.*]] = addi
+  ! CHECK: %[[ext0:.*]] = arith.addi
   ! CHECK: subi
-  ! CHECK: %[[ext1:.*]] = addi
+  ! CHECK: %[[ext1:.*]] = arith.addi
   ! CHECK: %[[shape:.*]] = fir.shape_shift %{{.*}}, %[[ext0]], %{{.*}}, %[[ext1]]
   ! CHECK: %[[rebox:.*]] = fir.rebox %[[x]](%[[shape]]) : (!fir.box<!fir.array<?xf32>>, !fir.shapeshift<2>) -> !fir.box<!fir.ptr<!fir.array<?x?xf32>>>
   ! CHECK: fir.store %[[rebox]] to %[[p]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?x?xf32>>>>
@@ -291,8 +291,8 @@ subroutine issue857_array_remap(rhs)
 
   ! CHECK: %[[c101:.*]] = fir.convert %c101_i64 : (i64) -> index
   ! CHECK: %[[c200:.*]] = fir.convert %c200_i64 : (i64) -> index
-  ! CHECK: %[[sub:.*]] = subi %[[c200]], %[[c101]] : index
-  ! CHECK: %[[extent:.*]] = addi %[[sub]], %c1{{.*}} : index
+  ! CHECK: %[[sub:.*]] = arith.subi %[[c200]], %[[c101]] : index
+  ! CHECK: %[[extent:.*]] = arith.addi %[[sub]], %c1{{.*}} : index
   ! CHECK: %[[addr:.*]] = fir.box_addr %{{.*}} : (!fir.box<!fir.ptr<!fir.array<?x?x!fir.type<_QFissue857_array_remapTt{i:i32}>>>>) -> !fir.ptr<!fir.array<?x?x!fir.type<_QFissue857_array_remapTt{i:i32}>>>
   ! CHECK: %[[addr_cast:.*]] = fir.convert %[[addr]] : (!fir.ptr<!fir.array<?x?x!fir.type<_QFissue857_array_remapTt{i:i32}>>>) -> !fir.ptr<!fir.array<?x!fir.type<_QFissue857_array_remapTt{i:i32}>>>
   ! CHECK: fir.store %[[addr_cast]] to %[[lhs_addr]] : !fir.ref<!fir.ptr<!fir.array<?x!fir.type<_QFissue857_array_remapTt{i:i32}>>>>

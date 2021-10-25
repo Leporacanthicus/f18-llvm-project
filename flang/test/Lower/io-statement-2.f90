@@ -97,7 +97,7 @@ c = 1; d = 9
 ! CHECK: fir.result
 ! CHECK: else
 ! CHECK: fir.result %false
-! CHECK: = addi %arg0, %c1
+! CHECK: = arith.addi %arg0, %c1
 ! CHECK: = select
 ! CHECK: fir.result
 ! CHECK: fir.if %{{[0-9]*}}#1

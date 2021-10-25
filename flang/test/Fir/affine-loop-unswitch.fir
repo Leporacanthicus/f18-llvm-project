@@ -21,8 +21,8 @@ func @calc(%a: !arr_d1, %v: f32) {
   fir.do_loop %i = %c1 to %len step %c1 {
     fir.do_loop %j = %c1 to %len step %c1 {
       fir.do_loop %k = %c1 to %len step %c1 {
-        %im2 = subi %i, %c2 : index
-        %cond = cmpi "sgt", %im2, %c0 : index
+        %im2 = arith.subi %i, %c2 : index
+        %cond = arith.cmpi "sgt", %im2, %c0 : index
         fir.if %cond {
           %a_idx = fir.array_coor %a(%dims) %i
             : (!arr_d1, !fir.shape<1>, index) -> !fir.ref<f32>

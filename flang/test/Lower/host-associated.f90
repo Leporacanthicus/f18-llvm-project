@@ -151,11 +151,11 @@ contains
 
 
     ! CHECK: %[[qlb:.*]] = fir.convert %[[qbounds]]#0 : (index) -> i64
-    ! CHECK: %[[qoffset:.*]] = subi %c1{{.*}}, %[[qlb]] : i64
+    ! CHECK: %[[qoffset:.*]] = arith.subi %c1{{.*}}, %[[qlb]] : i64
     ! CHECK: %[[qelt:.*]] = fir.coordinate_of %[[q]], %[[qoffset]] : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, i64) -> !fir.ref<f32>
     ! CHECK: %[[qload:.*]] = fir.load %[[qelt]] : !fir.ref<f32>
     ! CHECK: %[[plb:.*]] = fir.convert %[[pbounds]]#0 : (index) -> i64
-    ! CHECK: %[[poffset:.*]] = subi %c2{{.*}}, %[[plb]] : i64
+    ! CHECK: %[[poffset:.*]] = arith.subi %c2{{.*}}, %[[plb]] : i64
     ! CHECK: %[[pelt:.*]] = fir.coordinate_of %[[p]], %[[poffset]] : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, i64) -> !fir.ref<f32>
     ! CHECK: fir.store %[[qload]] to %[[pelt]] : !fir.ref<f32>
     p(2) = q(1)

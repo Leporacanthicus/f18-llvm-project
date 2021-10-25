@@ -104,7 +104,7 @@ subroutine ref_scalar_real_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[load:.*]] = fir.load %[[coor]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf32>>>>
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[load]], %c0{{.*}} : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, index) -> (index, index, index)
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]] : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]] : i64
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[load]], %[[index]] : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, i64) -> !fir.ref<f32>
   ! CHECK: fir.call @_QPtakes_real_scalar(%[[coor]]) : (!fir.ref<f32>) -> ()
   call takes_real_scalar(p1_0%p(7))
@@ -115,7 +115,7 @@ subroutine ref_scalar_real_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[load:.*]] = fir.load %[[coor]] : !fir.ref<!fir.box<!fir.ptr<!fir.array<?xf32>>>>
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[load]], %c0{{.*}} : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, index) -> (index, index, index)
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]] : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]] : i64
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[load]], %[[index]] : (!fir.box<!fir.ptr<!fir.array<?xf32>>>, i64) -> !fir.ref<f32>
   ! CHECK: fir.call @_QPtakes_real_scalar(%[[coor]]) : (!fir.ref<f32>) -> ()
   call takes_real_scalar(p1_1(5)%p(7))
@@ -217,7 +217,7 @@ subroutine ref_scalar_cst_char_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[box:.*]] = fir.load %[[coor]]
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[cast:.*]] = fir.convert %[[addr]]
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[cast]], %c10{{.*}}
@@ -231,7 +231,7 @@ subroutine ref_scalar_cst_char_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[box:.*]] = fir.load %[[coor]]
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[cast:.*]] = fir.convert %[[addr]]
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[cast]], %c10{{.*}}
@@ -274,7 +274,7 @@ subroutine ref_scalar_def_char_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK-DAG: %[[len:.*]] = fir.box_elesize %[[box]]
   ! CHECK-DAG: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK-DAG: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK-DAG: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK-DAG: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK-DAG: %[[addr:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[addr]], %[[len]]
   ! CHECK: fir.call @_QPtakes_char_scalar(%[[boxchar]])
@@ -288,7 +288,7 @@ subroutine ref_scalar_def_char_p(p0_0, p1_0, p0_1, p1_1)
   ! CHECK-DAG: %[[len:.*]] = fir.box_elesize %[[box]]
   ! CHECK-DAG: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK-DAG: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK-DAG: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK-DAG: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK-DAG: %[[addr:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[addr]], %[[len]]
   ! CHECK: fir.call @_QPtakes_char_scalar(%[[boxchar]])
@@ -324,7 +324,7 @@ subroutine ref_scalar_derived(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[box:.*]] = fir.load %[[coor]]
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK: %[[elem:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[fldx:.*]] = fir.field_index x
   ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[elem]], %[[fldx]]
@@ -337,7 +337,7 @@ subroutine ref_scalar_derived(p0_0, p1_0, p0_1, p1_1)
   ! CHECK: %[[box:.*]] = fir.load %[[coor]]
   ! CHECK: %[[dims:.*]]:3 = fir.box_dims %[[box]], %c0{{.*}}
   ! CHECK: %[[lb:.*]] = fir.convert %[[dims]]#0 : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK: %[[index:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK: %[[elem:.*]] = fir.coordinate_of %[[box]], %[[index]]
   ! CHECK: %[[fldx:.*]] = fir.field_index x
   ! CHECK: %[[addr:.*]] = fir.coordinate_of %[[elem]], %[[fldx]]
@@ -661,14 +661,14 @@ subroutine very_long(x)
   ! CHECK-DAG: %[[fldc:.*]] = fir.field_index c
   ! CHECK-DAG: %[[fldd:.*]] = fir.field_index d
   ! CHECK: %[[coor2:.*]] = fir.coordinate_of %[[b_box]], %[[fldc]], %[[fldd]]
-  ! CHECK: %[[index:.*]] = subi %c6{{.*}}, %c1{{.*}} : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c6{{.*}}, %c1{{.*}} : i64
   ! CHECK: %[[coor3:.*]] = fir.coordinate_of %[[coor2]], %[[index]]
   ! CHECK: %[[flde:.*]] = fir.field_index e
   ! CHECK: %[[coor4:.*]] = fir.coordinate_of %[[coor3]], %[[flde]]
   ! CHECK: %[[e_box:.*]] = fir.load %[[coor4]]
   ! CHECK: %[[edims:.*]]:3 = fir.box_dims %[[e_box]], %c0{{.*}}
   ! CHECK: %[[lb:.*]] = fir.convert %[[edims]]#0 : (index) -> i64
-  ! CHECK: %[[index2:.*]] = subi %c7{{.*}}, %[[lb]]
+  ! CHECK: %[[index2:.*]] = arith.subi %c7{{.*}}, %[[lb]]
   ! CHECK: %[[coor5:.*]] = fir.coordinate_of %[[e_box]], %[[index2]]
   ! CHECK: %[[fldf:.*]] = fir.field_index f
   ! CHECK: %[[coor6:.*]] = fir.coordinate_of %[[coor5]], %[[fldf:.*]]

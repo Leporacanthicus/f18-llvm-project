@@ -22,7 +22,7 @@ subroutine test_element_ref(x, y)
   ! Test that for an entity that is not know to be contiguous, the fir.box is passed
   ! to coordinate of and that the lower bounds is already applied by lowering.
   ! CHECK: %[[c4_2:.*]] = fir.convert %[[c4]] : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c100{{.*}}, %[[c4_2]] : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c100{{.*}}, %[[c4_2]] : i64
   ! CHECK: fir.coordinate_of %arg1, %{{.*}} : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 
 
@@ -48,7 +48,7 @@ subroutine test_element_assign(x, y)
   ! CHECK: fir.coordinate_of %[[xaddr]], %{{.*}} : (!fir.ref<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
   y(100) = 42.
   ! CHECK: %[[c4_2:.*]] = fir.convert %[[c4]] : (index) -> i64
-  ! CHECK: %[[index:.*]] = subi %c100{{.*}}, %[[c4_2]] : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c100{{.*}}, %[[c4_2]] : i64
   ! CHECK: fir.coordinate_of %arg1, %{{.*}} : (!fir.box<!fir.array<?xf32>>, i64) -> !fir.ref<f32>
 
   ! ArrayCoorCHECK-DAG: %[[xaddr:.*]] = fir.box_addr %arg0 : (!fir.box<!fir.array<?xf32>>) -> !fir.ref<!fir.array<?xf32>>

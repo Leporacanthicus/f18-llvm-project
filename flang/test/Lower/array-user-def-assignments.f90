@@ -42,7 +42,7 @@ subroutine test_derived(x)
   ! CHECK:         %[[VAL_11:.*]] = fir.array_load %[[VAL_0]](%[[VAL_9]]) {{\[}}%[[VAL_10]]] : (!fir.ref<!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>>, !fir.shape<1>, !fir.slice<1>) -> !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>
   ! CHECK:         %[[VAL_12:.*]] = arith.constant 1 : index
   ! CHECK:         %[[VAL_13:.*]] = arith.constant 0 : index
-  ! CHECK:         %[[VAL_14:.*]] = subi %[[VAL_5]], %[[VAL_12]] : index
+  ! CHECK:         %[[VAL_14:.*]] = arith.subi %[[VAL_5]], %[[VAL_12]] : index
   ! CHECK:         %[[VAL_15:.*]] = fir.do_loop %[[VAL_16:.*]] = %[[VAL_13]] to %[[VAL_14]] step %[[VAL_12]] unordered iter_args(%[[VAL_17:.*]] = %[[VAL_3]]) -> (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>) {
   ! CHECK:           %[[VAL_18:.*]] = fir.array_access %[[VAL_11]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> !fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>
   ! CHECK:           %[[VAL_19:.*]]:2 = fir.array_modify %[[VAL_17]], %[[VAL_16]] : (!fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>, index) -> (!fir.ref<!fir.type<_QMdefined_assignmentsTt{i:i32}>>, !fir.array<100x!fir.type<_QMdefined_assignmentsTt{i:i32}>>)
@@ -78,7 +78,7 @@ subroutine test_intrinsic(x)
 ! CHECK:         %[[VAL_13:.*]] = arith.constant 0.000000e+00 : f32
 ! CHECK:         %[[VAL_14:.*]] = arith.constant 1 : index
 ! CHECK:         %[[VAL_15:.*]] = arith.constant 0 : index
-! CHECK:         %[[VAL_16:.*]] = subi %[[VAL_6]], %[[VAL_14]] : index
+! CHECK:         %[[VAL_16:.*]] = arith.subi %[[VAL_6]], %[[VAL_14]] : index
 ! CHECK:         %[[VAL_17:.*]] = fir.do_loop %[[VAL_18:.*]] = %[[VAL_15]] to %[[VAL_16]] step %[[VAL_14]] unordered iter_args(%[[VAL_19:.*]] = %[[VAL_4]]) -> (!fir.array<100xf32>) {
 ! CHECK:           %[[VAL_20:.*]] = fir.array_fetch %[[VAL_12]], %[[VAL_18]] : (!fir.array<100xf32>, index) -> f32
 ! CHECK:           %[[VAL_21:.*]] = cmpf olt, %[[VAL_20]], %[[VAL_13]] : f32
@@ -112,7 +112,7 @@ subroutine test_intrinsic_2(x, y)
 ! CHECK:         %[[VAL_10:.*]] = fir.array_load %[[VAL_1]](%[[VAL_9]]) : (!fir.ref<!fir.array<100xf32>>, !fir.shape<1>) -> !fir.array<100xf32>
 ! CHECK:         %[[VAL_11:.*]] = arith.constant 1 : index
 ! CHECK:         %[[VAL_12:.*]] = arith.constant 0 : index
-! CHECK:         %[[VAL_13:.*]] = subi %[[VAL_8]], %[[VAL_11]] : index
+! CHECK:         %[[VAL_13:.*]] = arith.subi %[[VAL_8]], %[[VAL_11]] : index
 ! CHECK:         %[[VAL_14:.*]] = fir.do_loop %[[VAL_15:.*]] = %[[VAL_12]] to %[[VAL_13]] step %[[VAL_11]] unordered iter_args(%[[VAL_16:.*]] = %[[VAL_6]]) -> (!fir.array<100x!fir.logical<4>>) {
 ! CHECK:           %[[VAL_17:.*]] = fir.array_fetch %[[VAL_10]], %[[VAL_15]] : (!fir.array<100xf32>, index) -> f32
 ! CHECK:           %[[VAL_18:.*]]:2 = fir.array_modify %[[VAL_16]], %[[VAL_15]] : (!fir.array<100x!fir.logical<4>>, index) -> (!fir.ref<!fir.logical<4>>, !fir.array<100x!fir.logical<4>>)
@@ -135,7 +135,7 @@ subroutine from_char(i, c)
   ! CHECK:         %[[VAL_5:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_4]] : (!fir.box<!fir.array<?xi32>>, index) -> (index, index, index)
   ! CHECK:         %[[VAL_6:.*]] = arith.constant 1 : index
   ! CHECK:         %[[VAL_7:.*]] = arith.constant 0 : index
-  ! CHECK:         %[[VAL_8:.*]] = subi %[[VAL_5]]#1, %[[VAL_6]] : index
+  ! CHECK:         %[[VAL_8:.*]] = arith.subi %[[VAL_5]]#1, %[[VAL_6]] : index
   ! CHECK:         %[[VAL_9:.*]] = fir.do_loop %[[VAL_10:.*]] = %[[VAL_7]] to %[[VAL_8]] step %[[VAL_6]] unordered iter_args(%[[VAL_11:.*]] = %[[VAL_2]]) -> (!fir.array<?xi32>) {
   ! CHECK:           %[[VAL_12:.*]] = fir.array_access %[[VAL_3]], %[[VAL_10]] : (!fir.array<?x!fir.char<1,?>>, index) -> !fir.ref<!fir.char<1,?>>
   ! CHECK:           %[[VAL_13:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
@@ -178,7 +178,7 @@ subroutine to_char(i, c)
 ! CHECK:         %[[VAL_6:.*]]:3 = fir.box_dims %[[VAL_1]], %[[VAL_5]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>, index) -> (index, index, index)
 ! CHECK:         %[[VAL_7:.*]] = arith.constant 1 : index
 ! CHECK:         %[[VAL_8:.*]] = arith.constant 0 : index
-! CHECK:         %[[VAL_9:.*]] = subi %[[VAL_6]]#1, %[[VAL_7]] : index
+! CHECK:         %[[VAL_9:.*]] = arith.subi %[[VAL_6]]#1, %[[VAL_7]] : index
 ! CHECK:         %[[VAL_10:.*]] = fir.do_loop %[[VAL_11:.*]] = %[[VAL_8]] to %[[VAL_9]] step %[[VAL_7]] unordered iter_args(%[[VAL_12:.*]] = %[[VAL_3]]) -> (!fir.array<?x!fir.char<1,?>>) {
 ! CHECK:           %[[VAL_13:.*]] = fir.array_fetch %[[VAL_4]], %[[VAL_11]] : (!fir.array<?xi32>, index) -> i32
 ! CHECK:           %[[VAL_14:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_11]] : (!fir.array<?x!fir.char<1,?>>, index) -> (!fir.ref<!fir.char<1,?>>, !fir.array<?x!fir.char<1,?>>)
@@ -299,7 +299,7 @@ subroutine test_intrinsic_where_1(x, y, l)
   ! CHECK: %[[VAL_13:.*]] = fir.array_load %[[VAL_11]](%[[VAL_12]]) : (!fir.heap<!fir.array<10x!fir.logical<4>>>, !fir.shape<1>) -> !fir.array<10x!fir.logical<4>>
   ! CHECK: %[[VAL_14:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_15:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_16:.*]] = subi %[[VAL_8]], %[[VAL_14]] : index
+  ! CHECK: %[[VAL_16:.*]] = arith.subi %[[VAL_8]], %[[VAL_14]] : index
   ! CHECK: %[[VAL_17:.*]] = fir.do_loop %[[VAL_18:.*]] = %[[VAL_15]] to %[[VAL_16]] step %[[VAL_14]] unordered iter_args(%[[VAL_19:.*]] = %[[VAL_13]]) -> (!fir.array<10x!fir.logical<4>>) {
   ! CHECK: %[[VAL_20:.*]] = fir.array_fetch %[[VAL_10]], %[[VAL_18]] : (!fir.array<10x!fir.logical<4>>, index) -> !fir.logical<4>
   ! CHECK: %[[VAL_21:.*]] = fir.array_update %[[VAL_19]], %[[VAL_20]], %[[VAL_18]] : (!fir.array<10x!fir.logical<4>>, !fir.logical<4>, index) -> !fir.array<10x!fir.logical<4>>
@@ -315,10 +315,10 @@ subroutine test_intrinsic_where_1(x, y, l)
   ! CHECK: %[[VAL_29:.*]] = fir.array_load %[[VAL_1]](%[[VAL_28]]) : (!fir.ref<!fir.array<10xf32>>, !fir.shape<1>) -> !fir.array<10xf32>
   ! CHECK: %[[VAL_30:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_31:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_32:.*]] = subi %[[VAL_27]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_32:.*]] = arith.subi %[[VAL_27]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_33:.*]] = fir.do_loop %[[VAL_34:.*]] = %[[VAL_31]] to %[[VAL_32]] step %[[VAL_30]] unordered iter_args(%[[VAL_35:.*]] = %[[VAL_25]]) -> (!fir.array<10x!fir.logical<4>>) {
   ! CHECK: %[[VAL_36:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_37:.*]] = addi %[[VAL_34]], %[[VAL_36]] : index
+  ! CHECK: %[[VAL_37:.*]] = arith.addi %[[VAL_34]], %[[VAL_36]] : index
   ! CHECK: %[[VAL_38:.*]] = fir.array_coor %[[VAL_11]](%[[VAL_23]]) %[[VAL_37]] : (!fir.heap<!fir.array<10x!fir.logical<4>>>, !fir.shape<1>, index) -> !fir.ref<!fir.logical<4>>
   ! CHECK: %[[VAL_39:.*]] = fir.load %[[VAL_38]] : !fir.ref<!fir.logical<4>>
   ! CHECK: %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (!fir.logical<4>) -> i1
@@ -360,7 +360,7 @@ subroutine test_intrinsic_where_2(x, y, l)
   ! CHECK: %[[VAL_12:.*]] = fir.array_load %[[VAL_10]](%[[VAL_11]]) : (!fir.heap<!fir.array<10x!fir.logical<4>>>, !fir.shape<1>) -> !fir.array<10x!fir.logical<4>>
   ! CHECK: %[[VAL_13:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_14:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_15:.*]] = subi %[[VAL_7]], %[[VAL_13]] : index
+  ! CHECK: %[[VAL_15:.*]] = arith.subi %[[VAL_7]], %[[VAL_13]] : index
   ! CHECK: %[[VAL_16:.*]] = fir.do_loop %[[VAL_17:.*]] = %[[VAL_14]] to %[[VAL_15]] step %[[VAL_13]] unordered iter_args(%[[VAL_18:.*]] = %[[VAL_12]]) -> (!fir.array<10x!fir.logical<4>>) {
   ! CHECK: %[[VAL_19:.*]] = fir.array_fetch %[[VAL_9]], %[[VAL_17]] : (!fir.array<10x!fir.logical<4>>, index) -> !fir.logical<4>
   ! CHECK: %[[VAL_20:.*]] = fir.array_update %[[VAL_18]], %[[VAL_19]], %[[VAL_17]] : (!fir.array<10x!fir.logical<4>>, !fir.logical<4>, index) -> !fir.array<10x!fir.logical<4>>
@@ -377,10 +377,10 @@ subroutine test_intrinsic_where_2(x, y, l)
   ! CHECK: %[[VAL_29:.*]] = arith.constant 0.000000e+00 : f32
   ! CHECK: %[[VAL_30:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_31:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_32:.*]] = subi %[[VAL_26]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_32:.*]] = arith.subi %[[VAL_26]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_33:.*]] = fir.do_loop %[[VAL_34:.*]] = %[[VAL_31]] to %[[VAL_32]] step %[[VAL_30]] unordered iter_args(%[[VAL_35:.*]] = %[[VAL_24]]) -> (!fir.array<10xf32>) {
   ! CHECK: %[[VAL_36:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_37:.*]] = addi %[[VAL_34]], %[[VAL_36]] : index
+  ! CHECK: %[[VAL_37:.*]] = arith.addi %[[VAL_34]], %[[VAL_36]] : index
   ! CHECK: %[[VAL_38:.*]] = fir.array_coor %[[VAL_10]](%[[VAL_22]]) %[[VAL_37]] : (!fir.heap<!fir.array<10x!fir.logical<4>>>, !fir.shape<1>, index) -> !fir.ref<!fir.logical<4>>
   ! CHECK: %[[VAL_39:.*]] = fir.load %[[VAL_38]] : !fir.ref<!fir.logical<4>>
   ! CHECK: %[[VAL_40:.*]] = fir.convert %[[VAL_39]] : (!fir.logical<4>) -> i1
@@ -498,7 +498,7 @@ subroutine test_in_forall_with_cleanup(x, y)
 ! CHECK:           %[[VAL_25:.*]] = fir.box_addr %[[VAL_24]] : (!fir.box<!fir.heap<f32>>) -> !fir.heap<f32>
 ! CHECK:           %[[VAL_26:.*]] = fir.convert %[[VAL_25]] : (!fir.heap<f32>) -> i64
 ! CHECK:           %[[VAL_27:.*]] = arith.constant 0 : i64
-! CHECK:           %[[VAL_28:.*]] = cmpi ne, %[[VAL_26]], %[[VAL_27]] : i64
+! CHECK:           %[[VAL_28:.*]] = arith.cmpi ne, %[[VAL_26]], %[[VAL_27]] : i64
 ! CHECK:           fir.if %[[VAL_28]] {
 ! CHECK:             fir.freemem %[[VAL_25]] : !fir.heap<f32>
 ! CHECK:           }
@@ -532,19 +532,19 @@ subroutine test_forall_array(x, y)
 ! CHECK:           %[[VAL_15:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_16:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_17:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_16]] : (!fir.box<!fir.array<?x?x!fir.logical<4>>>, index) -> (index, index, index)
-! CHECK:           %[[VAL_18:.*]] = addi %[[VAL_15]], %[[VAL_17]]#1 : index
-! CHECK:           %[[VAL_19:.*]] = subi %[[VAL_18]], %[[VAL_15]] : index
+! CHECK:           %[[VAL_18:.*]] = arith.addi %[[VAL_15]], %[[VAL_17]]#1 : index
+! CHECK:           %[[VAL_19:.*]] = arith.subi %[[VAL_18]], %[[VAL_15]] : index
 ! CHECK:           %[[VAL_20:.*]] = arith.constant 1 : i64
 ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i64) -> index
 ! CHECK:           %[[VAL_22:.*]] = arith.constant 0 : index
-! CHECK:           %[[VAL_23:.*]] = subi %[[VAL_19]], %[[VAL_15]] : index
-! CHECK:           %[[VAL_24:.*]] = addi %[[VAL_23]], %[[VAL_21]] : index
+! CHECK:           %[[VAL_23:.*]] = arith.subi %[[VAL_19]], %[[VAL_15]] : index
+! CHECK:           %[[VAL_24:.*]] = arith.addi %[[VAL_23]], %[[VAL_21]] : index
 ! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_26:.*]] = cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
+! CHECK:           %[[VAL_26:.*]] = arith.cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_29:.*]] = arith.constant 0 : index
-! CHECK:           %[[VAL_30:.*]] = subi %[[VAL_27]], %[[VAL_28]] : index
+! CHECK:           %[[VAL_30:.*]] = arith.subi %[[VAL_27]], %[[VAL_28]] : index
 ! CHECK:           %[[VAL_31:.*]] = fir.do_loop %[[VAL_32:.*]] = %[[VAL_29]] to %[[VAL_30]] step %[[VAL_28]] unordered iter_args(%[[VAL_33:.*]] = %[[VAL_13]]) -> (!fir.array<?x?x!fir.logical<4>>) {
 ! CHECK:             %[[VAL_34:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_35:.*]] = fir.convert %[[VAL_34]] : (i32) -> i64
@@ -552,8 +552,8 @@ subroutine test_forall_array(x, y)
 ! CHECK:             %[[VAL_37:.*]] = arith.constant 1 : index
 ! CHECK:             %[[VAL_38:.*]] = arith.constant 1 : i64
 ! CHECK:             %[[VAL_39:.*]] = fir.convert %[[VAL_38]] : (i64) -> index
-! CHECK:             %[[VAL_40:.*]] = muli %[[VAL_32]], %[[VAL_39]] : index
-! CHECK:             %[[VAL_41:.*]] = addi %[[VAL_37]], %[[VAL_40]] : index
+! CHECK:             %[[VAL_40:.*]] = arith.muli %[[VAL_32]], %[[VAL_39]] : index
+! CHECK:             %[[VAL_41:.*]] = arith.addi %[[VAL_37]], %[[VAL_40]] : index
 ! CHECK:             %[[VAL_42:.*]] = fir.array_fetch %[[VAL_10]], %[[VAL_36]], %[[VAL_41]] {Fortran.offsets} : (!fir.array<?x?xf32>, index, index) -> f32
 ! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_44:.*]] = fir.convert %[[VAL_43]] : (i32) -> i64
@@ -561,8 +561,8 @@ subroutine test_forall_array(x, y)
 ! CHECK:             %[[VAL_46:.*]] = arith.constant 1 : index
 ! CHECK:             %[[VAL_47:.*]] = arith.constant 1 : i64
 ! CHECK:             %[[VAL_48:.*]] = fir.convert %[[VAL_47]] : (i64) -> index
-! CHECK:             %[[VAL_49:.*]] = muli %[[VAL_32]], %[[VAL_48]] : index
-! CHECK:             %[[VAL_50:.*]] = addi %[[VAL_46]], %[[VAL_49]] : index
+! CHECK:             %[[VAL_49:.*]] = arith.muli %[[VAL_32]], %[[VAL_48]] : index
+! CHECK:             %[[VAL_50:.*]] = arith.addi %[[VAL_46]], %[[VAL_49]] : index
 ! CHECK:             %[[VAL_51:.*]]:2 = fir.array_modify %[[VAL_13]], %[[VAL_45]], %[[VAL_50]] {Fortran.offsets} : (!fir.array<?x?x!fir.logical<4>>, index, index) -> (!fir.ref<!fir.logical<4>>, !fir.array<?x?x!fir.logical<4>>)
 ! CHECK:             fir.store %[[VAL_42]] to %[[VAL_2]] : !fir.ref<f32>
 ! CHECK:             fir.call @_QPassign_real_to_logical(%[[VAL_51]]#0, %[[VAL_2]]) : (!fir.ref<!fir.logical<4>>, !fir.ref<f32>) -> ()
@@ -679,19 +679,19 @@ subroutine from_char_forall_array(i, c)
   ! CHECK:           %[[VAL_14:.*]] = arith.constant 1 : index
   ! CHECK:           %[[VAL_15:.*]] = arith.constant 1 : index
   ! CHECK:           %[[VAL_16:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_15]] : (!fir.box<!fir.array<?x?xi32>>, index) -> (index, index, index)
-  ! CHECK:           %[[VAL_17:.*]] = addi %[[VAL_14]], %[[VAL_16]]#1 : index
-  ! CHECK:           %[[VAL_18:.*]] = subi %[[VAL_17]], %[[VAL_14]] : index
+  ! CHECK:           %[[VAL_17:.*]] = arith.addi %[[VAL_14]], %[[VAL_16]]#1 : index
+  ! CHECK:           %[[VAL_18:.*]] = arith.subi %[[VAL_17]], %[[VAL_14]] : index
   ! CHECK:           %[[VAL_19:.*]] = arith.constant 1 : i64
   ! CHECK:           %[[VAL_20:.*]] = fir.convert %[[VAL_19]] : (i64) -> index
   ! CHECK:           %[[VAL_21:.*]] = arith.constant 0 : index
-  ! CHECK:           %[[VAL_22:.*]] = subi %[[VAL_18]], %[[VAL_14]] : index
-  ! CHECK:           %[[VAL_23:.*]] = addi %[[VAL_22]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_22:.*]] = arith.subi %[[VAL_18]], %[[VAL_14]] : index
+  ! CHECK:           %[[VAL_23:.*]] = arith.addi %[[VAL_22]], %[[VAL_20]] : index
   ! CHECK:           %[[VAL_24:.*]] = divi_signed %[[VAL_23]], %[[VAL_20]] : index
-  ! CHECK:           %[[VAL_25:.*]] = cmpi sgt, %[[VAL_24]], %[[VAL_21]] : index
+  ! CHECK:           %[[VAL_25:.*]] = arith.cmpi sgt, %[[VAL_24]], %[[VAL_21]] : index
   ! CHECK:           %[[VAL_26:.*]] = select %[[VAL_25]], %[[VAL_24]], %[[VAL_21]] : index
   ! CHECK:           %[[VAL_27:.*]] = arith.constant 1 : index
   ! CHECK:           %[[VAL_28:.*]] = arith.constant 0 : index
-  ! CHECK:           %[[VAL_29:.*]] = subi %[[VAL_26]], %[[VAL_27]] : index
+  ! CHECK:           %[[VAL_29:.*]] = arith.subi %[[VAL_26]], %[[VAL_27]] : index
   ! CHECK:           %[[VAL_30:.*]] = fir.do_loop %[[VAL_31:.*]] = %[[VAL_28]] to %[[VAL_29]] step %[[VAL_27]] unordered iter_args(%[[VAL_32:.*]] = %[[VAL_12]]) -> (!fir.array<?x?xi32>) {
   ! CHECK:             %[[VAL_33:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
   ! CHECK:             %[[VAL_34:.*]] = fir.convert %[[VAL_33]] : (i32) -> i64
@@ -699,8 +699,8 @@ subroutine from_char_forall_array(i, c)
   ! CHECK:             %[[VAL_36:.*]] = arith.constant 1 : index
   ! CHECK:             %[[VAL_37:.*]] = arith.constant 1 : i64
   ! CHECK:             %[[VAL_38:.*]] = fir.convert %[[VAL_37]] : (i64) -> index
-  ! CHECK:             %[[VAL_39:.*]] = muli %[[VAL_31]], %[[VAL_38]] : index
-  ! CHECK:             %[[VAL_40:.*]] = addi %[[VAL_36]], %[[VAL_39]] : index
+  ! CHECK:             %[[VAL_39:.*]] = arith.muli %[[VAL_31]], %[[VAL_38]] : index
+  ! CHECK:             %[[VAL_40:.*]] = arith.addi %[[VAL_36]], %[[VAL_39]] : index
   ! CHECK:             %[[VAL_41:.*]] = fir.array_access %[[VAL_9]], %[[VAL_35]], %[[VAL_40]] {Fortran.offsets} : (!fir.array<?x?x!fir.char<1,?>>, index, index) -> !fir.ref<!fir.char<1,?>>
   ! CHECK:             %[[VAL_42:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> index
   ! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_2]] : !fir.ref<i32>
@@ -709,8 +709,8 @@ subroutine from_char_forall_array(i, c)
   ! CHECK:             %[[VAL_46:.*]] = arith.constant 1 : index
   ! CHECK:             %[[VAL_47:.*]] = arith.constant 1 : i64
   ! CHECK:             %[[VAL_48:.*]] = fir.convert %[[VAL_47]] : (i64) -> index
-  ! CHECK:             %[[VAL_49:.*]] = muli %[[VAL_31]], %[[VAL_48]] : index
-  ! CHECK:             %[[VAL_50:.*]] = addi %[[VAL_46]], %[[VAL_49]] : index
+  ! CHECK:             %[[VAL_49:.*]] = arith.muli %[[VAL_31]], %[[VAL_48]] : index
+  ! CHECK:             %[[VAL_50:.*]] = arith.addi %[[VAL_46]], %[[VAL_49]] : index
   ! CHECK:             %[[VAL_51:.*]]:2 = fir.array_modify %[[VAL_12]], %[[VAL_45]], %[[VAL_50]] {Fortran.offsets} : (!fir.array<?x?xi32>, index, index) -> (!fir.ref<i32>, !fir.array<?x?xi32>)
   ! CHECK:             %[[VAL_52:.*]] = fir.emboxchar %[[VAL_41]], %[[VAL_42]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
   ! CHECK:             fir.call @_QPsfrom_char(%[[VAL_51]]#0, %[[VAL_52]]) : (!fir.ref<i32>, !fir.boxchar<1>) -> ()
@@ -760,19 +760,19 @@ subroutine to_char_forall_array(i, c)
 ! CHECK:           %[[VAL_15:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_16:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_17:.*]]:3 = fir.box_dims %[[VAL_1]], %[[VAL_16]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>, index) -> (index, index, index)
-! CHECK:           %[[VAL_18:.*]] = addi %[[VAL_15]], %[[VAL_17]]#1 : index
-! CHECK:           %[[VAL_19:.*]] = subi %[[VAL_18]], %[[VAL_15]] : index
+! CHECK:           %[[VAL_18:.*]] = arith.addi %[[VAL_15]], %[[VAL_17]]#1 : index
+! CHECK:           %[[VAL_19:.*]] = arith.subi %[[VAL_18]], %[[VAL_15]] : index
 ! CHECK:           %[[VAL_20:.*]] = arith.constant 1 : i64
 ! CHECK:           %[[VAL_21:.*]] = fir.convert %[[VAL_20]] : (i64) -> index
 ! CHECK:           %[[VAL_22:.*]] = arith.constant 0 : index
-! CHECK:           %[[VAL_23:.*]] = subi %[[VAL_19]], %[[VAL_15]] : index
-! CHECK:           %[[VAL_24:.*]] = addi %[[VAL_23]], %[[VAL_21]] : index
+! CHECK:           %[[VAL_23:.*]] = arith.subi %[[VAL_19]], %[[VAL_15]] : index
+! CHECK:           %[[VAL_24:.*]] = arith.addi %[[VAL_23]], %[[VAL_21]] : index
 ! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_26:.*]] = cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
+! CHECK:           %[[VAL_26:.*]] = arith.cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index
 ! CHECK:           %[[VAL_29:.*]] = arith.constant 0 : index
-! CHECK:           %[[VAL_30:.*]] = subi %[[VAL_27]], %[[VAL_28]] : index
+! CHECK:           %[[VAL_30:.*]] = arith.subi %[[VAL_27]], %[[VAL_28]] : index
 ! CHECK:           %[[VAL_31:.*]] = fir.do_loop %[[VAL_32:.*]] = %[[VAL_29]] to %[[VAL_30]] step %[[VAL_28]] unordered iter_args(%[[VAL_33:.*]] = %[[VAL_13]]) -> (!fir.array<?x?x!fir.char<1,?>>) {
 ! CHECK:             %[[VAL_34:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_35:.*]] = fir.convert %[[VAL_34]] : (i32) -> i64
@@ -780,8 +780,8 @@ subroutine to_char_forall_array(i, c)
 ! CHECK:             %[[VAL_37:.*]] = arith.constant 1 : index
 ! CHECK:             %[[VAL_38:.*]] = arith.constant 1 : i64
 ! CHECK:             %[[VAL_39:.*]] = fir.convert %[[VAL_38]] : (i64) -> index
-! CHECK:             %[[VAL_40:.*]] = muli %[[VAL_32]], %[[VAL_39]] : index
-! CHECK:             %[[VAL_41:.*]] = addi %[[VAL_37]], %[[VAL_40]] : index
+! CHECK:             %[[VAL_40:.*]] = arith.muli %[[VAL_32]], %[[VAL_39]] : index
+! CHECK:             %[[VAL_41:.*]] = arith.addi %[[VAL_37]], %[[VAL_40]] : index
 ! CHECK:             %[[VAL_42:.*]] = fir.array_fetch %[[VAL_10]], %[[VAL_36]], %[[VAL_41]] {Fortran.offsets} : (!fir.array<?x?xi32>, index, index) -> i32
 ! CHECK:             %[[VAL_43:.*]] = fir.load %[[VAL_3]] : !fir.ref<i32>
 ! CHECK:             %[[VAL_44:.*]] = fir.convert %[[VAL_43]] : (i32) -> i64
@@ -789,8 +789,8 @@ subroutine to_char_forall_array(i, c)
 ! CHECK:             %[[VAL_46:.*]] = arith.constant 1 : index
 ! CHECK:             %[[VAL_47:.*]] = arith.constant 1 : i64
 ! CHECK:             %[[VAL_48:.*]] = fir.convert %[[VAL_47]] : (i64) -> index
-! CHECK:             %[[VAL_49:.*]] = muli %[[VAL_32]], %[[VAL_48]] : index
-! CHECK:             %[[VAL_50:.*]] = addi %[[VAL_46]], %[[VAL_49]] : index
+! CHECK:             %[[VAL_49:.*]] = arith.muli %[[VAL_32]], %[[VAL_48]] : index
+! CHECK:             %[[VAL_50:.*]] = arith.addi %[[VAL_46]], %[[VAL_49]] : index
 ! CHECK:             %[[VAL_51:.*]]:2 = fir.array_modify %[[VAL_13]], %[[VAL_45]], %[[VAL_50]] {Fortran.offsets} : (!fir.array<?x?x!fir.char<1,?>>, index, index) -> (!fir.ref<!fir.char<1,?>>, !fir.array<?x?x!fir.char<1,?>>)
 ! CHECK:             %[[VAL_52:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x?x!fir.char<1,?>>>) -> index
 ! CHECK:             %[[VAL_53:.*]] = fir.emboxchar %[[VAL_51]]#0, %[[VAL_52]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>

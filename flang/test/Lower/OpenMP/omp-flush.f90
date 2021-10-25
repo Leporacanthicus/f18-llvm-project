@@ -41,7 +41,7 @@ program flush
 !FIRDialect:      omp.flush
 !FIRDialect:      %{{.*}} = fir.load %{{.*}} : !fir.ref<i32>
 !FIRDialect:      %{{.*}} = fir.load %{{.*}} : !fir.ref<i32>
-!FIRDialect:      %{{.*}} = addi %{{.*}}, %{{.*}} : i32
+!FIRDialect:      %{{.*}} = arith.addi %{{.*}}, %{{.*}} : i32
 !FIRDialect:      fir.store %{{.*}} to %{{.*}} : !fir.ref<i32>
 
 !LLVMIRDialect:     omp.flush(%{{.*}}, %{{.*}}, %{{.*}} : !llvm.ptr<i32>, !llvm.ptr<i32>, !llvm.ptr<i32>)
@@ -64,7 +64,7 @@ program flush
 !FIRDialect:      omp.flush
 !FIRDialect:      %{{.*}} = fir.load %{{.*}} : !fir.ref<i32>
 !FIRDialect:      %{{.*}} = fir.load %{{.*}} : !fir.ref<i32>
-!FIRDialect:      %{{.*}} = addi %{{.*}}, %{{.*}} : i32
+!FIRDialect:      %{{.*}} = arith.addi %{{.*}}, %{{.*}} : i32
 !FIRDialect:      fir.store %{{.*}} to %{{.*}} : !fir.ref<i32>
 
 !LLVMIRDialect:     omp.flush(%{{.*}}, %{{.*}}, %{{.*}} : !llvm.ptr<i32>, !llvm.ptr<i32>, !llvm.ptr<i32>)

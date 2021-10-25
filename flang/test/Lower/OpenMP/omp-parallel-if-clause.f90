@@ -15,7 +15,7 @@
 !FIRDialect-DAG: fir.store %[[CONSTANT_4]] to %[[ALPHA]] : !fir.ref<i32>
 !FIRDialect-DAG: %[[CONSTANT_0:.*]] = arith.constant 0 : i32
 !FIRDialect-DAG: %[[LD_ALPHA:.*]] = fir.load %[[ALPHA]] : !fir.ref<i32>
-!FIRDialect:    %[[COND:.*]] = cmpi sle, %[[LD_ALPHA]], %[[CONSTANT_0]] : i32
+!FIRDialect:    %[[COND:.*]] = arith.cmpi sle, %[[LD_ALPHA]], %[[CONSTANT_0]] : i32
 !FIRDialect:     omp.parallel if(%[[COND]] : i1) {
 !FIRDialect:       omp.terminator
 !FIRDialect:     }

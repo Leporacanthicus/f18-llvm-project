@@ -41,8 +41,8 @@ subroutine foodim1()
   allocate(x(42:100))
   ! CHECK-DAG: %[[c42:.*]] = fir.convert %c42{{.*}} : (i32) -> index
   ! CHECK-DAG: %[[c100:.*]] = fir.convert %c100_i32 : (i32) -> index
-  ! CHECK-DAG: %[[diff:.*]] = subi %[[c100]], %[[c42]] : index
-  ! CHECK: %[[extent:.*]] = addi %[[diff]], %c1{{.*}} : index
+  ! CHECK-DAG: %[[diff:.*]] = arith.subi %[[c100]], %[[c42]] : index
+  ! CHECK: %[[extent:.*]] = arith.addi %[[diff]], %c1{{.*}} : index
   ! CHECK: %[[alloc:.*]] = fir.allocmem !fir.array<?xf32>, %[[extent]] {{{.*}}uniq_name = "_QFfoodim1Ex.alloc"}
   ! CHECK-DAG: fir.store %[[alloc]] to %[[xAddrVar]] : !fir.ref<!fir.heap<!fir.array<?xf32>>>
   ! CHECK-DAG: fir.store %[[extent]] to %[[xExtVar]] : !fir.ref<index>

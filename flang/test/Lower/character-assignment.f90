@@ -8,11 +8,11 @@ subroutine assign1(lhs, rhs)
   ! CHECK: %[[rhs:.*]]:2 = fir.unboxchar %arg1
   lhs = rhs
   ! Compute minimum length
-  ! CHECK: %[[cmp_len:[0-9]+]] = cmpi slt, %[[lhs:.*]]#1, %[[rhs:.*]]#1
+  ! CHECK: %[[cmp_len:[0-9]+]] = arith.cmpi slt, %[[lhs:.*]]#1, %[[rhs:.*]]#1
   ! CHECK-NEXT: %[[min_len:[0-9]+]] = select %[[cmp_len]], %[[lhs]]#1, %[[rhs]]#1
 
   ! Copy of rhs into lhs
-  ! CHECK: %[[count:.*]] = muli %{{.*}}, %{{.*}} : i64
+  ! CHECK: %[[count:.*]] = arith.muli %{{.*}}, %{{.*}} : i64
   ! CHECk-DAG: %[[bug:.*]] = fir.convert %[[lhs]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK-DAG: %[[src:.*]] = fir.convert %[[rhs]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%{{.*}}, %[[src]], %[[count]], %false) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
@@ -39,17 +39,17 @@ subroutine assign_substring1(str, rhs, lb, ub)
   ! Compute substring offset
   ! CHECK-DAG: %[[lbi:.*]] = fir.convert %[[lb]] : (i64) -> index
   ! CHECK-DAG: %[[c1:.*]] = arith.constant 1
-  ! CHECK-DAG: %[[offset:.*]] = subi %[[lbi]], %[[c1]]
+  ! CHECK-DAG: %[[offset:.*]] = arith.subi %[[lbi]], %[[c1]]
   ! CHECK-DAG: %[[str_cast:.*]] = fir.convert %[[str]]#0
   ! CHECK-DAG: %[[str_addr:.*]] = fir.coordinate_of %[[str_cast]], %[[offset]]
   ! CHECK-DAG: %[[lhs_addr:.*]] = fir.convert %[[str_addr]]
 
   ! Compute substring length
   ! CHECK-DAG: %[[ubi:.*]] = fir.convert %[[ub]] : (i64) -> index
-  ! CHECK-DAG: %[[diff:.*]] = subi %[[ubi]], %[[lbi]]
-  ! CHECK-DAG: %[[pre_lhs_len:.*]] = addi %[[diff]], %[[c1]]
+  ! CHECK-DAG: %[[diff:.*]] = arith.subi %[[ubi]], %[[lbi]]
+  ! CHECK-DAG: %[[pre_lhs_len:.*]] = arith.addi %[[diff]], %[[c1]]
   ! CHECK-DAG: %[[c0:.*]] = arith.constant 0
-  ! CHECK-DAG: %[[cmp_len:.*]] = cmpi slt, %[[pre_lhs_len]], %[[c0]]
+  ! CHECK-DAG: %[[cmp_len:.*]] = arith.cmpi slt, %[[pre_lhs_len]], %[[c0]]
 
   ! CHECK-DAG: %[[lhs_len:.*]] = select %[[cmp_len]], %[[c0]], %[[pre_lhs_len]]
 
@@ -71,7 +71,7 @@ subroutine assign_constant(lhs)
   lhs = "Hello World"
   ! CHECK-DAG: %[[dst:.*]] = fir.convert %[[lhs]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK-DAG: %[[src:.*]] = fir.convert %[[cst]] : (!fir.ref<!fir.char<1,11>>) -> !fir.ref<i8>
-  ! CHECK-DAG: %[[count:.*]] = muli %{{.*}}, %{{.*}} : i64
+  ! CHECK-DAG: %[[count:.*]] = arith.muli %{{.*}}, %{{.*}} : i64
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[dst]], %[[src]], %[[count]], %false) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
 
   ! Padding

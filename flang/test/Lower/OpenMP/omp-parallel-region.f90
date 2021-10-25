@@ -33,11 +33,11 @@ program parallel
 !FIRDialect: omp.parallel num_threads(%{{.*}} : i32) {
 !FIRDialect-DAG: %[[OMP_VAR_A:.*]] = fir.load %[[VAR_A]]
 !FIRDialect-DAG: %[[OMP_VAR_B:.*]] = fir.load %[[VAR_B]]
-!FIRDialect:     %[[OMP_VAR_C:.*]] = addi %[[OMP_VAR_A]], %[[OMP_VAR_B]]
+!FIRDialect:     %[[OMP_VAR_C:.*]] = arith.addi %[[OMP_VAR_A]], %[[OMP_VAR_B]]
 !FIRDialect:     fir.store %[[OMP_VAR_C]] to %[[VAR_C]]
 !FIRDialect-DAG: %[[CONSTANT:.*]] = arith.constant 4 : i32
 !FIRDialect-DAG: %[[COND_C:.*]] = fir.load %[[VAR_C]] : !fir.ref<i32>
-!FIRDialect:     %[[COND_RES:.*]] = cmpi sgt, %[[COND_C]], %[[CONSTANT]] : i32
+!FIRDialect:     %[[COND_RES:.*]] = arith.cmpi sgt, %[[COND_C]], %[[CONSTANT]] : i32
 !FIRDialect: fir.if %[[COND_RES]] {
 !FIRDialect:       fir.call @_FortranAioBeginExternalListOutput
 !FIRDialect:       fir.call @_FortranAioOutputAscii

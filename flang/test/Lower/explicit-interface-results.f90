@@ -111,7 +111,7 @@ subroutine alloc()
   ! CHECK: _FortranAioOutputDescriptor
   ! CHECK: %[[load:.*]] = fir.load %[[alloc]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?xf32>>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[load]] : (!fir.box<!fir.heap<!fir.array<?xf32>>>) -> !fir.heap<!fir.array<?xf32>>
-  ! CHECK: %[[cmpi:.*]] = cmpi
+  ! CHECK: %[[cmpi:.*]] = arith.cmpi
   ! CHECK: fir.if %[[cmpi]]
   ! CHECK: fir.freemem %[[addr]] : !fir.heap<!fir.array<?xf32>>
 end subroutine
@@ -125,7 +125,7 @@ subroutine cst_char_alloc()
   ! CHECK: _FortranAioOutputDescriptor
   ! CHECK: %[[load:.*]] = fir.load %[[alloc]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[load]] : (!fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>) -> !fir.heap<!fir.array<?x!fir.char<1,10>>>
-  ! CHECK: %[[cmpi:.*]] = cmpi
+  ! CHECK: %[[cmpi:.*]] = arith.cmpi
   ! CHECK: fir.if %[[cmpi]]
   ! CHECK: fir.freemem %[[addr]] : !fir.heap<!fir.array<?x!fir.char<1,10>>>
 end subroutine
@@ -139,7 +139,7 @@ subroutine def_char_alloc()
   ! CHECK: _FortranAioOutputDescriptor
   ! CHECK: %[[load:.*]] = fir.load %[[alloc]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[load]] : (!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>) -> !fir.heap<!fir.array<?x!fir.char<1,?>>>
-  ! CHECK: %[[cmpi:.*]] = cmpi
+  ! CHECK: %[[cmpi:.*]] = arith.cmpi
   ! CHECK: fir.if %[[cmpi]]
   ! CHECK: fir.freemem %[[addr]] : !fir.heap<!fir.array<?x!fir.char<1,?>>>
 end subroutine
@@ -177,13 +177,13 @@ subroutine dyn_array(m, n)
   integer :: m, n
   ! CHECK-DAG: %[[mload:.*]] = fir.load %[[m]] : !fir.ref<i32>
   ! CHECK-DAG: %[[mcast:.*]] = fir.convert %[[mload]] : (i32) -> i64
-  ! CHECK-DAG: %[[msub:.*]] = subi %[[mcast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[madd:.*]] = addi %[[msub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[msub:.*]] = arith.subi %[[mcast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[madd:.*]] = arith.addi %[[msub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[mcast2:.*]] = fir.convert %[[madd]] : (i64) -> index
   ! CHECK-DAG: %[[nload:.*]] = fir.load %[[n]] : !fir.ref<i32>
   ! CHECK-DAG: %[[ncast:.*]] = fir.convert %[[nload]] : (i32) -> i64
-  ! CHECK-DAG: %[[nsub:.*]] = subi %[[ncast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[nadd:.*]] = addi %[[nsub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nsub:.*]] = arith.subi %[[ncast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nadd:.*]] = arith.addi %[[nsub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[ncast2:.*]] = fir.convert %[[nadd]] : (i64) -> index
   ! CHECK: %[[tmp:.*]] = fir.alloca !fir.array<?x?xf32>, %[[mcast2]], %[[ncast2]]
   ! CHECK: %[[shape:.*]] = fir.shape %[[mcast2]], %[[ncast2]] : (index, index) -> !fir.shape<2>
@@ -212,13 +212,13 @@ subroutine cst_char_dyn_array(m, n)
   integer :: m, n
   ! CHECK-DAG: %[[mload:.*]] = fir.load %[[m]] : !fir.ref<i32>
   ! CHECK-DAG: %[[mcast:.*]] = fir.convert %[[mload]] : (i32) -> i64
-  ! CHECK-DAG: %[[msub:.*]] = subi %[[mcast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[madd:.*]] = addi %[[msub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[msub:.*]] = arith.subi %[[mcast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[madd:.*]] = arith.addi %[[msub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[mcast2:.*]] = fir.convert %[[madd]] : (i64) -> index
   ! CHECK-DAG: %[[nload:.*]] = fir.load %[[n]] : !fir.ref<i32>
   ! CHECK-DAG: %[[ncast:.*]] = fir.convert %[[nload]] : (i32) -> i64
-  ! CHECK-DAG: %[[nsub:.*]] = subi %[[ncast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[nadd:.*]] = addi %[[nsub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nsub:.*]] = arith.subi %[[ncast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nadd:.*]] = arith.addi %[[nsub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[ncast2:.*]] = fir.convert %[[nadd]] : (i64) -> index
   ! CHECK: %[[tmp:.*]] = fir.alloca !fir.array<?x?x!fir.char<1,10>>, %[[mcast2]], %[[ncast2]]
   ! CHECK: %[[shape:.*]] = fir.shape %[[mcast2]], %[[ncast2]] : (index, index) -> !fir.shape<2>
@@ -232,14 +232,14 @@ end subroutine
 subroutine dyn_char_dyn_array(l, m, n)
   ! CHECK-DAG: %[[mload:.*]] = fir.load %[[m]] : !fir.ref<i32>
   ! CHECK-DAG: %[[mcast:.*]] = fir.convert %[[mload]] : (i32) -> i64
-  ! CHECK-DAG: %[[msub:.*]] = subi %[[mcast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[madd:.*]] = addi %[[msub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[msub:.*]] = arith.subi %[[mcast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[madd:.*]] = arith.addi %[[msub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[mcast2:.*]] = fir.convert %[[madd]] : (i64) -> index
 
   ! CHECK-DAG: %[[nload:.*]] = fir.load %[[n]] : !fir.ref<i32>
   ! CHECK-DAG: %[[ncast:.*]] = fir.convert %[[nload]] : (i32) -> i64
-  ! CHECK-DAG: %[[nsub:.*]] = subi %[[ncast]], %c1{{.*}} : i64
-  ! CHECK-DAG: %[[nadd:.*]] = addi %[[nsub]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nsub:.*]] = arith.subi %[[ncast]], %c1{{.*}} : i64
+  ! CHECK-DAG: %[[nadd:.*]] = arith.addi %[[nsub]], %c1{{.*}} : i64
   ! CHECK-DAG: %[[ncast2:.*]] = fir.convert %[[nadd]] : (i64) -> index
 
   ! CHECK-DAG: %[[lload:.*]] = fir.load %[[l]] : !fir.ref<i32>
@@ -263,7 +263,7 @@ subroutine dyn_char_alloc(l)
   ! CHECK: _FortranAioOutputDescriptor
   ! CHECK: %[[load:.*]] = fir.load %[[alloc]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[load]] : (!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>) -> !fir.heap<!fir.array<?x!fir.char<1,?>>>
-  ! CHECK: %[[cmpi:.*]] = cmpi
+  ! CHECK: %[[cmpi:.*]] = arith.cmpi
   ! CHECK: fir.if %[[cmpi]]
   ! CHECK: fir.freemem %[[addr]] : !fir.heap<!fir.array<?x!fir.char<1,?>>>
 end subroutine
@@ -364,7 +364,7 @@ function test_recursion(n) result(res)
     ! the result, and not the local value of symbol n.
 
     ! CHECK: %[[nLoad:.*]] = fir.load %[[n]] : !fir.ref<i64>
-    ! CHECK: %[[sub:.*]] = subi %[[nLoad]], %c1{{.*}} : i64
+    ! CHECK: %[[sub:.*]] = arith.subi %[[nLoad]], %c1{{.*}} : i64
     ! CHECK: fir.store %[[sub]] to %[[nInCall:.*]] : !fir.ref<i64>
 
     ! CHECK-NOT: fir.alloca !fir.array<?xi32>

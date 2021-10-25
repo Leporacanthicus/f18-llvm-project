@@ -34,7 +34,7 @@ func @f2(%a : !fir.ref<!fir.array<?x?xf32>>, %b : !fir.ref<!fir.array<?x?xf32>>,
     // CHECK: = icmp sgt
     %r = fir.do_loop %i = %o to %n step %c1 iter_args(%v = %v1) -> !fir.array<?x?xf32> {
       %x = fir.array_fetch %wIn, %i, %j : (!fir.array<?x?xf32>, index, index) -> f32
-      %y = addf %x, %f : f32
+      %y = arith.addf %x, %f : f32
       // CHECK: %[[AOFF:.*]] = getelementptr float, float* %[[A]], i64
       %r = fir.array_update %v, %y, %i, %j : (!fir.array<?x?xf32>, f32, index, index) -> !fir.array<?x?xf32>
       fir.result %r : !fir.array<?x?xf32>
@@ -58,9 +58,9 @@ func @f3(%a : !fir.ref<!fir.array<?x?xf32>>, %b : !fir.ref<!fir.array<?x?xf32>>,
     // CHECK: = icmp sgt
     %r = fir.do_loop %i = %o to %n step %c1 iter_args(%v = %v1) -> !fir.array<?x?xf32> {
       %x = fir.array_fetch %wIn, %i, %j : (!fir.array<?x?xf32>, index, index) -> f32
-      %y = addf %x, %f : f32
+      %y = arith.addf %x, %f : f32
       // CHECK: %[[AOFF:.*]] = getelementptr float, float* %[[A]], i64
-      %i2 = addi %i, %c1 : index
+      %i2 = arith.addi %i, %c1 : index
       %r = fir.array_update %v, %y, %i2, %j : (!fir.array<?x?xf32>, f32, index, index) -> !fir.array<?x?xf32>
       fir.result %r : !fir.array<?x?xf32>
     }
@@ -84,10 +84,10 @@ func @f4(%a : !fir.ref<!fir.array<?x?xf32>>, %b : !fir.ref<!fir.array<?x?xf32>>,
     %r = fir.do_loop %i = %o to %n step %c1 iter_args(%v = %v1) -> !fir.array<?x?xf32> {
       %x2 = fir.array_fetch %vIn, %i, %j : (!fir.array<?x?xf32>, index, index) -> f32
       %x = fir.array_fetch %wIn, %i, %j : (!fir.array<?x?xf32>, index, index) -> f32
-      %y = addf %x, %f : f32
-      %y2 = addf %y, %x2 : f32
+      %y = arith.addf %x, %f : f32
+      %y2 = arith.addf %y, %x2 : f32
       // CHECK: %[[AOFF:.*]] = getelementptr float, float* %[[A]], i64
-      %i2 = addi %i, %c1 : index
+      %i2 = arith.addi %i, %c1 : index
       %r = fir.array_update %v, %y2, %i2, %j : (!fir.array<?x?xf32>, f32, index, index) -> !fir.array<?x?xf32>
       fir.result %r : !fir.array<?x?xf32>
     }
@@ -107,7 +107,7 @@ func @f5(%arg0: !fir.box<!fir.array<?xf32>>, %arg1: !fir.box<!fir.array<?xf32>>,
   %c0 = arith.constant 0 : index
   %c1 = arith.constant 1 : index
   %0:3 = fir.box_dims %arg0, %c0 : (!fir.box<!fir.array<?xf32>>, index) -> (index, index, index)
-  %1 = subi %0#1, %c1 : index
+  %1 = arith.subi %0#1, %c1 : index
   %2 = fir.array_load %arg0 : (!fir.box<!fir.array<?xf32>>) -> !fir.array<?xf32>
   %3 = fir.array_load %arg1 : (!fir.box<!fir.array<?xf32>>) -> !fir.array<?xf32>
   // CHECK: icmp sgt
@@ -124,7 +124,7 @@ func @f5(%arg0: !fir.box<!fir.array<?xf32>>, %arg1: !fir.box<!fir.array<?xf32>>,
     // CHECK: %[[B_VAL:.*]] = load float, float* %[[B_ADDR]]
     // CHECK: fadd float %[[B_VAL]], %[[F]]
     %5 = fir.array_fetch %3, %arg3 : (!fir.array<?xf32>, index) -> f32
-    %6 = addf %5, %arg2 : f32
+    %6 = arith.addf %5, %arg2 : f32
     %7 = fir.array_update %arg4, %6, %arg3 : (!fir.array<?xf32>, f32, index) -> !fir.array<?xf32>
     fir.result %7 : !fir.array<?xf32>
   }
@@ -158,7 +158,7 @@ func @f6(%arg0: !fir.box<!fir.array<?xf32>>, %arg1: f32) {
   %4 = fir.array_load %arg0 [%3] : (!fir.box<!fir.array<?xf32>>, !fir.slice<1>) -> !fir.array<?xf32>
   %5 = fir.do_loop %arg2 = %c0 to %c9 step %c1 iter_args(%arg3 = %2) -> (!fir.array<?xf32>) {
     %6 = fir.array_fetch %4, %arg2 : (!fir.array<?xf32>, index) -> f32
-    %7 = addf %6, %arg1 : f32
+    %7 = arith.addf %6, %arg1 : f32
     %8 = fir.array_update %arg3, %7, %arg2 : (!fir.array<?xf32>, f32, index) -> !fir.array<?xf32>
     fir.result %8 : !fir.array<?xf32>
   }

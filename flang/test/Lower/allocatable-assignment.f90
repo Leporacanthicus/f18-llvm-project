@@ -19,7 +19,7 @@ subroutine test_simple_scalar(x)
   ! CHECK: %[[boxLoad:.*]] = fir.load %[[box]] : !fir.ref<!fir.box<!fir.heap<f32>>>
   ! CHECK: %[[addr:.*]] = fir.box_addr %[[boxLoad]] : (!fir.box<!fir.heap<f32>>) -> !fir.heap<f32>
   ! CHECK: %[[addrCast:.*]] = fir.convert %[[addr]] : (!fir.heap<f32>) -> i64
-  ! CHECK: %[[isAlloc:.*]] = cmpi ne, %[[addrCast]], %c0{{.*}} : i64
+  ! CHECK: %[[isAlloc:.*]] = arith.cmpi ne, %[[addrCast]], %c0{{.*}} : i64
   ! CHECK: fir.if %[[isAlloc]] {
   ! CHECK:   fir.if %false{{.*}} {
   ! CHECK:   }
@@ -40,7 +40,7 @@ subroutine test_simple_local_scalar()
   ! CHECK: %[[cst:.*]] = arith.constant 4.200000e+01 : f32
   ! CHECK: %[[xAddr:.*]] = fir.load %[[x]] : !fir.ref<!fir.heap<f32>>
   ! CHECK: %[[xCast:.*]] = fir.convert %[[xAddr]] : (!fir.heap<f32>) -> i64
-  ! CHECK: %[[isAlloc:.*]] = cmpi ne, %[[xCast]], %c0{{.*}} : i64
+  ! CHECK: %[[isAlloc:.*]] = arith.cmpi ne, %[[xCast]], %c0{{.*}} : i64
   ! CHECK: fir.if %[[isAlloc]] {
   ! CHECK:   fir.if %false{{.*}} {
   ! CHECK:   }
@@ -66,7 +66,7 @@ subroutine test_deferred_char_scalar(x)
   ! CHECK: %[[xAddr:.]] = fir.box_addr %[[boxLoad]] : (!fir.box<!fir.heap<!fir.char<1,?>>>) -> !fir.heap<!fir.char<1,?>>
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[xLen:.*]] = fir.box_elesize %[[boxLoad]] : (!fir.box<!fir.heap<!fir.char<1,?>>>) -> index
-  ! CHECK:   %[[cmpLen:.*]] = cmpi ne, %[[xLen]], %c12{{.*}} : index
+  ! CHECK:   %[[cmpLen:.*]] = arith.cmpi ne, %[[xLen]], %c12{{.*}} : index
   ! CHECK:   %[[realloc:.*]] = select %[[cmpLen]], %[[cmpLen]], %false{{.*}} : i1
   ! CHECK:   fir.if %[[realloc]] {
   ! CHECK:     fir.freemem %[[xAddr]] : !fir.heap<!fir.char<1,?>>
@@ -151,9 +151,9 @@ subroutine test_from_cst_shape_array(x, y)
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim1:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
   ! CHECK:   %[[dim2:.*]]:3 = fir.box_dims %[[boxLoad]], %c1{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp1:.*]] = cmpi ne, %[[dim1]]#1, %c2{{.*}} : index
+  ! CHECK:   %[[cmp1:.*]] = arith.cmpi ne, %[[dim1]]#1, %c2{{.*}} : index
   ! CHECK:   %[[mustRealloc1:.*]] = select %[[cmp1]], %[[cmp1]], %false : i1
-  ! CHECK:   %[[cmp2:.*]] = cmpi ne, %[[dim2]]#1, %c3{{.*}} : index
+  ! CHECK:   %[[cmp2:.*]] = arith.cmpi ne, %[[dim2]]#1, %c3{{.*}} : index
   ! CHECK:   %[[mustRealloc2:.*]] = select %[[cmp2]], %[[cmp2]], %[[mustRealloc1]] : i1
   ! CHECK:   fir.if %[[mustRealloc2]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x?xf32>>
@@ -183,9 +183,9 @@ subroutine test_from_dyn_shape_array(x, y)
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim1:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
   ! CHECK:   %[[dim2:.*]]:3 = fir.box_dims %[[boxLoad]], %c1{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp1:.*]] = cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
+  ! CHECK:   %[[cmp1:.*]] = arith.cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
   ! CHECK:   %[[mustRealloc1:.*]] = select %[[cmp1]], %[[cmp1]], %false : i1
-  ! CHECK:   %[[cmp2:.*]] = cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
+  ! CHECK:   %[[cmp2:.*]] = arith.cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
   ! CHECK:   %[[mustRealloc2:.*]] = select %[[cmp2]], %[[cmp2]], %[[mustRealloc1]] : i1
   ! CHECK:   fir.if %[[mustRealloc2]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x?xf32>>
@@ -217,9 +217,9 @@ subroutine test_with_lbounds(x, y)
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim1:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
   ! CHECK:   %[[dim2:.*]]:3 = fir.box_dims %[[boxLoad]], %c1{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp1:.*]] = cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
+  ! CHECK:   %[[cmp1:.*]] = arith.cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
   ! CHECK:   %[[mustRealloc1:.*]] = select %[[cmp1]], %[[cmp1]], %false : i1
-  ! CHECK:   %[[cmp2:.*]] = cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
+  ! CHECK:   %[[cmp2:.*]] = arith.cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
   ! CHECK:   %[[mustRealloc2:.*]] = select %[[cmp2]], %[[cmp2]], %[[mustRealloc1]] : i1
   ! CHECK:   fir.if %[[mustRealloc2]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x?xf32>>
@@ -256,9 +256,9 @@ subroutine test_runtime_shape(x)
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim1:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
   ! CHECK:   %[[dim2:.*]]:3 = fir.box_dims %[[boxLoad]], %c1{{.*}} : (!fir.box<!fir.heap<!fir.array<?x?xf32>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp1:.*]] = cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
+  ! CHECK:   %[[cmp1:.*]] = arith.cmpi ne, %[[dim1]]#1, %[[ydim1]]#1 : index
   ! CHECK:   %[[mustRealloc1:.*]] = select %[[cmp1]], %[[cmp1]], %false : i1
-  ! CHECK:   %[[cmp2:.*]] = cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
+  ! CHECK:   %[[cmp2:.*]] = arith.cmpi ne, %[[dim2]]#1, %[[ydim2]]#1 : index
   ! CHECK:   %[[mustRealloc2:.*]] = select %[[cmp2]], %[[cmp2]], %[[mustRealloc1]] : i1
   ! CHECK:   fir.if %[[mustRealloc2]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x?xf32>>
@@ -347,7 +347,7 @@ subroutine test_cst_char(x, c)
   ! CHECK: %[[boxLoad:.*]] = fir.load %[[x]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>>
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x!fir.char<1,10>>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp:.*]] = cmpi ne, %[[dim]]#1, %c20{{.*}} : index
+  ! CHECK:   %[[cmp:.*]] = arith.cmpi ne, %[[dim]]#1, %c20{{.*}} : index
   ! CHECK:   %[[mustRealloc:.*]] = select %[[cmp]], %[[cmp]], %false : i1
   ! CHECK:   fir.if %[[mustRealloc]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x!fir.char<1,10>>>
@@ -376,7 +376,7 @@ subroutine test_dyn_char(x, n, c)
   ! CHECK: %[[boxLoad:.*]] = fir.load %[[x]] : !fir.ref<!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>>
   ! CHECK: fir.if %{{.*}} {
   ! CHECK:   %[[dim:.*]]:3 = fir.box_dims %[[boxLoad]], %c0{{.*}} : (!fir.box<!fir.heap<!fir.array<?x!fir.char<1,?>>>>, index) -> (index, index, index)
-  ! CHECK:   %[[cmp:.*]] = cmpi ne, %[[dim]]#1, %c20{{.*}} : index
+  ! CHECK:   %[[cmp:.*]] = arith.cmpi ne, %[[dim]]#1, %c20{{.*}} : index
   ! CHECK:   %[[mustRealloc:.*]] = select %[[cmp]], %[[cmp]], %false : i1
   ! CHECK:   fir.if %[[mustRealloc]] {
   ! CHECK:     fir.freemem %{{.*}} : !fir.heap<!fir.array<?x!fir.char<1,?>>>

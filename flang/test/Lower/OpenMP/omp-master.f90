@@ -62,7 +62,7 @@ call foo()
 !FIRDialect: omp.master  {
 !FIRDialect:   %{{.*}} = fir.load %{{.*}}
 !FIRDialect:   %{{.*}} = fir.load %{{.*}}
-!FIRDialect:   %[[RESULT:.*]] = cmpi sge, %{{.*}}, %{{.*}}
+!FIRDialect:   %[[RESULT:.*]] = arith.cmpi sge, %{{.*}}, %{{.*}}
 !FIRDialect:   fir.if %[[RESULT]] {
 if (alpha .ge. gama) then
 !$OMP PARALLEL
@@ -78,7 +78,7 @@ print*, alpha
 end if
 !FIRDialect:   %{{.*}} = fir.load %{{.*}}
 !FIRDialect:   %{{.*}} = fir.load %{{.*}}
-!FIRDialect:   %{{.*}} = addi %{{.*}}, %{{.*}}
+!FIRDialect:   %{{.*}} = arith.addi %{{.*}}, %{{.*}}
 !FIRDialect:   fir.store %{{.*}} to %{{.*}}
 !FIRDialect:   } else {
 !FIRDialect:   }

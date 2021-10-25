@@ -25,8 +25,8 @@ subroutine dim_testi(i, j, k)
 ! CHECK: %[[VAL_3:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
 ! CHECK: %[[VAL_4:.*]] = fir.load %[[VAL_1]] : !fir.ref<i32>
 ! CHECK: %[[VAL_5:.*]] = arith.constant 0 : i32
-! CHECK: %[[VAL_6:.*]] = subi %[[VAL_3]], %[[VAL_4]] : i32
-! CHECK: %[[VAL_7:.*]] = cmpi sgt, %[[VAL_6]], %[[VAL_5]] : i32
+! CHECK: %[[VAL_6:.*]] = arith.subi %[[VAL_3]], %[[VAL_4]] : i32
+! CHECK: %[[VAL_7:.*]] = arith.cmpi sgt, %[[VAL_6]], %[[VAL_5]] : i32
 ! CHECK: %[[VAL_8:.*]] = select %[[VAL_7]], %[[VAL_6]], %[[VAL_5]] : i32
 ! CHECK: fir.store %[[VAL_8]] to %[[VAL_2]] : !fir.ref<i32>
 ! CHECK: return

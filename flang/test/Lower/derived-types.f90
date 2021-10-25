@@ -82,8 +82,8 @@ subroutine array_comp_elt_ref()
   ! CHECK: %[[alloc:.*]] = fir.alloca !fir.type<_QMdTr2{x_array:!fir.array<10x20xf32>}>
   ! CHECK: %[[field:.*]] = fir.field_index x_array, !fir.type<_QMdTr2{x_array:!fir.array<10x20xf32>}>
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[alloc]], %[[field]] : (!fir.ref<!fir.type<_QMdTr2{x_array:!fir.array<10x20xf32>}>>, !fir.field) -> !fir.ref<!fir.array<10x20xf32>>
-  ! CHECK-DAG: %[[index1:.*]] = subi %c5{{.*}}, %c1{{.*}} : i64
-  ! CHECK-DAG: %[[index2:.*]] = subi %c6{{.*}}, %c1{{.*}} : i64
+  ! CHECK-DAG: %[[index1:.*]] = arith.subi %c5{{.*}}, %c1{{.*}} : i64
+  ! CHECK-DAG: %[[index2:.*]] = arith.subi %c6{{.*}}, %c1{{.*}} : i64
   ! CHECK: fir.coordinate_of %[[coor]], %[[index1]], %[[index2]] : (!fir.ref<!fir.array<10x20xf32>>, i64, i64) -> !fir.ref<f32>
   call real_bar(some_r2%x_array(5, 6))
 end subroutine
@@ -93,8 +93,8 @@ end subroutine
 subroutine char_array_comp_elt_ref()
   type(c2) :: some_c2
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %{{.*}}, %{{.*}} : (!fir.ref<!fir.type<_QMdTc2{ch_array:!fir.array<20x30x!fir.char<1,10>>}>>, !fir.field) -> !fir.ref<!fir.array<20x30x!fir.char<1,10>>>
-  ! CHECK-DAG: %[[index1:.*]] = subi %c5{{.*}}, %c1{{.*}} : i64
-  ! CHECK-DAG: %[[index2:.*]] = subi %c6{{.*}}, %c1{{.*}} : i64
+  ! CHECK-DAG: %[[index1:.*]] = arith.subi %c5{{.*}}, %c1{{.*}} : i64
+  ! CHECK-DAG: %[[index2:.*]] = arith.subi %c6{{.*}}, %c1{{.*}} : i64
   ! CHECK: fir.coordinate_of %[[coor]], %[[index1]], %[[index2]] : (!fir.ref<!fir.array<20x30x!fir.char<1,10>>>, i64, i64) -> !fir.ref<!fir.char<1,10>>
   ! CHECK: fir.emboxchar %{{.*}}, %c10 : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>
   call char_bar(some_c2%ch_array(5, 6))
@@ -104,7 +104,7 @@ end subroutine
 subroutine array_elt_comp_ref()
   type(r) :: some_r_array(100)
   ! CHECK: %[[alloca:.*]] = fir.alloca !fir.array<100x!fir.type<_QMdTr{x:f32}>>
-  ! CHECK: %[[index:.*]] = subi %c5{{.*}}, %c1{{.*}} : i64
+  ! CHECK: %[[index:.*]] = arith.subi %c5{{.*}}, %c1{{.*}} : i64
   ! CHECK: %[[elt:.*]] = fir.coordinate_of %[[alloca]], %[[index]] : (!fir.ref<!fir.array<100x!fir.type<_QMdTr{x:f32}>>>, i64) -> !fir.ref<!fir.type<_QMdTr{x:f32}>>
   ! CHECK: %[[field:.*]] = fir.field_index x, !fir.type<_QMdTr{x:f32}>
   ! CHECK: fir.coordinate_of %[[elt]], %[[field]] : (!fir.ref<!fir.type<_QMdTr{x:f32}>>, !fir.field) -> !fir.ref<f32>

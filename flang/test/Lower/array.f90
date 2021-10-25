@@ -16,9 +16,9 @@ subroutine s(i,j,k,ii,jj,kk,a1,a2,a3,a4,a5,a6,a7)
 
   ! CHECK-LABEL: BeginExternalListOutput
   ! CHECK-DAG: fir.load %arg3 :
-  ! CHECK-DAG: %[[i1:.*]] = subi %{{.*}}, %[[one:c1.*]] :
+  ! CHECK-DAG: %[[i1:.*]] = arith.subi %{{.*}}, %[[one:c1.*]] :
   ! CHECK: fir.load %arg4 :
-  ! CHECK: %[[j1:.*]] = subi %{{.*}}, %[[one]] :
+  ! CHECK: %[[j1:.*]] = arith.subi %{{.*}}, %[[one]] :
   ! CHECK: fir.coordinate_of %arg6, %[[i1]], %[[j1]] :
   ! CHECK-LABEL: EndIoStatement
   print *, a1(ii,jj)
@@ -29,10 +29,10 @@ subroutine s(i,j,k,ii,jj,kk,a1,a2,a3,a4,a5,a6,a7)
   ! CHECK-LABEL: BeginExternalListOutput
   ! CHECK-DAG: fir.load %arg3 :
   ! CHECK-DAG: %[[cc2:.*]] = fir.convert %c2{{.*}} :
-  ! CHECK: %[[i2:.*]] = subi %{{.*}}, %[[cc2]] :
+  ! CHECK: %[[i2:.*]] = arith.subi %{{.*}}, %[[cc2]] :
   ! CHECK-DAG: fir.load %arg4 :
   ! CHECK-DAG: %[[cc3:.*]] = fir.convert %c3{{.*}} :
-  ! CHECK: %[[j2:.*]] = subi %{{.*}}, %[[cc3]] :
+  ! CHECK: %[[j2:.*]] = arith.subi %{{.*}}, %[[cc3]] :
   ! CHECK: fir.coordinate_of %arg8, %[[i2]], %[[j2]] :
   ! CHECK-LABEL: EndIoStatement
   print *, a3(ii,jj)
@@ -41,34 +41,34 @@ subroutine s(i,j,k,ii,jj,kk,a1,a2,a3,a4,a5,a6,a7)
   print *, a4(ii,jj)
   ! CHECK-LABEL: BeginExternalListOutput
   ! CHECK: fir.load %arg5 :
-  ! CHECK: %[[x5:.*]] = subi %{{.*}}, %{{.*}} :
+  ! CHECK: %[[x5:.*]] = arith.subi %{{.*}}, %{{.*}} :
   ! CHECK: fir.coordinate_of %arg10, %[[x5]] :
   ! CHECK-LABEL: EndIoStatement
   print *, a5(kk)
   ! CHECK-LABEL: BeginExternalListOutput
   ! CHECK: %[[a6:.*]] = fir.convert %arg11 : {{.*}} -> !fir.ref<!fir.array<?xi32>>
   ! CHECK: fir.load %arg3 :
-  ! CHECK-DAG: %[[x6:.*]] = subi %{{.*}}, %{{.*}} :
+  ! CHECK-DAG: %[[x6:.*]] = arith.subi %{{.*}}, %{{.*}} :
   ! CHECK-DAG: fir.load %arg4 :
-  ! CHECK: %[[y6:.*]] = subi %{{.*}}, %{{.*}} :
-  ! CHECK: %[[z6:.*]] = muli %{{.}}, %[[y6]] :
-  ! CHECK: %[[w6:.*]] = addi %[[z6]], %[[x6]] :
+  ! CHECK: %[[y6:.*]] = arith.subi %{{.*}}, %{{.*}} :
+  ! CHECK: %[[z6:.*]] = arith.muli %{{.}}, %[[y6]] :
+  ! CHECK: %[[w6:.*]] = arith.addi %[[z6]], %[[x6]] :
   ! CHECK: fir.coordinate_of %[[a6]], %[[w6]] :
   ! CHECK-LABEL: EndIoStatement
   print *, a6(ii, jj)
   ! CHECK-LABEL: BeginExternalListOutput
   ! CHECK: %[[a7:.*]] = fir.convert %arg12 : {{.*}} -> !fir.ref<!fir.array<?xf32>>
   ! CHECK: fir.load %arg5 :
-  ! CHECK-DAG: %[[x7:.*]] = subi %{{.*}}, %{{.*}} :
+  ! CHECK-DAG: %[[x7:.*]] = arith.subi %{{.*}}, %{{.*}} :
   ! CHECK-DAG: fir.load %arg4 :
-  ! CHECK: %[[y7:.*]] = subi %{{.*}}, %{{.*}} :
-  ! CHECK: %[[z7:.*]] = muli %[[u7:.*]], %[[y7]] :
-  ! CHECK: %[[w7:.*]] = addi %[[z7]], %[[x7]] :
-  ! CHECK-DAG: %[[v7:.*]] = muli %[[u7]], %{{.*}} :
+  ! CHECK: %[[y7:.*]] = arith.subi %{{.*}}, %{{.*}} :
+  ! CHECK: %[[z7:.*]] = arith.muli %[[u7:.*]], %[[y7]] :
+  ! CHECK: %[[w7:.*]] = arith.addi %[[z7]], %[[x7]] :
+  ! CHECK-DAG: %[[v7:.*]] = arith.muli %[[u7]], %{{.*}} :
   ! CHECK-DAG: fir.load %arg3 :
-  ! CHECK: %[[r7:.*]] = subi %{{.*}}, %{{.*}} :
-  ! CHECK: %[[s7:.*]] = muli %[[v7]], %[[r7]] :
-  ! CHECK: %[[t7:.*]] = addi %[[s7]], %[[w7]] :
+  ! CHECK: %[[r7:.*]] = arith.subi %{{.*}}, %{{.*}} :
+  ! CHECK: %[[s7:.*]] = arith.muli %[[v7]], %[[r7]] :
+  ! CHECK: %[[t7:.*]] = arith.addi %[[s7]], %[[w7]] :
   ! CHECK: fir.coordinate_of %[[a7]], %[[t7]] :
   ! CHECK-LABEL: EndIoStatement
   print *, a7(kk, jj, ii)

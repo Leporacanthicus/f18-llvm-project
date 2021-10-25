@@ -12,21 +12,21 @@ subroutine concat_1(a, b)
   print *, a // b
   ! Concatenation
 
-  ! CHECK: %[[len:.*]] = addi %[[a]]#1, %[[b]]#1
+  ! CHECK: %[[len:.*]] = arith.addi %[[a]]#1, %[[b]]#1
   ! CHECK: %[[temp:.*]] = fir.alloca !fir.char<1,?>(%[[len]] : index)
 
   ! CHECK-DAG: %[[c1:.*]] = arith.constant 1
   ! CHECK-DAG: %[[a2:.*]] = fir.convert %[[a]]#1
-  ! CHECK: %[[count:.*]] = muli %[[c1]], %[[a2]]
+  ! CHECK: %[[count:.*]] = arith.muli %[[c1]], %[[a2]]
   ! CHECK-DAG: constant false
   ! CHECK-DAG: %[[to:.*]] = fir.convert %[[temp]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK-DAG: %[[from:.*]] = fir.convert %[[a]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK: fir.call @llvm.memmove.p0i8.p0i8.i64(%[[to]], %[[from]], %[[count]], %false) : (!fir.ref<i8>, !fir.ref<i8>, i64, i1) -> ()
 
   ! CHECK: %[[c1_0:.*]] = arith.constant 1
-  ! CHECK: %[[count2:.*]] = subi %[[len]], %[[c1_0]]
+  ! CHECK: %[[count2:.*]] = arith.subi %[[len]], %[[c1_0]]
   ! CHECK: fir.do_loop %[[index2:.*]] = %[[a]]#1 to %[[count2]] step %[[c1_0]] {
-    ! CHECK: %[[b_index:.*]] = subi %[[index2]], %[[a]]#1
+    ! CHECK: %[[b_index:.*]] = arith.subi %[[index2]], %[[a]]#1
     ! CHECK: %[[b_cast:.*]] = fir.convert %[[b]]#0
     ! CHECK: %[[b_addr:.*]] = fir.coordinate_of %[[b_cast]], %[[b_index]]
     ! CHECK-DAG: %[[b_elt:.*]] = fir.load %[[b_addr]]

@@ -32,13 +32,13 @@ subroutine test_elem_sub(x, c, i, z)
   ! CHECK:         %[[VAL_11:.*]]:3 = fir.box_dims %[[VAL_0]], %[[VAL_10]] : (!fir.box<!fir.array<?xf32>>, index) -> (index, index, index)
   ! CHECK:         %[[VAL_12:.*]] = arith.constant 1 : index
   ! CHECK:         %[[VAL_13:.*]] = arith.constant 0 : index
-  ! CHECK:         %[[VAL_14:.*]] = subi %[[VAL_11]]#1, %[[VAL_12]] : index
+  ! CHECK:         %[[VAL_14:.*]] = arith.subi %[[VAL_11]]#1, %[[VAL_12]] : index
   ! CHECK:         fir.do_loop %[[VAL_15:.*]] = %[[VAL_13]] to %[[VAL_14]] step %[[VAL_12]] {
   ! CHECK:           %[[VAL_16:.*]] = arith.constant 1 : index
-  ! CHECK:           %[[VAL_17:.*]] = addi %[[VAL_15]], %[[VAL_16]] : index
+  ! CHECK:           %[[VAL_17:.*]] = arith.addi %[[VAL_15]], %[[VAL_16]] : index
   ! CHECK:           %[[VAL_18:.*]] = fir.array_coor %[[VAL_0]] %[[VAL_17]] : (!fir.box<!fir.array<?xf32>>, index) -> !fir.ref<f32>
   ! CHECK:           %[[VAL_19:.*]] = arith.constant 1 : index
-  ! CHECK:           %[[VAL_20:.*]] = addi %[[VAL_15]], %[[VAL_19]] : index
+  ! CHECK:           %[[VAL_20:.*]] = arith.addi %[[VAL_15]], %[[VAL_19]] : index
   ! CHECK:           %[[VAL_21:.*]] = fir.array_coor %[[VAL_1]] {{\[}}%[[VAL_8]]] %[[VAL_20]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>, !fir.slice<1>, index) -> !fir.ref<!fir.char<1,?>>
   ! CHECK:           %[[VAL_22:.*]] = fir.box_elesize %[[VAL_1]] : (!fir.box<!fir.array<?x!fir.char<1,?>>>) -> index
   ! CHECK:           %[[VAL_23:.*]] = fir.emboxchar %[[VAL_21]], %[[VAL_22]] : (!fir.ref<!fir.char<1,?>>, index) -> !fir.boxchar<1>

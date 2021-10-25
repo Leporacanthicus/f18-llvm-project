@@ -13,10 +13,10 @@ func @f(%a : !fir.box<none>) -> i32 {
 ^bb2(%4 : i32) :
    return %4 : i32
 ^bb3(%5 : i32) :
-   %6 = addi %5, %5 : i32
+   %6 = arith.addi %5, %5 : i32
    return %6 : i32
 ^bb4(%7 : i32) :
-   %8 = muli %7, %7 : i32
+   %8 = arith.muli %7, %7 : i32
    // CHECK: ret i32 %
    return %8 : i32
 }

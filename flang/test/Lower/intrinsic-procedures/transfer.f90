@@ -64,7 +64,7 @@ subroutine trans_test2(store, word)
   ! CHECK:         %[[VAL_29:.*]] = fir.array_load %[[VAL_27]](%[[VAL_28]]) : (!fir.heap<!fir.array<?xi32>>, !fir.shapeshift<1>) -> !fir.array<?xi32>
   ! CHECK:         %[[VAL_30:.*]] = arith.constant 1 : index
   ! CHECK:         %[[VAL_31:.*]] = arith.constant 0 : index
-  ! CHECK:         %[[VAL_32:.*]] = subi %[[VAL_7]], %[[VAL_30]] : index
+  ! CHECK:         %[[VAL_32:.*]] = arith.subi %[[VAL_7]], %[[VAL_30]] : index
   ! CHECK:         %[[VAL_33:.*]] = fir.do_loop %[[VAL_34:.*]] = %[[VAL_31]] to %[[VAL_32]] step %[[VAL_30]] unordered iter_args(%[[VAL_35:.*]] = %[[VAL_5]]) -> (!fir.array<3xi32>) {
   ! CHECK:           %[[VAL_36:.*]] = fir.array_fetch %[[VAL_29]], %[[VAL_34]] : (!fir.array<?xi32>, index) -> i32
   ! CHECK:           %[[VAL_37:.*]] = fir.array_update %[[VAL_35]], %[[VAL_36]], %[[VAL_34]] : (!fir.array<3xi32>, i32, index) -> !fir.array<3xi32>

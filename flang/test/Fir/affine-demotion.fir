@@ -19,7 +19,7 @@ module  {
       %7 = affine.apply #map2(%arg3)[%c1, %c100, %c1]
       %8 = affine.load %3[%7] : memref<?xf32>
       %9 = affine.load %4[%7] : memref<?xf32>
-      %10 = addf %8, %9 : f32
+      %10 = arith.addf %8, %9 : f32
       affine.store %10, %5[%7] : memref<?xf32>
     }
     %6 = fir.convert %arg2 : (!fir.ref<!fir.array<?xf32>>) -> memref<?xf32>
@@ -27,7 +27,7 @@ module  {
       %7 = affine.apply #map2(%arg3)[%c1, %c100, %c1]
       %8 = affine.load %5[%7] : memref<?xf32>
       %9 = affine.load %4[%7] : memref<?xf32>
-      %10 = mulf %8, %9 : f32
+      %10 = arith.mulf %8, %9 : f32
       affine.store %10, %6[%7] : memref<?xf32>
     }
     return
@@ -49,7 +49,7 @@ module  {
 // CHECK:      %[[VAL_14:.*]] = fir.load %[[VAL_13]] : !fir.ref<f32>
 // CHECK:      %[[VAL_15:.*]] = fir.coordinate_of %[[VAL_9]], %[[VAL_12]] : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
 // CHECK:      %[[VAL_16:.*]] = fir.load %[[VAL_15]] : !fir.ref<f32>
-// CHECK:      %[[VAL_17:.*]] = addf %[[VAL_14]], %[[VAL_16]] : f32
+// CHECK:      %[[VAL_17:.*]] = arith.addf %[[VAL_14]], %[[VAL_16]] : f32
 // CHECK:      %[[VAL_18:.*]] = fir.coordinate_of %[[VAL_10]], %[[VAL_12]] : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
 // CHECK:      fir.store %[[VAL_17]] to %[[VAL_18]] : !fir.ref<f32>
 // CHECK:    }
@@ -60,7 +60,7 @@ module  {
 // CHECK:      %[[VAL_23:.*]] = fir.load %[[VAL_22]] : !fir.ref<f32>
 // CHECK:      %[[VAL_24:.*]] = fir.coordinate_of %[[VAL_9]], %[[VAL_21]] : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
 // CHECK:      %[[VAL_25:.*]] = fir.load %[[VAL_24]] : !fir.ref<f32>
-// CHECK:      %[[VAL_26:.*]] = mulf %[[VAL_23]], %[[VAL_25]] : f32
+// CHECK:      %[[VAL_26:.*]] = arith.mulf %[[VAL_23]], %[[VAL_25]] : f32
 // CHECK:      %[[VAL_27:.*]] = fir.coordinate_of %[[VAL_19]], %[[VAL_21]] : (!fir.ref<!fir.array<?xf32>>, index) -> !fir.ref<f32>
 // CHECK:      fir.store %[[VAL_26]] to %[[VAL_27]] : !fir.ref<f32>
 // CHECK:    }

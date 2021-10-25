@@ -10,7 +10,7 @@ subroutine test_array_format
   character(10) :: array(2)
   array(1) ="(15HThis i"
   array(2) ="s a test.)"
-  ! CHECK-DAG: %[[fmtLen:.*]] = muli %[[c10]], %[[c2]] : index
+  ! CHECK-DAG: %[[fmtLen:.*]] = arith.muli %[[c10]], %[[c2]] : index
   ! CHECK-DAG: %[[scalarFmt:.*]] = fir.convert %[[mem]] : (!fir.ref<!fir.array<2x!fir.char<1,10>>>) -> !fir.ref<!fir.char<1,?>>
   ! CHECK-DAG: %[[fmtArg:.*]] = fir.convert %[[scalarFmt]] : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<i8>
   ! CHECK-DAG: %[[fmtLenArg:.*]] = fir.convert %[[fmtLen]] : (index) -> i64 

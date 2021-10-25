@@ -122,7 +122,7 @@ subroutine scalar_ref()
 ! CHECK-LABEL: fir.global internal @_QFscalar_refEp : !fir.box<!fir.ptr<f32>> {
   ! CHECK: %[[x:.*]] = fir.address_of(@_QFscalar_refEx) : !fir.ref<!fir.array<97xf32>>
   ! CHECK: %[[lb:.*]] = fir.convert %c4 : (index) -> i64
-  ! CHECK: %[[idx:.*]] = subi %c50{{.*}}, %[[lb]] : i64
+  ! CHECK: %[[idx:.*]] = arith.subi %c50{{.*}}, %[[lb]] : i64
   ! CHECK: %[[elt:.*]] = fir.coordinate_of %[[x]], %[[idx]] : (!fir.ref<!fir.array<97xf32>>, i64) -> !fir.ref<f32>
   ! CHECK: %[[box:.*]] = fir.embox %[[elt]] : (!fir.ref<f32>) -> !fir.box<!fir.ptr<f32>>
   ! CHECK: fir.has_value %[[box]] : !fir.box<!fir.ptr<f32>>
@@ -133,7 +133,7 @@ subroutine scalar_char_ref()
   character(10), pointer :: p => x(6)(7:16)
 ! CHECK-LABEL: fir.global internal @_QFscalar_char_refEp : !fir.box<!fir.ptr<!fir.char<1,10>>>
   ! CHECK: %[[x:.*]] = fir.address_of(@_QFscalar_char_refEx) : !fir.ref<!fir.array<100x!fir.char<1,20>>>
-  ! CHECK: %[[idx:.*]] = subi %c6{{.*}}, %c1{{.*}} : i64
+  ! CHECK: %[[idx:.*]] = arith.subi %c6{{.*}}, %c1{{.*}} : i64
   ! CHECK: %[[elt:.*]] = fir.coordinate_of %[[x]], %[[idx]] : (!fir.ref<!fir.array<100x!fir.char<1,20>>>, i64) -> !fir.ref<!fir.char<1,20>>
   ! CHECK: %[[eltCast:.*]] = fir.convert %[[elt:.*]] : (!fir.ref<!fir.char<1,20>>) -> !fir.ref<!fir.array<20x!fir.char<1>>>
   ! CHECK: %[[coor:.*]] = fir.coordinate_of %[[eltCast]], %{{.*}} : (!fir.ref<!fir.array<20x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>

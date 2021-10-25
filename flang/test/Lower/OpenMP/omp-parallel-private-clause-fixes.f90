@@ -23,9 +23,9 @@
 ! CHECK:               %[[VAL_14:.*]] = fir.convert %[[VAL_13]] : (index) -> i32
 ! CHECK:               fir.store %[[VAL_14]] to %[[VAL_0]] : !fir.ref<i32>
 ! CHECK:               %[[VAL_15:.*]] = fir.load %[[VAL_0]] : !fir.ref<i32>
-! CHECK:               %[[VAL_16:.*]] = addi %[[VAL_6]], %[[VAL_15]] : i32
+! CHECK:               %[[VAL_16:.*]] = arith.addi %[[VAL_6]], %[[VAL_15]] : i32
 ! CHECK:               fir.store %[[VAL_16]] to %[[VAL_1]] : !fir.ref<i32>
-! CHECK:               %[[VAL_17:.*]] = addi %[[VAL_13]], %[[VAL_11]] : index
+! CHECK:               %[[VAL_17:.*]] = arith.addi %[[VAL_13]], %[[VAL_11]] : index
 ! CHECK:               fir.result %[[VAL_17]] : index
 ! CHECK:             }
 ! CHECK:             %[[VAL_18:.*]] = fir.convert %[[VAL_19:.*]] : (index) -> i32

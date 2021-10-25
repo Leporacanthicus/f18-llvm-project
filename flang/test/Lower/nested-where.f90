@@ -52,17 +52,17 @@ program nested_where
   ! CHECK: %[[VAL_42:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
   ! CHECK: %[[VAL_43:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
   ! CHECK: %[[VAL_44:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
-  ! CHECK: %[[VAL_45:.*]] = subi %[[VAL_43]], %[[VAL_42]] : i64
-  ! CHECK: %[[VAL_46:.*]] = addi %[[VAL_45]], %[[VAL_44]] : i64
+  ! CHECK: %[[VAL_45:.*]] = arith.subi %[[VAL_43]], %[[VAL_42]] : i64
+  ! CHECK: %[[VAL_46:.*]] = arith.addi %[[VAL_45]], %[[VAL_44]] : i64
   ! CHECK: %[[VAL_47:.*]] = divi_signed %[[VAL_46]], %[[VAL_44]] : i64
-  ! CHECK: %[[VAL_48:.*]] = cmpi sgt, %[[VAL_47]], %[[VAL_41]] : i64
+  ! CHECK: %[[VAL_48:.*]] = arith.cmpi sgt, %[[VAL_47]], %[[VAL_41]] : i64
   ! CHECK: %[[VAL_49:.*]] = select %[[VAL_48]], %[[VAL_47]], %[[VAL_41]] : i64
   ! CHECK: %[[VAL_50:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_51:.*]] = fir.coordinate_of %[[VAL_4]], %[[VAL_50]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_52:.*]] = fir.load %[[VAL_51]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_53:.*]] = fir.convert %[[VAL_52]] : (!fir.heap<!fir.array<?xi8>>) -> i64
   ! CHECK: %[[VAL_54:.*]] = arith.constant 0 : i64
-  ! CHECK: %[[VAL_55:.*]] = cmpi eq, %[[VAL_53]], %[[VAL_54]] : i64
+  ! CHECK: %[[VAL_55:.*]] = arith.cmpi eq, %[[VAL_53]], %[[VAL_54]] : i64
   ! CHECK: fir.if %[[VAL_55]] {
   ! CHECK: %[[VAL_56:.*]] = arith.constant true
   ! CHECK: %[[VAL_57:.*]] = arith.constant 1 : i64
@@ -74,10 +74,10 @@ program nested_where
   ! CHECK: %[[VAL_62:.*]] = fir.convert %[[VAL_58]] : (!fir.heap<!fir.array<1xi64>>) -> !fir.ref<i64>
   ! CHECK: %[[VAL_63:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_61]], %[[VAL_56]], %[[VAL_57]], %[[VAL_40]], %[[VAL_62]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
   ! CHECK: }
-  ! CHECK: %[[VAL_64:.*]] = subi %[[VAL_37]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_64:.*]] = arith.subi %[[VAL_37]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_65:.*]] = divi_signed %[[VAL_64]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_66:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_67:.*]] = addi %[[VAL_65]], %[[VAL_66]] : index
+  ! CHECK: %[[VAL_67:.*]] = arith.addi %[[VAL_65]], %[[VAL_66]] : index
   ! CHECK: %[[VAL_68:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_69:.*]] = fir.coordinate_of %[[VAL_4]], %[[VAL_68]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_70:.*]] = fir.load %[[VAL_69]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
@@ -97,7 +97,7 @@ program nested_where
   ! CHECK: %[[VAL_84:.*]] = fir.load %[[VAL_83]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_85:.*]] = fir.convert %[[VAL_84]] : (!fir.heap<!fir.array<?xi8>>) -> i64
   ! CHECK: %[[VAL_86:.*]] = arith.constant 0 : i64
-  ! CHECK: %[[VAL_87:.*]] = cmpi eq, %[[VAL_85]], %[[VAL_86]] : i64
+  ! CHECK: %[[VAL_87:.*]] = arith.cmpi eq, %[[VAL_85]], %[[VAL_86]] : i64
   ! CHECK: fir.if %[[VAL_87]] {
   ! CHECK: %[[VAL_88:.*]] = arith.constant false
   ! CHECK: %[[VAL_89:.*]] = arith.constant 1 : i64
@@ -112,7 +112,7 @@ program nested_where
   ! CHECK: }
   ! CHECK: %[[VAL_97:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_98:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_99:.*]] = subi %[[VAL_8]], %[[VAL_97]] : index
+  ! CHECK: %[[VAL_99:.*]] = arith.subi %[[VAL_8]], %[[VAL_97]] : index
   ! CHECK: %[[VAL_100:.*]] = fir.do_loop %[[VAL_101:.*]] = %[[VAL_98]] to %[[VAL_99]] step %[[VAL_97]] unordered iter_args(%[[VAL_102:.*]] = %[[VAL_80]]) -> (!fir.array<?xi8>) {
   ! CHECK: %[[VAL_103:.*]] = fir.array_fetch %[[VAL_75]], %[[VAL_101]] : (!fir.array<3x!fir.logical<4>>, index) -> !fir.logical<4>
   ! CHECK: %[[VAL_104:.*]] = arith.constant 1 : i32
@@ -120,7 +120,7 @@ program nested_where
   ! CHECK: %[[VAL_106:.*]] = fir.load %[[VAL_105]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_107:.*]] = fir.shape %[[VAL_8]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_108:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_109:.*]] = addi %[[VAL_101]], %[[VAL_108]] : index
+  ! CHECK: %[[VAL_109:.*]] = arith.addi %[[VAL_101]], %[[VAL_108]] : index
   ! CHECK: %[[VAL_110:.*]] = fir.array_coor %[[VAL_106]](%[[VAL_107]]) %[[VAL_109]] : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
   ! CHECK: %[[VAL_111:.*]] = fir.convert %[[VAL_103]] : (!fir.logical<4>) -> i8
   ! CHECK: fir.store %[[VAL_111]] to %[[VAL_110]] : !fir.ref<i8>
@@ -136,17 +136,17 @@ program nested_where
   ! CHECK: %[[VAL_118:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
   ! CHECK: %[[VAL_119:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
   ! CHECK: %[[VAL_120:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
-  ! CHECK: %[[VAL_121:.*]] = subi %[[VAL_119]], %[[VAL_118]] : i64
-  ! CHECK: %[[VAL_122:.*]] = addi %[[VAL_121]], %[[VAL_120]] : i64
+  ! CHECK: %[[VAL_121:.*]] = arith.subi %[[VAL_119]], %[[VAL_118]] : i64
+  ! CHECK: %[[VAL_122:.*]] = arith.addi %[[VAL_121]], %[[VAL_120]] : i64
   ! CHECK: %[[VAL_123:.*]] = divi_signed %[[VAL_122]], %[[VAL_120]] : i64
-  ! CHECK: %[[VAL_124:.*]] = cmpi sgt, %[[VAL_123]], %[[VAL_117]] : i64
+  ! CHECK: %[[VAL_124:.*]] = arith.cmpi sgt, %[[VAL_123]], %[[VAL_117]] : i64
   ! CHECK: %[[VAL_125:.*]] = select %[[VAL_124]], %[[VAL_123]], %[[VAL_117]] : i64
   ! CHECK: %[[VAL_126:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_127:.*]] = fir.coordinate_of %[[VAL_3]], %[[VAL_126]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_128:.*]] = fir.load %[[VAL_127]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_129:.*]] = fir.convert %[[VAL_128]] : (!fir.heap<!fir.array<?xi8>>) -> i64
   ! CHECK: %[[VAL_130:.*]] = arith.constant 0 : i64
-  ! CHECK: %[[VAL_131:.*]] = cmpi eq, %[[VAL_129]], %[[VAL_130]] : i64
+  ! CHECK: %[[VAL_131:.*]] = arith.cmpi eq, %[[VAL_129]], %[[VAL_130]] : i64
   ! CHECK: fir.if %[[VAL_131]] {
   ! CHECK: %[[VAL_132:.*]] = arith.constant true
   ! CHECK: %[[VAL_133:.*]] = arith.constant 1 : i64
@@ -158,10 +158,10 @@ program nested_where
   ! CHECK: %[[VAL_138:.*]] = fir.convert %[[VAL_134]] : (!fir.heap<!fir.array<1xi64>>) -> !fir.ref<i64>
   ! CHECK: %[[VAL_139:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_137]], %[[VAL_132]], %[[VAL_133]], %[[VAL_116]], %[[VAL_138]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
   ! CHECK: }
-  ! CHECK: %[[VAL_140:.*]] = subi %[[VAL_113]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_140:.*]] = arith.subi %[[VAL_113]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_141:.*]] = divi_signed %[[VAL_140]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_142:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_143:.*]] = addi %[[VAL_141]], %[[VAL_142]] : index
+  ! CHECK: %[[VAL_143:.*]] = arith.addi %[[VAL_141]], %[[VAL_142]] : index
   ! CHECK: %[[VAL_144:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_145:.*]] = fir.coordinate_of %[[VAL_3]], %[[VAL_144]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_146:.*]] = fir.load %[[VAL_145]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
@@ -181,7 +181,7 @@ program nested_where
   ! CHECK: %[[VAL_160:.*]] = fir.load %[[VAL_159]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_161:.*]] = fir.convert %[[VAL_160]] : (!fir.heap<!fir.array<?xi8>>) -> i64
   ! CHECK: %[[VAL_162:.*]] = arith.constant 0 : i64
-  ! CHECK: %[[VAL_163:.*]] = cmpi eq, %[[VAL_161]], %[[VAL_162]] : i64
+  ! CHECK: %[[VAL_163:.*]] = arith.cmpi eq, %[[VAL_161]], %[[VAL_162]] : i64
   ! CHECK: fir.if %[[VAL_163]] {
   ! CHECK: %[[VAL_164:.*]] = arith.constant false
   ! CHECK: %[[VAL_165:.*]] = arith.constant 1 : i64
@@ -196,7 +196,7 @@ program nested_where
   ! CHECK: }
   ! CHECK: %[[VAL_173:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_174:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_175:.*]] = subi %[[VAL_10]], %[[VAL_173]] : index
+  ! CHECK: %[[VAL_175:.*]] = arith.subi %[[VAL_10]], %[[VAL_173]] : index
   ! CHECK: %[[VAL_176:.*]] = fir.do_loop %[[VAL_177:.*]] = %[[VAL_174]] to %[[VAL_175]] step %[[VAL_173]] unordered iter_args(%[[VAL_178:.*]] = %[[VAL_156]]) -> (!fir.array<?xi8>) {
   ! CHECK: %[[VAL_179:.*]] = fir.array_fetch %[[VAL_151]], %[[VAL_177]] : (!fir.array<3x!fir.logical<4>>, index) -> !fir.logical<4>
   ! CHECK: %[[VAL_180:.*]] = arith.constant 1 : i32
@@ -204,7 +204,7 @@ program nested_where
   ! CHECK: %[[VAL_182:.*]] = fir.load %[[VAL_181]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_183:.*]] = fir.shape %[[VAL_10]] : (index) -> !fir.shape<1>
   ! CHECK: %[[VAL_184:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_185:.*]] = addi %[[VAL_177]], %[[VAL_184]] : index
+  ! CHECK: %[[VAL_185:.*]] = arith.addi %[[VAL_177]], %[[VAL_184]] : index
   ! CHECK: %[[VAL_186:.*]] = fir.array_coor %[[VAL_182]](%[[VAL_183]]) %[[VAL_185]] : (!fir.heap<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
   ! CHECK: %[[VAL_187:.*]] = fir.convert %[[VAL_179]] : (!fir.logical<4>) -> i8
   ! CHECK: fir.store %[[VAL_187]] to %[[VAL_186]] : !fir.ref<i8>
@@ -219,15 +219,15 @@ program nested_where
   ! CHECK: %[[VAL_193:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
   ! CHECK: %[[VAL_194:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
   ! CHECK: %[[VAL_195:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
-  ! CHECK: %[[VAL_196:.*]] = subi %[[VAL_194]], %[[VAL_193]] : i64
-  ! CHECK: %[[VAL_197:.*]] = addi %[[VAL_196]], %[[VAL_195]] : i64
+  ! CHECK: %[[VAL_196:.*]] = arith.subi %[[VAL_194]], %[[VAL_193]] : i64
+  ! CHECK: %[[VAL_197:.*]] = arith.addi %[[VAL_196]], %[[VAL_195]] : i64
   ! CHECK: %[[VAL_198:.*]] = divi_signed %[[VAL_197]], %[[VAL_195]] : i64
-  ! CHECK: %[[VAL_199:.*]] = cmpi sgt, %[[VAL_198]], %[[VAL_192]] : i64
+  ! CHECK: %[[VAL_199:.*]] = arith.cmpi sgt, %[[VAL_198]], %[[VAL_192]] : i64
   ! CHECK: %[[VAL_200:.*]] = select %[[VAL_199]], %[[VAL_198]], %[[VAL_192]] : i64
-  ! CHECK: %[[VAL_201:.*]] = subi %[[VAL_189]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_201:.*]] = arith.subi %[[VAL_189]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_202:.*]] = divi_signed %[[VAL_201]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_203:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_204:.*]] = addi %[[VAL_202]], %[[VAL_203]] : index
+  ! CHECK: %[[VAL_204:.*]] = arith.addi %[[VAL_202]], %[[VAL_203]] : index
   ! CHECK: %[[VAL_205:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_206:.*]] = fir.coordinate_of %[[VAL_4]], %[[VAL_205]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_207:.*]] = fir.load %[[VAL_206]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
@@ -250,15 +250,15 @@ program nested_where
   ! CHECK: %[[VAL_224:.*]] = fir.convert %[[VAL_30]] : (index) -> i64
   ! CHECK: %[[VAL_225:.*]] = fir.convert %[[VAL_32]] : (index) -> i64
   ! CHECK: %[[VAL_226:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
-  ! CHECK: %[[VAL_227:.*]] = subi %[[VAL_225]], %[[VAL_224]] : i64
-  ! CHECK: %[[VAL_228:.*]] = addi %[[VAL_227]], %[[VAL_226]] : i64
+  ! CHECK: %[[VAL_227:.*]] = arith.subi %[[VAL_225]], %[[VAL_224]] : i64
+  ! CHECK: %[[VAL_228:.*]] = arith.addi %[[VAL_227]], %[[VAL_226]] : i64
   ! CHECK: %[[VAL_229:.*]] = divi_signed %[[VAL_228]], %[[VAL_226]] : i64
-  ! CHECK: %[[VAL_230:.*]] = cmpi sgt, %[[VAL_229]], %[[VAL_223]] : i64
+  ! CHECK: %[[VAL_230:.*]] = arith.cmpi sgt, %[[VAL_229]], %[[VAL_223]] : i64
   ! CHECK: %[[VAL_231:.*]] = select %[[VAL_230]], %[[VAL_229]], %[[VAL_223]] : i64
-  ! CHECK: %[[VAL_232:.*]] = subi %[[VAL_189]], %[[VAL_30]] : index
+  ! CHECK: %[[VAL_232:.*]] = arith.subi %[[VAL_189]], %[[VAL_30]] : index
   ! CHECK: %[[VAL_233:.*]] = divi_signed %[[VAL_232]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_234:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_235:.*]] = addi %[[VAL_233]], %[[VAL_234]] : index
+  ! CHECK: %[[VAL_235:.*]] = arith.addi %[[VAL_233]], %[[VAL_234]] : index
   ! CHECK: %[[VAL_236:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_237:.*]] = fir.coordinate_of %[[VAL_3]], %[[VAL_236]] : (!fir.ref<tuple<i64, !fir.heap<!fir.array<?xi8>>, !fir.heap<!fir.array<?xi64>>>>, i32) -> !fir.ref<!fir.heap<!fir.array<?xi8>>>
   ! CHECK: %[[VAL_238:.*]] = fir.load %[[VAL_237]] : !fir.ref<!fir.heap<!fir.array<?xi8>>>
@@ -281,23 +281,23 @@ program nested_where
   ! CHECK: %[[VAL_255:.*]] = fir.convert %[[VAL_254]] : (i64) -> index
   ! CHECK: %[[VAL_256:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_257:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_258:.*]] = subi %[[VAL_255]], %[[VAL_256]] : index
+  ! CHECK: %[[VAL_258:.*]] = arith.subi %[[VAL_255]], %[[VAL_256]] : index
   ! CHECK: %[[VAL_259:.*]] = fir.do_loop %[[VAL_260:.*]] = %[[VAL_257]] to %[[VAL_258]] step %[[VAL_256]] unordered iter_args(%[[VAL_261:.*]] = %[[VAL_190]]) -> (!fir.array<3xi32>) {
   ! CHECK: %[[VAL_262:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_263:.*]] = addi %[[VAL_260]], %[[VAL_262]] : index
+  ! CHECK: %[[VAL_263:.*]] = arith.addi %[[VAL_260]], %[[VAL_262]] : index
   ! CHECK: %[[VAL_264:.*]] = fir.array_coor %[[VAL_214]](%[[VAL_222]]) %[[VAL_263]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
   ! CHECK: %[[VAL_265:.*]] = fir.load %[[VAL_264]] : !fir.ref<i8>
   ! CHECK: %[[VAL_266:.*]] = fir.convert %[[VAL_265]] : (i8) -> i1
   ! CHECK: %[[VAL_267:.*]] = fir.if %[[VAL_266]] -> (!fir.array<3xi32>) {
   ! CHECK: %[[VAL_268:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_269:.*]] = addi %[[VAL_260]], %[[VAL_268]] : index
+  ! CHECK: %[[VAL_269:.*]] = arith.addi %[[VAL_260]], %[[VAL_268]] : index
   ! CHECK: %[[VAL_270:.*]] = fir.array_coor %[[VAL_245]](%[[VAL_253]]) %[[VAL_269]] : (!fir.ref<!fir.array<?xi8>>, !fir.shape<1>, index) -> !fir.ref<i8>
   ! CHECK: %[[VAL_271:.*]] = fir.load %[[VAL_270]] : !fir.ref<i8>
   ! CHECK: %[[VAL_272:.*]] = fir.convert %[[VAL_271]] : (i8) -> i1
   ! CHECK: %[[VAL_273:.*]] = fir.if %[[VAL_272]] -> (!fir.array<3xi32>) {
   ! CHECK: %[[VAL_274:.*]] = arith.constant 1 : i32
   ! CHECK: %[[VAL_275:.*]] = arith.constant 1 : index
-  ! CHECK: %[[VAL_276:.*]] = addi %[[VAL_260]], %[[VAL_275]] : index
+  ! CHECK: %[[VAL_276:.*]] = arith.addi %[[VAL_260]], %[[VAL_275]] : index
   ! CHECK: %[[VAL_277:.*]] = fir.array_update %[[VAL_261]], %[[VAL_274]], %[[VAL_276]] {Fortran.offsets} : (!fir.array<3xi32>, i32, index) -> !fir.array<3xi32>
   ! CHECK: fir.result %[[VAL_277]] : !fir.array<3xi32>
   ! CHECK: } else {

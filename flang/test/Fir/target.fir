@@ -106,7 +106,7 @@ func @char1lensum(%arg0 : !fir.boxchar<1>, %arg1 : !fir.boxchar<1>) -> i64 {
   %2:2 = fir.unboxchar %arg1 : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1>>, i64)
   // I32: %[[add:.*]] = add i64 %
   // X64: %[[add:.*]] = add i64 %
-  %3 = addi %1#1, %2#1 : i64
+  %3 = arith.addi %1#1, %2#1 : i64
   // I32: ret i64 %[[add]]
   // X64: ret i64 %[[add]]
   return %3 : i64
@@ -129,7 +129,7 @@ func @char1copy(%arg0 : !fir.boxchar<1> {llvm.sret}, %arg1 : !fir.boxchar<1>) {
   %c0 = arith.constant 0 : index
   %c1 = arith.constant 1 : index
   %3 = fir.convert %1#1 : (i64) -> index
-  %last = subi %3, %c1 : index
+  %last = arith.subi %3, %c1 : index
   fir.do_loop %i = %c0 to %last step %c1 {
     %in_pos = fir.coordinate_of %2#0, %i : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>
     %out_pos = fir.coordinate_of %1#0, %i : (!fir.ref<!fir.array<?x!fir.char<1>>>, index) -> !fir.ref<!fir.char<1>>

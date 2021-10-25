@@ -8,7 +8,7 @@ subroutine abs_testi(a, b)
 ! CHECK:  %[[VAL_3:.*]] = arith.constant 31 : i32
 ! CHECK:  %[[VAL_4:.*]] = shift_right_signed %[[VAL_2]], %[[VAL_3]] : i32
 ! CHECK:  %[[VAL_5:.*]] = xor %[[VAL_2]], %[[VAL_4]] : i32
-! CHECK:  %[[VAL_6:.*]] = subi %[[VAL_5]], %[[VAL_4]] : i32
+! CHECK:  %[[VAL_6:.*]] = arith.subi %[[VAL_5]], %[[VAL_4]] : i32
 ! CHECK:  fir.store %[[VAL_6]] to %[[VAL_1]] : !fir.ref<i32>
 ! CHECK:  return
   integer :: a, b

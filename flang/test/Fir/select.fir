@@ -11,7 +11,7 @@ func @f(%a : i32) -> i32 {
 ^bb2(%3 : i32) :
    return %3 : i32
 ^bb3(%4 : i32) :
-   %5 = addi %4, %4 : i32
+   %5 = arith.addi %4, %4 : i32
    // CHECK: ret i32
    return %5 : i32 
 }
@@ -26,7 +26,7 @@ func @g(%a : i32) -> i32 {
 ^bb2(%3 : i32) :
    return %3 : i32
 ^bb3(%4 : i32) :
-   %5 = addi %4, %4 : i32
+   %5 = arith.addi %4, %4 : i32
    return %5 : i32 
 ^bb4:
    // CHECK: ret i32
@@ -50,14 +50,14 @@ func @h(%a : i32) -> i32 {
 ^bb2(%3 : i32) :
    return %3 : i32
 ^bb3(%4 : i32) :
-   %5 = addi %4, %4 : i32
+   %5 = arith.addi %4, %4 : i32
    br ^bb2(%5 : i32) 
 ^bb4:
    return %a : i32
 ^bb5:
    return %1 : i32
 ^bb6:
-   %x = addi %b4, %b3 : i32
+   %x = arith.addi %b4, %b3 : i32
    // CHECK: ret i32
    return %x : i32
 }

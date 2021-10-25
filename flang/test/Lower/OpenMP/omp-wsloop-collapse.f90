@@ -169,9 +169,9 @@ program wsloop_collapse
         do k = 1, c
 ! FIRDialect:           omp.wsloop (%[[VAL_9:.*]], %[[VAL_10:.*]], %[[VAL_11:.*]]) : i32 = (%[[VAL_20]], %[[VAL_23]], %[[VAL_26]]) to (%[[VAL_21]], %[[VAL_24]], %[[VAL_27]]) step (%[[VAL_22]], %[[VAL_25]], %[[VAL_28]]) collapse(3) inclusive {
 ! FIRDialect:             %[[VAL_12:.*]] = fir.load %[[VAL_6]] : !fir.ref<i32>
-! FIRDialect:             %[[VAL_13:.*]] = addi %[[VAL_12]], %[[VAL_9]] : i32
-! FIRDialect:             %[[VAL_14:.*]] = addi %[[VAL_13]], %[[VAL_10]] : i32
-! FIRDialect:             %[[VAL_15:.*]] = addi %[[VAL_14]], %[[VAL_11]] : i32
+! FIRDialect:             %[[VAL_13:.*]] = arith.addi %[[VAL_12]], %[[VAL_9]] : i32
+! FIRDialect:             %[[VAL_14:.*]] = arith.addi %[[VAL_13]], %[[VAL_10]] : i32
+! FIRDialect:             %[[VAL_15:.*]] = arith.addi %[[VAL_14]], %[[VAL_11]] : i32
 ! FIRDialect:             fir.store %[[VAL_15]] to %[[VAL_6]] : !fir.ref<i32>
 ! FIRDialect:             omp.yield
 ! FIRDialect:           }

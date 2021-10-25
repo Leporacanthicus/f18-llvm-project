@@ -62,7 +62,7 @@ subroutine pass_vector_subscript_write(x, j)
   ! CHECK: %[[copy:.*]] = fir.do_loop
   ! CHECK:   %[[jfetch:.*]] = fir.array_fetch %[[jload]], %{{.*}} : (!fir.array<10xi32>, index) -> i32
   ! CHECK:   %[[jcast:.*]] = fir.convert %[[jfetch]] : (i32) -> index
-  ! CHECK:   %[[jindex:.*]] = subi %[[jcast]], %c1{{.*}} : index
+  ! CHECK:   %[[jindex:.*]] = arith.subi %[[jcast]], %c1{{.*}} : index
   ! CHECK:   %[[xfetch:.*]] = fir.array_fetch %[[xload]], %[[jindex]] : (!fir.array<100xf32>, index) -> f32
   ! CHECK:   %[[update:.*]] = fir.array_update %{{.*}}, %[[xfetch]], %{{.*}} : (!fir.array<10xf32>, f32, index) -> !fir.array<10xf32>
   ! CHECK:   fir.result %[[update]] : !fir.array<10xf32>

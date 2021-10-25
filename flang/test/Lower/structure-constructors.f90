@@ -79,7 +79,7 @@ contains
     ! CHECK: %[[jload:.*]] = fir.array_load %[[j]](%{{.*}}) : (!fir.ref<!fir.array<5xi32>>, !fir.shape<1>) -> !fir.array<5xi32>
     ! CHECK: %[[loop:.*]] = fir.do_loop %[[idx:.*]] = %c0{{.*}} to %{{.*}} step %c1{{.*}} iter_args(%[[res:.*]] = %[[iload]]) -> (!fir.array<5xi32>) {
     ! CHECK:   %[[jval:.*]] = fir.array_fetch %[[jload]], %[[idx]] : (!fir.array<5xi32>, index) -> i32
-    ! CHECK:   %[[ival:.*]] = muli %c2{{.*}}, %[[jval]] : i32
+    ! CHECK:   %[[ival:.*]] = arith.muli %c2{{.*}}, %[[jval]] : i32
     ! CHECK:   %[[iupdate:.*]] = fir.array_update %[[res]], %[[ival]], %[[idx]] : (!fir.array<5xi32>, i32, index) -> !fir.array<5xi32>
     ! CHECK:   fir.result %[[iupdate]] : !fir.array<5xi32>
     ! CHECK: fir.array_merge_store %[[iload]], %[[loop]] to %[[icoor]] : !fir.array<5xi32>, !fir.array<5xi32>, !fir.ref<!fir.array<5xi32>>
@@ -108,14 +108,14 @@ contains
   ! CHECK: %[[VAL_16:.*]] = fir.array_load %[[VAL_5]](%[[VAL_15]]) : (!fir.ref<!fir.array<5x!fir.char<1,3>>>, !fir.shape<1>) -> !fir.array<5x!fir.char<1,3>>
   ! CHECK: %[[VAL_17:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_18:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_19:.*]] = subi %[[VAL_12]], %[[VAL_17]] : index
+  ! CHECK: %[[VAL_19:.*]] = arith.subi %[[VAL_12]], %[[VAL_17]] : index
   ! CHECK: %[[VAL_20:.*]] = fir.do_loop %[[VAL_21:.*]] = %[[VAL_18]] to %[[VAL_19]] step %[[VAL_17]] unordered iter_args(%[[VAL_22:.*]] = %[[VAL_14]]) -> (!fir.array<5x!fir.char<1,3>>) {
   ! CHECK: %[[VAL_23:.*]] = fir.array_access %[[VAL_16]], %[[VAL_21]] : (!fir.array<5x!fir.char<1,3>>, index) -> !fir.ref<!fir.char<1,3>>
   ! CHECK: %[[VAL_24:.*]] = fir.array_access %[[VAL_22]], %[[VAL_21]] : (!fir.array<5x!fir.char<1,3>>, index) -> !fir.ref<!fir.char<1,3>>
   ! CHECK: %[[VAL_25:.*]] = arith.constant 3 : index
   ! CHECK: %[[VAL_26:.*]] = arith.constant 1 : i64
   ! CHECK: %[[VAL_27:.*]] = fir.convert %[[VAL_25]] : (index) -> i64
-  ! CHECK: %[[VAL_28:.*]] = muli %[[VAL_26]], %[[VAL_27]] : i64
+  ! CHECK: %[[VAL_28:.*]] = arith.muli %[[VAL_26]], %[[VAL_27]] : i64
   ! CHECK: %[[VAL_29:.*]] = arith.constant false
   ! CHECK: %[[VAL_30:.*]] = fir.convert %[[VAL_24]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>
   ! CHECK: %[[VAL_31:.*]] = fir.convert %[[VAL_23]] : (!fir.ref<!fir.char<1,3>>) -> !fir.ref<i8>

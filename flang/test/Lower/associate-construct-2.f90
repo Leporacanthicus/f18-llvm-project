@@ -38,7 +38,7 @@ subroutine test2(n)
   integer :: n
   integer, external :: foo
   ! CHECK: %[[n:.*]] = fir.load %[[nadd]] : !fir.ref<i32>
-  ! CHECK: %[[n10:.*]] = addi %[[n]], %c10{{.*}} : i32
+  ! CHECK: %[[n10:.*]] = arith.addi %[[n]], %c10{{.*}} : i32
   ! CHECK: fir.store %[[n10]] to %{{.*}} : !fir.ref<i32>
   ! CHECK: %[[foo:.*]] = fir.call @_QPfoo(%{{.*}}) : (!fir.ref<i32>) -> i32
   ! CHECK: fir.store %[[foo]] to %{{.*}} : !fir.ref<i32>

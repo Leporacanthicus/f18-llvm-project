@@ -53,14 +53,14 @@ contains
     ! CHECK: %[[VAL_46:.*]] = fir.slice %[[VAL_37]], %[[VAL_44]]#1, %[[VAL_37]] path %[[VAL_43]], %[[VAL_33]] : (index, index, index, !fir.field, i64) -> !fir.slice<1>
     ! CHECK: %[[VAL_47:.*]] = fir.slice %[[VAL_37]], %[[VAL_44]]#1, %[[VAL_37]] path %[[VAL_43]], %[[VAL_34]] : (index, index, index, !fir.field, i64) -> !fir.slice<1>
     ! CHECK: %[[VAL_48:.*]] = fir.slice %[[VAL_37]], %[[VAL_44]]#1, %[[VAL_37]] path %[[VAL_43]], %[[VAL_35]] : (index, index, index, !fir.field, i64) -> !fir.slice<1>
-    ! CHECK: %[[CMP:.*]] = cmpi sgt, %[[VAL_40]]#1, %[[VAL_36]] : index 
+    ! CHECK: %[[CMP:.*]] = arith.cmpi sgt, %[[VAL_40]]#1, %[[VAL_36]] : index 
     ! CHECK: %[[SELECT:.*]] = select %[[CMP]], %[[VAL_40]]#1, %[[VAL_36]] : index 
     ! CHECK: br ^bb1(%[[VAL_36]], %[[SELECT]] : index, index)
     ! CHECK: ^bb1(%[[VAL_49:.*]]: index, %[[VAL_50:.*]]: index):
-    ! CHECK: %[[VAL_51:.*]] = cmpi sgt, %[[VAL_50]], %[[VAL_36]] : index
+    ! CHECK: %[[VAL_51:.*]] = arith.cmpi sgt, %[[VAL_50]], %[[VAL_36]] : index
     ! CHECK: cond_br %[[VAL_51]], ^bb2, ^bb3
     ! CHECK: ^bb2:
-    ! CHECK: %[[VAL_52:.*]] = addi %[[VAL_49]], %[[VAL_37]] : index
+    ! CHECK: %[[VAL_52:.*]] = arith.addi %[[VAL_49]], %[[VAL_37]] : index
     ! CHECK: %[[VAL_53:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_46]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: %[[VAL_54:.*]] = fir.load %[[VAL_53]] : !fir.ref<i32>
     ! CHECK: %[[VAL_55:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_47]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
@@ -68,10 +68,10 @@ contains
     ! CHECK: %[[VAL_57:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_48]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: %[[VAL_58:.*]] = fir.load %[[VAL_57]] : !fir.ref<i32>
     ! CHECK: %[[VAL_59:.*]] = divi_signed %[[VAL_56]], %[[VAL_58]] : i32
-    ! CHECK: %[[VAL_60:.*]] = addi %[[VAL_54]], %[[VAL_59]] : i32
+    ! CHECK: %[[VAL_60:.*]] = arith.addi %[[VAL_54]], %[[VAL_59]] : i32
     ! CHECK: %[[VAL_61:.*]] = fir.array_coor %[[arg0]] {{\[}}%[[VAL_42]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: fir.store %[[VAL_60]] to %[[VAL_61]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_62:.*]] = subi %[[VAL_50]], %[[VAL_37]] : index
+    ! CHECK: %[[VAL_62:.*]] = arith.subi %[[VAL_50]], %[[VAL_37]] : index
     ! CHECK: br ^bb1(%[[VAL_52]], %[[VAL_62]] : index, index)
     ! CHECK: ^bb3:
     ! CHECK: return
@@ -98,39 +98,39 @@ contains
     ! CHECK: %[[VAL_76:.*]] = fir.field_index f1, !fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>
     ! CHECK: %[[VAL_77:.*]]:3 = fir.box_dims %[[arg1]], %[[VAL_68]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>, index) -> (index, index, index)
     ! CHECK: %[[VAL_79:.*]] = fir.slice %[[VAL_69]], %[[VAL_77]]#1, %[[VAL_69]] path %[[VAL_70]], %[[VAL_66]], %[[VAL_66]], %[[VAL_76]], %[[VAL_63]] : (index, index, index, !fir.field, i64, i64, !fir.field, i64) -> !fir.slice<1>
-    ! CHECK: %[[CMP:.*]] = cmpi sgt, %[[VAL_73]]#1, %[[VAL_68]] : index 
+    ! CHECK: %[[CMP:.*]] = arith.cmpi sgt, %[[VAL_73]]#1, %[[VAL_68]] : index 
     ! CHECK: %[[SELECT:.*]] = select %[[CMP]], %[[VAL_73]]#1, %[[VAL_68]] : index 
     ! CHECK: br ^bb1(%[[VAL_68]], %[[SELECT]] : index, index)
     ! CHECK: ^bb1(%[[VAL_80:.*]]: index, %[[VAL_81:.*]]: index):
-    ! CHECK: %[[VAL_82:.*]] = cmpi sgt, %[[VAL_81]], %[[VAL_68]] : index
+    ! CHECK: %[[VAL_82:.*]] = arith.cmpi sgt, %[[VAL_81]], %[[VAL_68]] : index
     ! CHECK: cond_br %[[VAL_82]], ^bb2, ^bb3
     ! CHECK: ^bb2:
-    ! CHECK: %[[VAL_83:.*]] = addi %[[VAL_80]], %[[VAL_69]] : index
+    ! CHECK: %[[VAL_83:.*]] = arith.addi %[[VAL_80]], %[[VAL_69]] : index
     ! CHECK: %[[VAL_84:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_79]]] %[[VAL_83]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: %[[VAL_85:.*]] = fir.load %[[VAL_84]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_86:.*]] = subi %[[VAL_85]], %[[VAL_67]] : i32
+    ! CHECK: %[[VAL_86:.*]] = arith.subi %[[VAL_85]], %[[VAL_67]] : i32
     ! CHECK: %[[VAL_87:.*]] = fir.array_coor %[[arg0]] {{\[}}%[[VAL_75]]] %[[VAL_83]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: fir.store %[[VAL_86]] to %[[VAL_87]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_88:.*]] = subi %[[VAL_81]], %[[VAL_69]] : index
+    ! CHECK: %[[VAL_88:.*]] = arith.subi %[[VAL_81]], %[[VAL_69]] : index
     ! CHECK: br ^bb1(%[[VAL_83]], %[[VAL_88]] : index, index)
     ! CHECK: ^bb3:
     ! CHECK: %[[VAL_89:.*]] = fir.slice %[[VAL_69]], %[[VAL_77]]#1, %[[VAL_69]] path %[[VAL_70]], %[[VAL_64]], %[[VAL_64]], %[[VAL_76]], %[[VAL_66]] : (index, index, index, !fir.field, i64, i64, !fir.field, i64) -> !fir.slice<1>
     ! CHECK: %[[VAL_90:.*]] = fir.field_index d, !fir.type<_QMcsTr{n:i32,d:i32}>
     ! CHECK: %[[VAL_91:.*]] = fir.slice %[[VAL_69]], %[[VAL_73]]#1, %[[VAL_69]] path %[[VAL_70]], %[[VAL_65]], %[[VAL_66]], %[[VAL_71]], %[[VAL_90]] : (index, index, index, !fir.field, i64, i64, !fir.field, !fir.field) -> !fir.slice<1>
-    ! CHECK: %[[CMP2:.*]] = cmpi sgt, %[[VAL_77]]#1, %[[VAL_68]] : index 
+    ! CHECK: %[[CMP2:.*]] = arith.cmpi sgt, %[[VAL_77]]#1, %[[VAL_68]] : index 
     ! CHECK: %[[SELECT2:.*]] = select %[[CMP2]], %[[VAL_77]]#1, %[[VAL_68]] : index 
     ! CHECK: br ^bb4(%[[VAL_68]], %[[SELECT2]] : index, index)
     ! CHECK: ^bb4(%[[VAL_92:.*]]: index, %[[VAL_93:.*]]: index):
-    ! CHECK: %[[VAL_94:.*]] = cmpi sgt, %[[VAL_93]], %[[VAL_68]] : index
+    ! CHECK: %[[VAL_94:.*]] = arith.cmpi sgt, %[[VAL_93]], %[[VAL_68]] : index
     ! CHECK: cond_br %[[VAL_94]], ^bb5, ^bb6
     ! CHECK: ^bb5:
-    ! CHECK: %[[VAL_95:.*]] = addi %[[VAL_92]], %[[VAL_69]] : index
+    ! CHECK: %[[VAL_95:.*]] = arith.addi %[[VAL_92]], %[[VAL_69]] : index
     ! CHECK: %[[VAL_96:.*]] = fir.array_coor %[[arg0]] {{\[}}%[[VAL_91]]] %[[VAL_95]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: %[[VAL_97:.*]] = fir.load %[[VAL_96]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_98:.*]] = addi %[[VAL_97]], %[[VAL_67]] : i32
+    ! CHECK: %[[VAL_98:.*]] = arith.addi %[[VAL_97]], %[[VAL_67]] : i32
     ! CHECK: %[[VAL_99:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_89]]] %[[VAL_95]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt3{f:!fir.array<3x3x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: fir.store %[[VAL_98]] to %[[VAL_99]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_100:.*]] = subi %[[VAL_93]], %[[VAL_69]] : index
+    ! CHECK: %[[VAL_100:.*]] = arith.subi %[[VAL_93]], %[[VAL_69]] : index
     ! CHECK: br ^bb4(%[[VAL_95]], %[[VAL_100]] : index, index)
     ! CHECK: ^bb6:
     ! CHECK: return

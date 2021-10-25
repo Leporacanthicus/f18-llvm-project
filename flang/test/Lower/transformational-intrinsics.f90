@@ -115,7 +115,7 @@ subroutine in_elem_expr(x, y, z)
     ! CHECK-DAG: %[[res_elt:.*]] = fir.array_fetch %[[res_load]], %[[idx]] : (!fir.array<?x!fir.logical<1>>, index) -> !fir.logical<1>
     ! CHECK-DAG: %[[y_elt_i1:.*]] = fir.convert %[[y_elt]] : (!fir.logical<1>) -> i1
     ! CHECK-DAG: %[[res_elt_i1:.*]] = fir.convert %[[res_elt]] : (!fir.logical<1>) -> i1
-    ! CHECK: %[[neqv_i1:.*]] = cmpi ne, %[[y_elt_i1]], %[[res_elt_i1]] : i1
+    ! CHECK: %[[neqv_i1:.*]] = arith.cmpi ne, %[[y_elt_i1]], %[[res_elt_i1]] : i1
     ! CHECK: %[[neqv:.*]] = fir.convert %[[neqv_i1]] : (i1) -> !fir.logical<1>
     ! CHECK: fir.array_update %{{.*}} %[[neqv]], %[[idx]] : (!fir.array<?x!fir.logical<1>>, !fir.logical<1>, index) -> !fir.array<?x!fir.logical<1>>
   ! CHECK: }

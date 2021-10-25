@@ -4,7 +4,7 @@
 func @_QTtP.mem.size(%0 : i32, %1 : i16) -> index {
   %2 = call @_QTtP.f1.size(%0, %1) : (i32, i16) -> index
   %3 = call @_QTtP.f2.size(%0, %1) : (i32, i16) -> index
-  %4 = addi %2, %3 : index
+  %4 = arith.addi %2, %3 : index
   // CHECK: ret i64 8
   return %4 : index
 }
@@ -63,7 +63,7 @@ func @_QTt1P.mem.size(%0 : i32, %1 : i32) -> index {
   %2 = call @_QTt1P.f1.size(%0, %1) : (i32, i32) -> index
   // CHECK:  call i64 @_QTt1P.f2.size
   %3 = call @_QTt1P.f2.size(%0, %1) : (i32, i32) -> index
-  %4 = addi %2, %3 : index
+  %4 = arith.addi %2, %3 : index
   return %4 : index
 }
 // CHECK-LINE: define i64 @_QTt1P.f1.size(i32 %0, i32 %1)
