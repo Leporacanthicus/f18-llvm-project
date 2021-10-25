@@ -215,11 +215,11 @@ end function
 ! CHECK-LABEL: func @_QMchar_elemPfoo6(
 ! CHECK-SAME:                          %[[VAL_0:.*]]: !fir.boxchar<1>) {
 subroutine foo6(c)
-  ! CHECK: %[[VAL_1:.*]] = arith.constant false
-  ! CHECK: %[[VAL_2:.*]] = arith.constant 32 : i8
-  ! CHECK: %[[VAL_3:.*]] = arith.constant 10 : index
-  ! CHECK: %[[VAL_4:.*]] = arith.constant 0 : index
-  ! CHECK: %[[VAL_5:.*]] = arith.constant 1 : index
+  ! CHECK-DAG: %[[VAL_1:.*]] = arith.constant false
+  ! CHECK-DAG: %[[VAL_2:.*]] = arith.constant 32 : i8
+  ! CHECK-DAG: %[[VAL_3:.*]] = arith.constant 10 : index
+  ! CHECK-DAG: %[[VAL_4:.*]] = arith.constant 0 : index
+  ! CHECK-DAG: %[[VAL_5:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_6:.*]]:2 = fir.unboxchar %[[VAL_0]] : (!fir.boxchar<1>) -> (!fir.ref<!fir.char<1,?>>, index)
   ! CHECK: %[[VAL_7:.*]] = fir.convert %[[VAL_6]]#0 : (!fir.ref<!fir.char<1,?>>) -> !fir.ref<!fir.array<10x!fir.char<1,?>>>
   ! CHECK: %[[VAL_8:.*]] = fir.shape %[[VAL_3]] : (index) -> !fir.shape<1>

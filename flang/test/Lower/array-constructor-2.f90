@@ -15,7 +15,7 @@ subroutine test1(a, b)
 
   !  Look at PARAMETER case
   ! CHECK: %{{.*}} = fir.address_of(@_QQro.4xi4.6a6af0eea868c84da59807d34f7e1a86) : !fir.ref<!fir.array<4xi32>>
-  b = arith.constant_array
+  b = constant_array
 end subroutine test1
 
 !  Dynamic array ctor with constant extent.
