@@ -202,7 +202,7 @@ private:
       return affineBinaryOp(mlir::AffineExprKind::Add, op.lhs(), op.rhs());
     if (auto op = value.getDefiningOp<mlir::arith::MulIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mul, op.lhs(), op.rhs());
-    if (auto op = value.getDefiningOp<mlir::UnsignedRemIOp>())
+    if (auto op = value.getDefiningOp<mlir::arith::RemUIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mod, op.lhs(), op.rhs());
     if (auto op = value.getDefiningOp<mlir::arith::ConstantOp>())
       if (auto intConstant = op.getValue().dyn_cast<IntegerAttr>())
