@@ -25,7 +25,7 @@ subroutine modulo_testi(r, a, p)
   integer(8) :: r, a, p
   ! CHECK-DAG: %[[a:.*]] = fir.load %[[arg1]] : !fir.ref<i64>
   ! CHECK-DAG: %[[p:.*]] = fir.load %[[arg2]] : !fir.ref<i64>
-  ! CHECK-DAG: %[[rem:.*]] = remi_signed %[[a]], %[[p]] : i64
+  ! CHECK-DAG: %[[rem:.*]] = arith.remsi %[[a]], %[[p]] : i64
   ! CHECK-DAG: %[[argXor:.*]] = arith.xori %[[a]], %[[p]] : i64
   ! CHECK-DAG: %[[signDifferent:.*]] = arith.cmpi slt, %[[argXor]], %c0{{.*}} : i64
   ! CHECK-DAG: %[[remNotZero:.*]] = arith.cmpi ne, %[[rem]], %c0{{.*}} : i64

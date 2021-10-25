@@ -3,11 +3,11 @@
 ! CHECK-LABEL: sign_testi
 subroutine sign_testi(a, b, c)
   integer a, b, c
-  ! CHECK: shift_right_signed
-  ! CHECK: xor
-  ! CHECK: subi
-  ! CHECK-DAG: subi
-  ! CHECK-DAG: cmpi slt
+  ! CHECK: arith.shrsi
+  ! CHECK: arith.xori
+  ! CHECK: arith.subi
+  ! CHECK-DAG: arith.subi
+  ! CHECK-DAG: arith.cmpi slt
   ! CHECK: select
   c = sign(a, b)
 end subroutine
@@ -16,8 +16,8 @@ end subroutine
 subroutine sign_testr(a, b, c)
   real a, b, c
   ! CHECK-DAG: fir.call {{.*}}fabs
-  ! CHECK-DAG: negf
-  ! CHECK-DAG: cmpf olt
+  ! CHECK-DAG: arith.negf
+  ! CHECK-DAG: arith.cmpf olt
   ! CHECK: select
   c = sign(a, b)
 end subroutine

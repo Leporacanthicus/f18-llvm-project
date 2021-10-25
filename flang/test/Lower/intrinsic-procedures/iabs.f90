@@ -3,9 +3,9 @@
 ! CHECK-LABEL: iabs_test
 subroutine iabs_test(a, b)
   integer :: a, b
-  ! CHECK: shift_right_signed
-  ! CHECK: xor
-  ! CHECK: subi
+  ! CHECK: arith.shrsi
+  ! CHECK: arith.xori
+  ! CHECK: arith.subi
   b = iabs(a)
 end subroutine
 
@@ -14,9 +14,9 @@ end subroutine
 subroutine iabs_testRT(a, b)
   integer(KIND=4) :: a
   integer(KIND=16) :: b
-  ! CHECK: shift_right_signed
-  ! CHECK: xor
-  ! CHECK: %[[RT:.*]] =  subi
+  ! CHECK: arith.shrsi
+  ! CHECK: arith.xori
+  ! CHECK: %[[RT:.*]] =  arith.subi
   ! CHECK: fir.convert %[[RT]] : (i32)
   b = iabs(a)
 end subroutine
