@@ -86,7 +86,7 @@ public:
     mlir::OwningRewritePatternList patterns(context);
     patterns.insert<LoopResultRemoval>(context);
     mlir::ConversionTarget target = *context;
-    target.addLegalDialect<fir::FIROpsDialect, mlir::StandardOpsDialect>();
+    target.addLegalDialect<fir::FIROpsDialect, mlir::arith::ArithmeticDialect, mlir::StandardOpsDialect>();
     target.addDynamicallyLegalOp<fir::DoLoopOp>(
         [&](fir::DoLoopOp op) { return op.getNumResults() == 0; });
     if (mlir::failed(mlir::applyPartialConversion(function, target,

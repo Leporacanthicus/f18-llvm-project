@@ -299,6 +299,7 @@ public:
         context, forceLoopToExecuteOnce);
     mlir::ConversionTarget target(*context);
     target.addLegalDialect<mlir::AffineDialect, FIROpsDialect,
+                           mlir::arith::ArithmeticDialect,
                            mlir::StandardOpsDialect>();
 
     // apply the patterns

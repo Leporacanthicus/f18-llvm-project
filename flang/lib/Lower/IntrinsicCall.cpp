@@ -1699,7 +1699,7 @@ mlir::Value IntrinsicLibrary::genAbs(mlir::Type resultType,
   auto arg = args[0];
   auto type = arg.getType();
   if (fir::isa_real(type)) {
-    // Runtime call to fp abs. An alternative would be to use mlir AbsFOp
+    // Runtime call to fp abs. An alternative would be to use mlir math::AbsFOp
     // but it does not support all fir floating point types.
     return genRuntimeCall("abs", resultType, args);
   }

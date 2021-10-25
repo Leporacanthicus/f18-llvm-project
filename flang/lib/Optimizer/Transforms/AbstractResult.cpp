@@ -249,7 +249,7 @@ public:
       return;
 
     // Convert the calls and, if needed,  the ReturnOp in the function body.
-    target.addLegalDialect<fir::FIROpsDialect, mlir::StandardOpsDialect>();
+    target.addLegalDialect<fir::FIROpsDialect, mlir::arith::ArithmeticDialect, mlir::StandardOpsDialect>();
     target.addIllegalOp<fir::SaveResultOp>();
     target.addDynamicallyLegalOp<fir::CallOp>([](fir::CallOp call) {
       return !mustConvertCallOrFunc(call.getFunctionType());

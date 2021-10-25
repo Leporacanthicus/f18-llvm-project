@@ -991,6 +991,7 @@ public:
     patterns1.insert<ArrayAmendConversion>(context);
     mlir::ConversionTarget target(*context);
     target.addLegalDialect<FIROpsDialect, mlir::scf::SCFDialect,
+                           mlir::arith::ArithmeticDialect,
                            mlir::StandardOpsDialect>();
     target.addIllegalOp<ArrayAccessOp, ArrayAmendOp, ArrayFetchOp,
                         ArrayUpdateOp, ArrayModifyOp>();
