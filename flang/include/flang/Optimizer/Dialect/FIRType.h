@@ -217,10 +217,19 @@ inline bool singleIndirectionLevel(mlir::Type ty) {
 }
 #endif
 
-/// Apply the components specified by `path` to `rootTy` to determine the type
-/// of the resulting component element. `rootTy` should be an aggregate type.
-/// Returns null on error.
-mlir::Type applyPathToType(mlir::Type rootTy, mlir::ValueRange path);
+/// Return true iff `ty` is the type of a POINTER entity or value.
+/// `isa_ref_type()` can be used to distinguish.
+bool isPointerType(mlir::Type ty);
+
+/// Return true iff `ty` is the type of an ALLOCATABLE entity or value.
+bool isAllocatableType(mlir::Type ty);
+
+/// Return true iff `ty` is the type of an unlimited polymorphic entity or
+/// value.
+bool isUnlimitedPolymorphicType(mlir::Type ty);
+
+/// Return true iff `ty` is a RecordType with members that are allocatable.
+bool isRecordWithAllocatableMember(mlir::Type ty);
 
 /// Return true iff `ty` is a RecordType with type parameters.
 inline bool isRecordWithTypeParameters(mlir::Type ty) {
