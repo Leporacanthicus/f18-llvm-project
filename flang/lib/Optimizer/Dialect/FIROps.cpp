@@ -131,7 +131,7 @@ static mlir::ParseResult parseAllocatableOp(FN wrapResultType,
 
 template <typename OP>
 static void printAllocatableOp(mlir::OpAsmPrinter &p, OP &op) {
-  p << op.getOperationName() << ' ' << op.in_type();
+  p << ' ' << op.in_type();
   if (!op.typeparams().empty()) {
     p << '(' << op.typeparams() << " : " << op.typeparams().getTypes() << ')';
   }
@@ -592,7 +592,7 @@ mlir::FunctionType fir::CallOp::getFunctionType() {
 static void printCallOp(mlir::OpAsmPrinter &p, fir::CallOp &op) {
   auto callee = op.callee();
   bool isDirect = callee.hasValue();
-  p << op.getOperationName() << ' ';
+  p << ' ';
   if (isDirect)
     p << callee.getValue();
   else
@@ -685,7 +685,7 @@ static mlir::LogicalResult verify(fir::CharConvertOp op) {
 
 template <typename OPTY>
 static void printCmpOp(OpAsmPrinter &p, OPTY op) {
-  p << op.getOperationName() << ' ';
+  p << ' ';
   auto predSym = mlir::arith::symbolizeCmpFPredicate(
       op->template getAttrOfType<mlir::IntegerAttr>(
             OPTY::getPredicateAttrName())
@@ -775,7 +775,7 @@ static mlir::ParseResult parseConstcOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::ConstcOp &op) {
-  p << op.getOperationName() << " (0x";
+  p << " (0x";
   auto f1 = op.getOperation()
                 ->getAttr(fir::ConstcOp::getRealAttrName())
                 .cast<mlir::FloatAttr>();
@@ -867,7 +867,7 @@ static mlir::LogicalResult verify(fir::ConvertOp &op) {
 //===----------------------------------------------------------------------===//
 
 static void print(mlir::OpAsmPrinter &p, fir::CoordinateOp op) {
-  p << op.getOperationName() << ' ' << op.ref() << ", " << op.coor();
+  p << ' ' << op.ref() << ", " << op.coor();
   p.printOptionalAttrDict(op->getAttrs(), /*elideAttrs=*/{"baseType"});
   p << " : ";
   p.printFunctionalType(op.getOperandTypes(), op->getResultTypes());
@@ -958,8 +958,8 @@ static mlir::ParseResult parseDispatchOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DispatchOp &op) {
-  p << op.getOperationName() << ' '
-    << op.getOperation()->getAttr(fir::DispatchOp::getMethodAttrName()) << '(';
+  p << ' ' << op.getOperation()->getAttr(fir::DispatchOp::getMethodAttrName())
+    << '(';
   p.printOperand(op.object());
   if (!op.args().empty()) {
     p << ", ";
@@ -1009,7 +1009,7 @@ static void print(mlir::OpAsmPrinter &p, fir::DispatchTableOp &op) {
       op.getOperation()
           ->getAttrOfType<StringAttr>(mlir::SymbolTable::getSymbolAttrName())
           .getValue();
-  p << op.getOperationName() << " @" << tableName;
+  p << " @" << tableName;
 
   Region &body = op.getOperation()->getRegion(0);
   if (!body.empty())
@@ -1103,7 +1103,7 @@ static mlir::ParseResult parseEmboxProcOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::EmboxProcOp &op) {
-  p << op.getOperationName() << ' ' << op.getOperation()->getAttr("funcname");
+  p << ' ' << op.getOperation()->getAttr("funcname");
   auto h = op.host();
   if (h) {
     p << ", ";
@@ -1151,7 +1151,7 @@ static mlir::ParseResult parseGenTypeDescOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::GenTypeDescOp &op) {
-  p << op.getOperationName() << ' ' << op.getOperation()->getAttr("in_type");
+  p << ' ' << op.getOperation()->getAttr("in_type");
   p.printOptionalAttrDict(op.getOperation()->getAttrs(), {"in_type"});
 }
 
@@ -1230,7 +1230,6 @@ static ParseResult parseGlobalOp(OpAsmParser &parser, OperationState &result) {
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::GlobalOp &op) {
-  p << op.getOperationName();
   if (op.linkName().hasValue())
     p << ' ' << op.linkName().getValue();
   p << ' ';
@@ -1333,7 +1332,7 @@ static mlir::ParseResult parseGlobalLenOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::GlobalLenOp &op) {
-  p << op.getOperationName() << ' '
+  p << ' '
     << op.getOperation()->getAttr(fir::GlobalLenOp::getLenParamAttrName())
     << ", " << op.getOperation()->getAttr(fir::GlobalLenOp::getIntAttrName());
 }
@@ -1417,7 +1416,7 @@ static mlir::ParseResult parseFieldIndexOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::FieldIndexOp &op) {
-  p << op.getOperationName() << ' '
+  p << ' '
     << op.getOperation()
            ->getAttrOfType<mlir::StringAttr>(fir::FieldIndexOp::getFieldAttrName())
            .getValue()
@@ -1726,7 +1725,7 @@ static mlir::LogicalResult verify(fir::IterWhileOp op) {
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::IterWhileOp op) {
-  p << fir::IterWhileOp::getOperationName() << " (" << op.getInductionVar()
+  p << " (" << op.getInductionVar()
     << " = " << op.lowerBound() << " to " << op.upperBound() << " step "
     << op.step() << ") and (";
   assert(op.hasIterOperands());
@@ -1810,7 +1809,7 @@ static mlir::ParseResult parseLenParamIndexOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::LenParamIndexOp &op) {
-  p << op.getOperationName() << ' '
+  p << ' '
     << op.getOperation()
            ->getAttrOfType<mlir::StringAttr>(
                fir::LenParamIndexOp::getFieldAttrName())
@@ -1861,7 +1860,7 @@ static mlir::ParseResult parseLoadOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::LoadOp &op) {
-  p << op.getOperationName() << ' ';
+  p << ' ';
   p.printOperand(op.memref());
   p.printOptionalAttrDict(op.getOperation()->getAttrs(), {});
   p << " : " << op.memref().getType();
@@ -2023,7 +2022,7 @@ static mlir::LogicalResult verify(fir::DoLoopOp op) {
 
 static void print(mlir::OpAsmPrinter &p, fir::DoLoopOp op) {
   bool printBlockTerminators = false;
-  p << fir::DoLoopOp::getOperationName() << ' ' << op.getInductionVar() << " = "
+  p << ' ' << op.getInductionVar() << " = "
     << op.lowerBound() << " to " << op.upperBound() << " step " << op.step();
   if (op.unordered())
     p << " unordered";
@@ -2113,7 +2112,7 @@ static mlir::ParseResult parseDTEntryOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::DTEntryOp &op) {
-  p << op.getOperationName() << ' '
+  p << ' '
     << op.getOperation()->getAttr(fir::DTEntryOp::getMethodAttrName()) << ", "
     << op.getOperation()->getAttr(fir::DTEntryOp::getProcAttrName());
 }
@@ -2456,7 +2455,7 @@ static mlir::ParseResult parseSelectCase(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::SelectCaseOp &op) {
-  p << op.getOperationName() << ' ';
+  p << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
   auto cases = op.getOperation()
@@ -2718,7 +2717,7 @@ unsigned fir::SelectTypeOp::targetOffsetSize() {
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::SelectTypeOp &op) {
-  p << op.getOperationName() << ' ';
+  p << ' ';
   p.printOperand(op.getSelector());
   p << " : " << op.getSelector().getType() << " [";
   auto cases = op.getOperation()
@@ -2899,7 +2898,7 @@ static mlir::ParseResult parseStoreOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::StoreOp &op) {
-  p << op.getOperationName() << ' ';
+  p << ' ';
   p.printOperand(op.value());
   p << " to ";
   p.printOperand(op.memref());
@@ -3022,7 +3021,7 @@ static mlir::ParseResult parseStringLitOp(mlir::OpAsmParser &parser,
 }
 
 static void print(mlir::OpAsmPrinter &p, fir::StringLitOp &op) {
-  p << op.getOperationName() << ' ' << op.getValue() << '(';
+  p << ' ' << op.getValue() << '(';
   p << op.getSize().cast<mlir::IntegerAttr>().getValue() << ") : ";
   p.printType(op.getType());
 }
@@ -3119,7 +3118,7 @@ static LogicalResult verify(fir::IfOp op) {
 
 static void print(mlir::OpAsmPrinter &p, fir::IfOp op) {
   bool printBlockTerminators = false;
-  p << fir::IfOp::getOperationName() << ' ' << op.condition();
+  p << ' ' << op.condition();
   if (!op.results().empty()) {
     p << " -> (" << op.getResultTypes() << ')';
     printBlockTerminators = true;
