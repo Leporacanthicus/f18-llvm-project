@@ -74,7 +74,7 @@ void fir::runtime::genAdjust(fir::FirOpBuilder &builder, mlir::Location loc,
 
 mlir::Value
 fir::runtime::genCharCompare(fir::FirOpBuilder &builder, mlir::Location loc,
-                             mlir::CmpIPredicate cmp, mlir::Value lhsBuff,
+                             mlir::arith::CmpIPredicate cmp, mlir::Value lhsBuff,
                              mlir::Value lhsLen, mlir::Value rhsBuff,
                              mlir::Value rhsLen) {
   mlir::FuncOp beginFunc;
@@ -99,12 +99,12 @@ fir::runtime::genCharCompare(fir::FirOpBuilder &builder, mlir::Location loc,
                                             lhsLen, rhsLen);
   auto tri = builder.create<fir::CallOp>(loc, beginFunc, args).getResult(0);
   auto zero = builder.createIntegerConstant(loc, tri.getType(), 0);
-  return builder.create<mlir::CmpIOp>(loc, cmp, tri, zero);
+  return builder.create<mlir::arith::CmpIOp>(loc, cmp, tri, zero);
 }
 
 mlir::Value fir::runtime::genCharCompare(fir::FirOpBuilder &builder,
                                          mlir::Location loc,
-                                         mlir::CmpIPredicate cmp,
+                                         mlir::arith::CmpIPredicate cmp,
                                          const fir::ExtendedValue &lhs,
                                          const fir::ExtendedValue &rhs) {
   if (lhs.getBoxOf<fir::BoxValue>() || rhs.getBoxOf<fir::BoxValue>())

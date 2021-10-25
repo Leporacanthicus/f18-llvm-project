@@ -53,7 +53,7 @@ void genAdjust(fir::FirOpBuilder &builder, mlir::Location loc,
 /// Generate call to a character comparison for two ssa-values of type
 /// `boxchar`.
 mlir::Value genCharCompare(fir::FirOpBuilder &builder, mlir::Location loc,
-                           mlir::CmpIPredicate cmp,
+                           mlir::arith::CmpIPredicate cmp,
                            const fir::ExtendedValue &lhs,
                            const fir::ExtendedValue &rhs);
 
@@ -62,7 +62,7 @@ mlir::Value genCharCompare(fir::FirOpBuilder &builder, mlir::Location loc,
 /// reference to its buffer (`ref<char<K>>`) and its LEN type parameter (some
 /// integral type).
 mlir::Value genCharCompare(fir::FirOpBuilder &builder, mlir::Location loc,
-                           mlir::CmpIPredicate cmp, mlir::Value lhsBuff,
+                           mlir::arith::CmpIPredicate cmp, mlir::Value lhsBuff,
                            mlir::Value lhsLen, mlir::Value rhsBuff,
                            mlir::Value rhsLen);
 

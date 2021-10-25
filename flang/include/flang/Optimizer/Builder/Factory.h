@@ -112,8 +112,8 @@ void genCharacterCopy(mlir::Value src, mlir::Value srcLen, mlir::Value dst,
                 .getResult()
           : builder.template create<mlir::ConstantIndexOp>(loc, srcTy.getLen())
                 .getResult();
-  auto cond = builder.template create<mlir::CmpIOp>(
-      loc, mlir::CmpIPredicate::slt, loop.getInductionVar(), slen);
+  auto cond = builder.template create<mlir::arith::CmpIOp>(
+      loc, mlir::arith::CmpIPredicate::slt, loop.getInductionVar(), slen);
   auto ifOp = builder.template create<fir::IfOp>(loc, cond, /*withElse=*/true);
   builder.setInsertionPointToStart(&ifOp.thenRegion().front());
   auto csrcTy = toArrayTy(srcTy);

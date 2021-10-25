@@ -673,8 +673,8 @@ void fir::factory::genReallocIfNeeded(fir::FirOpBuilder &builder,
           auto castPrevious =
               builder.createConvert(loc, required.getType(), previous);
           // reallocate = reallocate || previous != required
-          auto cmp = builder.create<mlir::CmpIOp>(
-              loc, mlir::CmpIPredicate::ne, castPrevious, required);
+          auto cmp = builder.create<mlir::arith::CmpIOp>(
+              loc, mlir::arith::CmpIPredicate::ne, castPrevious, required);
           mustReallocate =
               builder.create<mlir::SelectOp>(loc, cmp, cmp, mustReallocate);
         };

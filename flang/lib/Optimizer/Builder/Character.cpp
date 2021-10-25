@@ -455,7 +455,7 @@ void fir::factory::CharacterExprHelper::createLengthOneAssign(
 /// Returns the minimum of integer mlir::Value \p a and \b.
 mlir::Value genMin(fir::FirOpBuilder &builder, mlir::Location loc,
                    mlir::Value a, mlir::Value b) {
-  auto cmp = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::slt, a, b);
+  auto cmp = builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt, a, b);
   return builder.create<mlir::SelectOp>(loc, cmp, a, b);
 }
 
@@ -552,7 +552,7 @@ fir::CharBoxValue fir::factory::CharacterExprHelper::createSubstring(
 
   // Set length to zero if bounds were reversed (Fortran 2018 9.4.1)
   auto zero = builder.createIntegerConstant(loc, substringLen.getType(), 0);
-  auto cdt = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::slt,
+  auto cdt = builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt,
                                           substringLen, zero);
   substringLen = builder.create<mlir::SelectOp>(loc, cdt, zero, substringLen);
 
@@ -585,7 +585,7 @@ fir::factory::CharacterExprHelper::createLenTrim(const fir::CharBoxValue &str) {
       builder.createConvert(loc, builder.getRefType(blank.getType()), elemAddr);
   auto c = builder.create<fir::LoadOp>(loc, codeAddr);
   auto isBlank =
-      builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::eq, blank, c);
+      builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::eq, blank, c);
   llvm::SmallVector<mlir::Value> results = {isBlank, index};
   builder.create<fir::ResultOp>(loc, results);
   builder.restoreInsertionPoint(insPt);

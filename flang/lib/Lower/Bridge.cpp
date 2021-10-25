@@ -1018,7 +1018,7 @@ private:
       }
       if (forceLoopToExecuteOnce) { // minimum tripCount is 1
         auto one = builder->createIntegerConstant(loc, controlType, 1);
-        auto cond = builder->create<mlir::CmpIOp>(loc, CmpIPredicate::slt,
+        auto cond = builder->create<mlir::arith::CmpIOp>(loc, CmpIPredicate::slt,
                                                   tripCount, one);
         tripCount = builder->create<mlir::SelectOp>(loc, cond, one, tripCount);
       }
@@ -1031,7 +1031,7 @@ private:
       startBlock(info.headerBlock);
       tripCount = builder->create<fir::LoadOp>(loc, info.tripVariable);
       auto zero = builder->createIntegerConstant(loc, controlType, 0);
-      auto cond = builder->create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt,
+      auto cond = builder->create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sgt,
                                                 tripCount, zero);
       if (info.maskExpr) {
         genFIRConditionalBranch(cond, info.maskBlock, info.exitBlock);
@@ -1527,9 +1527,9 @@ private:
         break;
       }
       auto genCond = [&](mlir::Value rhs,
-                         mlir::CmpIPredicate pred) -> mlir::Value {
+                         mlir::arith::CmpIPredicate pred) -> mlir::Value {
         if (!isCharSelector)
-          return builder->create<mlir::CmpIOp>(loc, pred, selector, rhs);
+          return builder->create<mlir::arith::CmpIOp>(loc, pred, selector, rhs);
         fir::factory::CharacterExprHelper charHelper{*builder, loc};
         auto [lhsAddr, lhsLen] = charHelper.createUnboxChar(selector);
         auto [rhsAddr, rhsLen] = charHelper.createUnboxChar(rhs);
@@ -1539,22 +1539,22 @@ private:
       auto *newBlock = insertBlock(*caseBlock);
       if (attr.isa<fir::ClosedIntervalAttr>()) {
         auto *newBlock2 = insertBlock(*caseBlock);
-        auto cond = genCond(*caseValue++, mlir::CmpIPredicate::sge);
+        auto cond = genCond(*caseValue++, mlir::arith::CmpIPredicate::sge);
         genFIRConditionalBranch(cond, newBlock, newBlock2);
         builder->setInsertionPointToEnd(newBlock);
-        auto cond2 = genCond(*caseValue++, mlir::CmpIPredicate::sle);
+        auto cond2 = genCond(*caseValue++, mlir::arith::CmpIPredicate::sle);
         genFIRConditionalBranch(cond2, *caseBlock++, newBlock2);
         builder->setInsertionPointToEnd(newBlock2);
         continue;
       }
-      mlir::CmpIPredicate pred;
+      mlir::arith::CmpIPredicate pred;
       if (attr.isa<fir::PointIntervalAttr>()) {
-        pred = mlir::CmpIPredicate::eq;
+        pred = mlir::arith::CmpIPredicate::eq;
       } else if (attr.isa<fir::LowerBoundAttr>()) {
-        pred = mlir::CmpIPredicate::sge;
+        pred = mlir::arith::CmpIPredicate::sge;
       } else {
         assert(attr.isa<fir::UpperBoundAttr>() && "unexpected predicate");
-        pred = mlir::CmpIPredicate::sle;
+        pred = mlir::arith::CmpIPredicate::sle;
       }
       auto cond = genCond(*caseValue++, pred);
       genFIRConditionalBranch(cond, *caseBlock++, newBlock);

@@ -147,21 +147,21 @@ enum class ConstituentSemantics {
 
 /// Convert parser's INTEGER relational operators to MLIR.  TODO: using
 /// unordered, but we may want to cons ordered in certain situation.
-static mlir::CmpIPredicate
+static mlir::arith::CmpIPredicate
 translateRelational(Fortran::common::RelationalOperator rop) {
   switch (rop) {
   case Fortran::common::RelationalOperator::LT:
-    return mlir::CmpIPredicate::slt;
+    return mlir::arith::CmpIPredicate::slt;
   case Fortran::common::RelationalOperator::LE:
-    return mlir::CmpIPredicate::sle;
+    return mlir::arith::CmpIPredicate::sle;
   case Fortran::common::RelationalOperator::EQ:
-    return mlir::CmpIPredicate::eq;
+    return mlir::arith::CmpIPredicate::eq;
   case Fortran::common::RelationalOperator::NE:
-    return mlir::CmpIPredicate::ne;
+    return mlir::arith::CmpIPredicate::ne;
   case Fortran::common::RelationalOperator::GT:
-    return mlir::CmpIPredicate::sgt;
+    return mlir::arith::CmpIPredicate::sgt;
   case Fortran::common::RelationalOperator::GE:
-    return mlir::CmpIPredicate::sge;
+    return mlir::arith::CmpIPredicate::sge;
   }
   llvm_unreachable("unhandled INTEGER relational operator");
 }
@@ -424,7 +424,7 @@ public:
   }
 
   template <typename OpTy>
-  mlir::Value createCompareOp(mlir::CmpIPredicate pred, const ExtValue &left,
+  mlir::Value createCompareOp(mlir::arith::CmpIPredicate pred, const ExtValue &left,
                               const ExtValue &right) {
     if (auto *lhs = left.getUnboxed())
       if (auto *rhs = right.getUnboxed())
@@ -432,7 +432,7 @@ public:
     fir::emitFatalError(getLoc(), "array compare should be handled in genarr");
   }
   template <typename OpTy, typename A>
-  mlir::Value createCompareOp(const A &ex, mlir::CmpIPredicate pred) {
+  mlir::Value createCompareOp(const A &ex, mlir::arith::CmpIPredicate pred) {
     auto left = genval(ex.left());
     return createCompareOp<OpTy>(pred, left, genval(ex.right()));
   }
@@ -453,13 +453,13 @@ public:
 
   /// Create a call to the runtime to compare two CHARACTER values.
   /// Precondition: This assumes that the two values have `fir.boxchar` type.
-  mlir::Value createCharCompare(mlir::CmpIPredicate pred, const ExtValue &left,
+  mlir::Value createCharCompare(mlir::arith::CmpIPredicate pred, const ExtValue &left,
                                 const ExtValue &right) {
     return fir::runtime::genCharCompare(builder, getLoc(), pred, left, right);
   }
 
   template <typename A>
-  mlir::Value createCharCompare(const A &ex, mlir::CmpIPredicate pred) {
+  mlir::Value createCharCompare(const A &ex, mlir::arith::CmpIPredicate pred) {
     auto left = genval(ex.left());
     return createCharCompare(pred, left, genval(ex.right()));
   }
@@ -879,7 +879,7 @@ public:
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Relational<Fortran::evaluate::Type<
                       Fortran::common::TypeCategory::Integer, KIND>> &op) {
-    return createCompareOp<mlir::CmpIOp>(op, translateRelational(op.opr));
+    return createCompareOp<mlir::arith::CmpIOp>(op, translateRelational(op.opr));
   }
   template <int KIND>
   ExtValue genval(const Fortran::evaluate::Relational<Fortran::evaluate::Type<
@@ -942,9 +942,9 @@ public:
     case Fortran::evaluate::LogicalOperator::Or:
       return createBinaryOp<mlir::OrOp>(lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Eqv:
-      return createCompareOp<mlir::CmpIOp>(mlir::CmpIPredicate::eq, lhs, rhs);
+      return createCompareOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Neqv:
-      return createCompareOp<mlir::CmpIOp>(mlir::CmpIPredicate::ne, lhs, rhs);
+      return createCompareOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::ne, lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Not:
       // lib/evaluate expression for .NOT. is Fortran::evaluate::Not<KIND>.
       llvm_unreachable(".NOT. is not a binary operator");
@@ -3103,7 +3103,7 @@ private:
     return builder.create<OP>(loc, lhs, rhs);
   }
   template <typename OP, typename A>
-  ExtValue createCompareBoolOp(mlir::CmpIPredicate pred, const A &x) {
+  ExtValue createCompareBoolOp(mlir::arith::CmpIPredicate pred, const A &x) {
     auto loc = getLoc();
     auto i1Ty = builder.getI1Type();
     auto left = gen(x.left());
@@ -3120,9 +3120,9 @@ private:
     case Fortran::evaluate::LogicalOperator::Or:
       return createBinaryBoolOp<mlir::OrOp>(x);
     case Fortran::evaluate::LogicalOperator::Eqv:
-      return createCompareBoolOp<mlir::CmpIOp>(mlir::CmpIPredicate::eq, x);
+      return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, x);
     case Fortran::evaluate::LogicalOperator::Neqv:
-      return createCompareBoolOp<mlir::CmpIOp>(mlir::CmpIPredicate::ne, x);
+      return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::ne, x);
     case Fortran::evaluate::LogicalOperator::Not:
       llvm_unreachable(".NOT. handled elsewhere");
     }
@@ -3137,7 +3137,7 @@ private:
     return builder.create<OP>(loc, pred, fir::getBase(lhs), fir::getBase(rhs));
   }
   template <typename A>
-  ExtValue createCompareCharOp(mlir::CmpIPredicate pred, const A &x) {
+  ExtValue createCompareCharOp(mlir::arith::CmpIPredicate pred, const A &x) {
     auto loc = getLoc();
     auto lhs = gen(x.left());
     auto rhs = gen(x.right());
@@ -3146,7 +3146,7 @@ private:
   template <int KIND>
   ExtValue gen(const Fortran::evaluate::Relational<Fortran::evaluate::Type<
                    Fortran::common::TypeCategory::Integer, KIND>> &x) {
-    return createCompareOp<mlir::CmpIOp>(translateRelational(x.opr), x);
+    return createCompareOp<mlir::arith::CmpIOp>(translateRelational(x.opr), x);
   }
   template <int KIND>
   ExtValue gen(const Fortran::evaluate::Relational<Fortran::evaluate::Type<
@@ -5314,7 +5314,7 @@ public:
         auto cast = builder.createConvert(loc, iTy, substringBounds[1]);
         auto zero = builder.createIntegerConstant(loc, iTy, 0);
         auto size = builder.create<mlir::arith::SubIOp>(loc, cast, substringBounds[0]);
-        auto cmp = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sgt,
+        auto cmp = builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sgt,
                                                 size, zero);
         // size = MAX(upper - (lower - 1), 0)
         substringBounds[1] =
@@ -5666,7 +5666,7 @@ public:
                          mlir::Value eleSz) {
     auto loc = getLoc();
     auto reallocFunc = fir::factory::getRealloc(builder);
-    auto cond = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::sle,
+    auto cond = builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sle,
                                              bufferSize, needed);
     auto ifOp = builder.create<fir::IfOp>(loc, mem.getType(), cond,
                                           /*withElseRegion=*/true);
@@ -6005,7 +6005,7 @@ public:
     };
   }
   template <typename OP, typename A>
-  CC createCompareBoolOp(mlir::CmpIPredicate pred, const A &x) {
+  CC createCompareBoolOp(mlir::arith::CmpIPredicate pred, const A &x) {
     auto loc = getLoc();
     auto i1Ty = builder.getI1Type();
     auto lf = genarr(x.left());
@@ -6026,9 +6026,9 @@ public:
     case Fortran::evaluate::LogicalOperator::Or:
       return createBinaryBoolOp<mlir::OrOp>(x);
     case Fortran::evaluate::LogicalOperator::Eqv:
-      return createCompareBoolOp<mlir::CmpIOp>(mlir::CmpIPredicate::eq, x);
+      return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, x);
     case Fortran::evaluate::LogicalOperator::Neqv:
-      return createCompareBoolOp<mlir::CmpIOp>(mlir::CmpIPredicate::ne, x);
+      return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::ne, x);
     case Fortran::evaluate::LogicalOperator::Not:
       llvm_unreachable(".NOT. handled elsewhere");
     }
@@ -6051,7 +6051,7 @@ public:
     };
   }
   template <typename A>
-  CC createCompareCharOp(mlir::CmpIPredicate pred, const A &x) {
+  CC createCompareCharOp(mlir::arith::CmpIPredicate pred, const A &x) {
     auto loc = getLoc();
     auto lf = genarr(x.left());
     auto rf = genarr(x.right());
@@ -6064,7 +6064,7 @@ public:
   template <int KIND>
   CC genarr(const Fortran::evaluate::Relational<Fortran::evaluate::Type<
                 Fortran::common::TypeCategory::Integer, KIND>> &x) {
-    return createCompareOp<mlir::CmpIOp>(translateRelational(x.opr), x);
+    return createCompareOp<mlir::arith::CmpIOp>(translateRelational(x.opr), x);
   }
   template <int KIND>
   CC genarr(const Fortran::evaluate::Relational<Fortran::evaluate::Type<

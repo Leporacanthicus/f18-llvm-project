@@ -157,7 +157,7 @@ struct AffineIfCondition {
   using MaybeAffineExpr = llvm::Optional<mlir::AffineExpr>;
 
   explicit AffineIfCondition(mlir::Value fc) : firCondition(fc) {
-    if (auto condDef = firCondition.getDefiningOp<mlir::CmpIOp>())
+    if (auto condDef = firCondition.getDefiningOp<mlir::arith::CmpIOp>())
       fromCmpIOp(condDef);
   }
 
@@ -217,7 +217,7 @@ private:
     return {};
   }
 
-  void fromCmpIOp(mlir::CmpIOp cmpOp) {
+  void fromCmpIOp(mlir::arith::CmpIOp cmpOp) {
     auto lhsAffine = toAffineExpr(cmpOp.lhs());
     auto rhsAffine = toAffineExpr(cmpOp.rhs());
     if (!lhsAffine.hasValue() || !rhsAffine.hasValue())
@@ -233,17 +233,17 @@ private:
   }
 
   llvm::Optional<std::pair<AffineExpr, bool>>
-  constraint(mlir::CmpIPredicate predicate, mlir::AffineExpr basic) {
+  constraint(mlir::arith::CmpIPredicate predicate, mlir::AffineExpr basic) {
     switch (predicate) {
-    case mlir::CmpIPredicate::slt:
+    case mlir::arith::CmpIPredicate::slt:
       return {std::make_pair(basic - 1, false)};
-    case mlir::CmpIPredicate::sle:
+    case mlir::arith::CmpIPredicate::sle:
       return {std::make_pair(basic, false)};
-    case mlir::CmpIPredicate::sgt:
+    case mlir::arith::CmpIPredicate::sgt:
       return {std::make_pair(1 - basic, false)};
-    case mlir::CmpIPredicate::sge:
+    case mlir::arith::CmpIPredicate::sge:
       return {std::make_pair(0 - basic, false)};
-    case mlir::CmpIPredicate::eq:
+    case mlir::arith::CmpIPredicate::eq:
       return {std::make_pair(basic, true)};
     default:
       return {};

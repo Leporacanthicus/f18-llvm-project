@@ -77,7 +77,7 @@ struct ErrorManager {
   void genStatCheck(fir::FirOpBuilder &builder, mlir::Location loc) {
     if (statValue) {
       auto zero = builder.createIntegerConstant(loc, statValue.getType(), 0);
-      auto cmp = builder.create<mlir::CmpIOp>(loc, mlir::CmpIPredicate::eq,
+      auto cmp = builder.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::eq,
                                               statValue, zero);
       auto ifOp = builder.create<fir::IfOp>(loc, cmp,
                                             /*withElseRegion=*/false);
