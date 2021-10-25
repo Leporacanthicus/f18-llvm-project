@@ -938,9 +938,9 @@ public:
     auto rhs = builder.createConvert(getLoc(), i1Type, srhs);
     switch (op.logicalOperator) {
     case Fortran::evaluate::LogicalOperator::And:
-      return createBinaryOp<mlir::arith::AndOp>(lhs, rhs);
+      return createBinaryOp<mlir::arith::AndIOp>(lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Or:
-      return createBinaryOp<mlir::arith::OrOp>(lhs, rhs);
+      return createBinaryOp<mlir::arith::OrIOp>(lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Eqv:
       return createCompareOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, lhs, rhs);
     case Fortran::evaluate::LogicalOperator::Neqv:
@@ -3116,9 +3116,9 @@ private:
   ExtValue gen(const Fortran::evaluate::LogicalOperation<KIND> &x) {
     switch (x.logicalOperator) {
     case Fortran::evaluate::LogicalOperator::And:
-      return createBinaryBoolOp<mlir::arith::AndOp>(x);
+      return createBinaryBoolOp<mlir::arith::AndIOp>(x);
     case Fortran::evaluate::LogicalOperator::Or:
-      return createBinaryBoolOp<mlir::arith::OrOp>(x);
+      return createBinaryBoolOp<mlir::arith::OrIOp>(x);
     case Fortran::evaluate::LogicalOperator::Eqv:
       return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, x);
     case Fortran::evaluate::LogicalOperator::Neqv:
@@ -6022,9 +6022,9 @@ public:
   CC genarr(const Fortran::evaluate::LogicalOperation<KIND> &x) {
     switch (x.logicalOperator) {
     case Fortran::evaluate::LogicalOperator::And:
-      return createBinaryBoolOp<mlir::arith::AndOp>(x);
+      return createBinaryBoolOp<mlir::arith::AndIOp>(x);
     case Fortran::evaluate::LogicalOperator::Or:
-      return createBinaryBoolOp<mlir::arith::OrOp>(x);
+      return createBinaryBoolOp<mlir::arith::OrIOp>(x);
     case Fortran::evaluate::LogicalOperator::Eqv:
       return createCompareBoolOp<mlir::arith::CmpIOp>(mlir::arith::CmpIPredicate::eq, x);
     case Fortran::evaluate::LogicalOperator::Neqv:
