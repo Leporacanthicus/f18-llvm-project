@@ -597,7 +597,7 @@ class fir_IntegralSwitchTerminatorOp<string mnemonic,
   }];
 
   let printer = [{
-    p << getOperationName() << ' ';
+    p << ' ';
     p.printOperand(getSelector());
     p << " : " << getSelector().getType() << " [";
     auto cases =
@@ -784,7 +784,7 @@ def fir_UnreachableOp : fir_Op<"unreachable", [Terminator]> {
 
   let parser = "return mlir::success();";
 
-  let printer = "p << getOperationName();";
+  let printer = "";
 }
 
 def fir_FirEndOp : fir_Op<"end", [Terminator]> {
