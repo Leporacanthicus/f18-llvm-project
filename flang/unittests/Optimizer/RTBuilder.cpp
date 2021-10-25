@@ -9,7 +9,6 @@
 #include "flang/Optimizer/Builder/Runtime/RTBuilder.h"
 #include "flang/Optimizer/Support/InitFIR.h"
 #include "gtest/gtest.h"
-#include <complex>
 
 // Check that it is possible to make a difference between complex runtime
 // function using C99 complex and C++ std::complex. This is important since
@@ -21,7 +20,9 @@
 c_float_complex_t c99_cacosf(c_float_complex_t);
 
 TEST(RTBuilderTest, ComplexRuntimeInterface) {
-  mlir::MLIRContext ctx;
+  mlir::DialectRegistry registry;
+  fir::support::registerDialects(registry);
+  mlir::MLIRContext ctx(registry);
   fir::support::loadDialects(ctx);
   mlir::Type c99_cacosf_signature{
       fir::runtime::RuntimeTableKey<decltype(c99_cacosf)>::getTypeModel()(
