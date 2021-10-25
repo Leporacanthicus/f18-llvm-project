@@ -608,7 +608,7 @@ static void genIoLoop(Fortran::lower::AbstractConverter &converter,
   auto upperValue = genControlValue(control.upper);
   auto stepValue = control.step.has_value()
                        ? genControlValue(*control.step)
-                       : builder.create<mlir::ConstantIndexOp>(loc, 1);
+                       : builder.create<mlir::arith::ConstantIndexOp>(loc, 1);
   auto genItemList = [&](const D &ioImpliedDo) {
     Fortran::lower::StatementContext loopCtx;
     if constexpr (std::is_same_v<D, Fortran::parser::InputImpliedDo>)

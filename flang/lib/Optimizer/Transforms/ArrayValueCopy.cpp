@@ -627,7 +627,7 @@ getOrReadExtentsAndShapeOp(mlir::Location loc, mlir::PatternRewriter &rewriter,
         dyn_cast_ptrOrBoxEleTy(boxTy).cast<SequenceType>().getDimension();
     auto idxTy = rewriter.getIndexType();
     for (decltype(rank) dim = 0; dim < rank; ++dim) {
-      auto dimVal = rewriter.create<mlir::ConstantIndexOp>(loc, dim);
+      auto dimVal = rewriter.create<mlir::arith::ConstantIndexOp>(loc, dim);
       auto dimInfo = rewriter.create<BoxDimsOp>(loc, idxTy, idxTy, idxTy,
                                                 loadOp.memref(), dimVal);
       result.emplace_back(dimInfo.getResult(1));
@@ -683,8 +683,8 @@ static void genArrayCopy(mlir::Location loc, mlir::PatternRewriter &rewriter,
   for (auto sh : llvm::reverse(extents)) {
     auto idxTy = rewriter.getIndexType();
     auto ubi = rewriter.create<ConvertOp>(loc, idxTy, sh);
-    auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
-    auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
+    auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
+    auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
     auto ub = rewriter.create<mlir::arith::SubIOp>(loc, idxTy, ubi, one);
     auto loop = rewriter.create<DoLoopOp>(loc, zero, ub, one);
     rewriter.setInsertionPointToStart(loop.getBody());

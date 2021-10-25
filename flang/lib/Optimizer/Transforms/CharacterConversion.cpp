@@ -43,8 +43,8 @@ public:
                << "running character conversion on " << conv << '\n');
 
     // Establish a loop that executes count iterations.
-    auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
-    auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
+    auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
+    auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
     auto idxTy = rewriter.getIndexType();
     auto castCnt = rewriter.create<fir::ConvertOp>(loc, idxTy, conv.count());
     auto countm1 = rewriter.create<mlir::arith::SubIOp>(loc, castCnt, one);

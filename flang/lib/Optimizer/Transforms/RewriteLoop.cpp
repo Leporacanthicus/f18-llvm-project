@@ -71,10 +71,10 @@ using OpRewritePattern::OpRewritePattern;
         rewriter.create<mlir::arith::DivSIOp>(loc, distance, step);
 
     if (forceLoopToExecuteOnce) {
-      auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
+      auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
       auto cond =
           rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sle, iters, zero);
-      auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
+      auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
       iters = rewriter.create<mlir::SelectOp>(loc, cond, one, iters);
     }
 
@@ -94,7 +94,7 @@ using OpRewritePattern::OpRewritePattern;
     assert(steppedIndex && "must be a Value");
     auto lastArg = conditionalBlock->getNumArguments() - 1;
     auto itersLeft = conditionalBlock->getArgument(lastArg);
-    auto one = rewriter.create<mlir::ConstantIndexOp>(loc, 1);
+    auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
     mlir::Value itersMinusOne =
         rewriter.create<mlir::arith::SubIOp>(loc, itersLeft, one);
 
@@ -109,7 +109,7 @@ using OpRewritePattern::OpRewritePattern;
 
     // Conditional block
     rewriter.setInsertionPointToEnd(conditionalBlock);
-    auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
+    auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
     auto comparison =
         rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sgt, itersLeft, zero);
 
@@ -262,7 +262,7 @@ public:
     // The comparison depends on the sign of the step value. We fully expect
     // this expression to be folded by the optimizer or LLVM. This expression
     // is written this way so that `step == 0` always returns `false`.
-    auto zero = rewriter.create<mlir::ConstantIndexOp>(loc, 0);
+    auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
     auto compl0 =
         rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::slt, zero, step);
     auto compl1 =
