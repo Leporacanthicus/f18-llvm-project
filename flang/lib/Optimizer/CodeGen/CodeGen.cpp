@@ -2290,7 +2290,7 @@ struct CoordinateOpConversion
   int64_t getIntValue(mlir::Value val) const {
     if (val) {
       if (auto *defop = val.getDefiningOp()) {
-        if (auto constOp = dyn_cast<mlir::ConstantIntOp>(defop))
+        if (auto constOp = dyn_cast<mlir::arith::ConstantIntOp>(defop))
           return constOp.getValue();
         if (auto llConstOp = dyn_cast<mlir::LLVM::ConstantOp>(defop))
           if (auto attr = llConstOp.value().dyn_cast<mlir::IntegerAttr>())
