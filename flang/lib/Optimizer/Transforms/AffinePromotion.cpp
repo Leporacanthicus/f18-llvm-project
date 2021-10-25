@@ -205,7 +205,7 @@ private:
     if (auto op = value.getDefiningOp<mlir::arith::RemUIOp>())
       return affineBinaryOp(mlir::AffineExprKind::Mod, op.lhs(), op.rhs());
     if (auto op = value.getDefiningOp<mlir::arith::ConstantOp>())
-      if (auto intConstant = op.getValue().dyn_cast<IntegerAttr>())
+      if (auto intConstant = op.value().dyn_cast<IntegerAttr>())
         return toAffineExpr(intConstant.getInt());
     if (auto blockArg = value.dyn_cast<mlir::BlockArgument>()) {
       affineArgs.push_back(value);
@@ -316,7 +316,7 @@ static mlir::AffineMap createArrayIndexAffineMap(unsigned dimensions,
 
 static Optional<int64_t> constantIntegerLike(const mlir::Value value) {
   if (auto definition = value.getDefiningOp<ConstantOp>())
-    if (auto stepAttr = definition.getValue().dyn_cast<IntegerAttr>())
+    if (auto stepAttr = definition.value().dyn_cast<IntegerAttr>())
       return stepAttr.getInt();
   return {};
 }
