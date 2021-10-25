@@ -481,7 +481,7 @@ mlir::Value fir::FirOpBuilder::genExtentFromTriplet(mlir::Location loc,
   step = createConvert(loc, type, step);
   auto diff = create<mlir::arith::SubIOp>(loc, ub, lb);
   auto add = create<mlir::arith::AddIOp>(loc, diff, step);
-  auto div = create<mlir::arith::SignedDivIOp>(loc, add, step);
+  auto div = create<mlir::arith::DivSIOp>(loc, add, step);
   auto cmp = create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sgt, div, zero);
   return create<mlir::SelectOp>(loc, cmp, div, zero);
 }
