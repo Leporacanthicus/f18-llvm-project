@@ -1348,7 +1348,7 @@ static void appendAsAttribute(llvm::SmallVectorImpl<mlir::Attribute> &attrs,
   if (auto *op = val.getDefiningOp()) {
     if (auto cop = mlir::dyn_cast<mlir::arith::ConstantOp>(op)) {
       // append the integer constant value
-      if (auto iattr = cop.getValue().dyn_cast<mlir::IntegerAttr>()) {
+      if (auto iattr = cop.value().dyn_cast<mlir::IntegerAttr>()) {
         attrs.push_back(iattr);
         return;
       }
