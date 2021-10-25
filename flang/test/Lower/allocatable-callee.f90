@@ -131,7 +131,7 @@ subroutine test_char_scalar_deferred_k2(c)
   ! CHECK: %[[box:.*]] = fir.load %[[arg0]] : !fir.ref<!fir.box<!fir.heap<!fir.char<2,?>>>>
   ! CHECK-DAG: %[[addr:.*]] = fir.box_addr %[[box]] : (!fir.box<!fir.heap<!fir.char<2,?>>>) -> !fir.heap<!fir.char<2,?>>
   ! CHECK-DAG: %[[size:.*]] = fir.box_elesize %[[box]] : (!fir.box<!fir.heap<!fir.char<2,?>>>) -> index
-  ! CHECK-DAG: %[[len:.*]] = divi_signed %[[size]], %c2{{.*}} : index
+  ! CHECK-DAG: %[[len:.*]] = arith.divsi %[[size]], %c2{{.*}} : index
   ! CHECK-DAG: %[[addr_cast:.*]] = fir.convert %[[addr]] : (!fir.heap<!fir.char<2,?>>) -> !fir.ref<!fir.char<2,?>>
   ! CHECK: %[[boxchar:.*]] = fir.emboxchar %[[addr_cast]], %[[len]] : (!fir.ref<!fir.char<2,?>>, index) -> !fir.boxchar<2>
   ! CHECK: fir.call @_QPfoo2(%[[boxchar]]) : (!fir.boxchar<2>) -> ()

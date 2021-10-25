@@ -67,7 +67,7 @@ contains
     ! CHECK: %[[VAL_56:.*]] = fir.load %[[VAL_55]] : !fir.ref<i32>
     ! CHECK: %[[VAL_57:.*]] = fir.array_coor %[[arg1]] {{\[}}%[[VAL_48]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: %[[VAL_58:.*]] = fir.load %[[VAL_57]] : !fir.ref<i32>
-    ! CHECK: %[[VAL_59:.*]] = divi_signed %[[VAL_56]], %[[VAL_58]] : i32
+    ! CHECK: %[[VAL_59:.*]] = arith.divsi %[[VAL_56]], %[[VAL_58]] : i32
     ! CHECK: %[[VAL_60:.*]] = arith.addi %[[VAL_54]], %[[VAL_59]] : i32
     ! CHECK: %[[VAL_61:.*]] = fir.array_coor %[[arg0]] {{\[}}%[[VAL_42]]] %[[VAL_52]] : (!fir.box<!fir.array<?x!fir.type<_QMcsTt2{f1:!fir.array<5xi32>,f2:!fir.type<_QMcsTr{n:i32,d:i32}>}>>>, !fir.slice<1>, index) -> !fir.ref<i32>
     ! CHECK: fir.store %[[VAL_60]] to %[[VAL_61]] : !fir.ref<i32>

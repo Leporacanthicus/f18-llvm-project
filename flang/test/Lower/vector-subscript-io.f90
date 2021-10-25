@@ -512,7 +512,7 @@ subroutine simple_iostat(x, y, j, stat)
 ! CHECK:   br ^bb1(%[[VAL_339]], %[[VAL_337]] : index, i1)
 ! CHECK: ^bb1(%[[VAL_349:.*]]: index, %[[VAL_350:.*]]: i1):
 ! CHECK:   %[[VAL_351:.*]] = arith.cmpi sle, %[[VAL_349]], %[[VAL_348]] : index
-! CHECK:   %[[VAL_352:.*]] = and %[[VAL_350]], %[[VAL_351]] : i1
+! CHECK:   %[[VAL_352:.*]] = arith.andi %[[VAL_350]], %[[VAL_351]] : i1
 ! CHECK:   cond_br %[[VAL_352]], ^bb2, ^bb3
 ! CHECK: ^bb2:
 ! CHECK:   %[[VAL_353:.*]] = fir.coordinate_of %[[VAL_346]], %[[VAL_349]] : (!fir.box<!fir.array<?xi32>>, index) -> !fir.ref<i32>
@@ -560,7 +560,7 @@ subroutine iostat_in_io_loop(k, j, stat)
 ! CHECK:   br ^bb1(%[[VAL_371]], %[[VAL_369]] : index, i1)
 ! CHECK: ^bb1(%[[VAL_380:.*]]: index, %[[VAL_381:.*]]: i1):
 ! CHECK:   %[[VAL_382:.*]] = arith.cmpi sle, %[[VAL_380]], %[[VAL_368]] : index
-! CHECK:   %[[VAL_383:.*]] = and %[[VAL_381]], %[[VAL_382]] : i1
+! CHECK:   %[[VAL_383:.*]] = arith.andi %[[VAL_381]], %[[VAL_382]] : i1
 ! CHECK:   cond_br %[[VAL_383]], ^bb2, ^bb7
 ! CHECK: ^bb2:
 ! CHECK:   %[[VAL_384:.*]] = fir.convert %[[VAL_380]] : (index) -> i32
@@ -575,7 +575,7 @@ subroutine iostat_in_io_loop(k, j, stat)
 ! CHECK:   br ^bb4(%[[VAL_372]], %[[VAL_381]] : index, i1)
 ! CHECK: ^bb4(%[[VAL_390:.*]]: index, %[[VAL_391:.*]]: i1):
 ! CHECK:   %[[VAL_392:.*]] = arith.cmpi sle, %[[VAL_390]], %[[VAL_373]] : index
-! CHECK:   %[[VAL_393:.*]] = and %[[VAL_391]], %[[VAL_392]] : i1
+! CHECK:   %[[VAL_393:.*]] = arith.andi %[[VAL_391]], %[[VAL_392]] : i1
 ! CHECK:   cond_br %[[VAL_393]], ^bb5, ^bb6(%[[VAL_391]] : i1)
 ! CHECK: ^bb5:
 ! CHECK:   %[[VAL_394:.*]] = fir.convert %[[VAL_385]] : (i32) -> index

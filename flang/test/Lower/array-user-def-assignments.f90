@@ -539,7 +539,7 @@ subroutine test_forall_array(x, y)
 ! CHECK:           %[[VAL_22:.*]] = arith.constant 0 : index
 ! CHECK:           %[[VAL_23:.*]] = arith.subi %[[VAL_19]], %[[VAL_15]] : index
 ! CHECK:           %[[VAL_24:.*]] = arith.addi %[[VAL_23]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_21]] : index
+! CHECK:           %[[VAL_25:.*]] = arith.divsi %[[VAL_24]], %[[VAL_21]] : index
 ! CHECK:           %[[VAL_26:.*]] = arith.cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index
@@ -686,7 +686,7 @@ subroutine from_char_forall_array(i, c)
   ! CHECK:           %[[VAL_21:.*]] = arith.constant 0 : index
   ! CHECK:           %[[VAL_22:.*]] = arith.subi %[[VAL_18]], %[[VAL_14]] : index
   ! CHECK:           %[[VAL_23:.*]] = arith.addi %[[VAL_22]], %[[VAL_20]] : index
-  ! CHECK:           %[[VAL_24:.*]] = divi_signed %[[VAL_23]], %[[VAL_20]] : index
+  ! CHECK:           %[[VAL_24:.*]] = arith.divsi %[[VAL_23]], %[[VAL_20]] : index
   ! CHECK:           %[[VAL_25:.*]] = arith.cmpi sgt, %[[VAL_24]], %[[VAL_21]] : index
   ! CHECK:           %[[VAL_26:.*]] = select %[[VAL_25]], %[[VAL_24]], %[[VAL_21]] : index
   ! CHECK:           %[[VAL_27:.*]] = arith.constant 1 : index
@@ -767,7 +767,7 @@ subroutine to_char_forall_array(i, c)
 ! CHECK:           %[[VAL_22:.*]] = arith.constant 0 : index
 ! CHECK:           %[[VAL_23:.*]] = arith.subi %[[VAL_19]], %[[VAL_15]] : index
 ! CHECK:           %[[VAL_24:.*]] = arith.addi %[[VAL_23]], %[[VAL_21]] : index
-! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_21]] : index
+! CHECK:           %[[VAL_25:.*]] = arith.divsi %[[VAL_24]], %[[VAL_21]] : index
 ! CHECK:           %[[VAL_26:.*]] = arith.cmpi sgt, %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_22]] : index
 ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index

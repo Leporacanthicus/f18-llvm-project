@@ -10,9 +10,9 @@ function ibits_test(i, j, k)
   ! CHECK-DAG: %[[VAL_8:.*]] = arith.subi %[[VAL_7]], %[[k]] : i32
   ! CHECK-DAG: %[[VAL_9:.*]] = arith.constant 0 : i32
   ! CHECK-DAG: %[[VAL_10:.*]] = arith.constant -1 : i32
-  ! CHECK: %[[VAL_11:.*]] = shift_right_unsigned %[[VAL_10]], %[[VAL_8]] : i32
-  ! CHECK: %[[VAL_12:.*]] = shift_right_signed %[[i]], %[[j]] : i32
-  ! CHECK: %[[VAL_13:.*]] = and %[[VAL_12]], %[[VAL_11]] : i32
+  ! CHECK: %[[VAL_11:.*]] = arith.shrui %[[VAL_10]], %[[VAL_8]] : i32
+  ! CHECK: %[[VAL_12:.*]] = arith.shrsi %[[i]], %[[j]] : i32
+  ! CHECK: %[[VAL_13:.*]] = arith.andi %[[VAL_12]], %[[VAL_11]] : i32
   ! CHECK: %[[VAL_14:.*]] = arith.cmpi eq, %[[k]], %[[VAL_9]] : i32
   ! CHECK: %[[VAL_15:.*]] = select %[[VAL_14]], %[[VAL_9]], %[[VAL_13]] : i32
   ! CHECK: fir.store %[[VAL_15]] to %[[result]] : !fir.ref<i32>

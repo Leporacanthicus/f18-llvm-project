@@ -27,7 +27,7 @@ func private @f2() -> i1
 // FIROPT:     func @x(%[[VAL_0:.*]]: index, %[[VAL_1:.*]]: index, %[[VAL_2:.*]]: index, %[[VAL_3:.*]]: i1, %[[VAL_4:.*]]: !fir.ref<index>) {
 // FIROPT:       %[[VAL_5:.*]] = arith.subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:       %[[VAL_6:.*]] = arith.addi %[[VAL_5]], %[[VAL_2]] : index
-// FIROPT:       %[[VAL_7:.*]] = divi_signed %[[VAL_6]], %[[VAL_2]] : index
+// FIROPT:       %[[VAL_7:.*]] = arith.divsi %[[VAL_6]], %[[VAL_2]] : index
 // FIROPT:       br ^bb1(%[[VAL_0]], %[[VAL_7]] : index, index)
 // FIROPT:     ^bb1(%[[VAL_8:.*]]: index, %[[VAL_9:.*]]: index):
 // FIROPT:       %[[VAL_10:.*]] = arith.constant 0 : index
@@ -60,7 +60,7 @@ func @x2(%lo : index, %up : index, %ok : i1) {
   // CHECK-DAG: %[[count:.*]] = phi i64
   // CHECK-DAG: %[[exit:.*]] = phi i1
   // CHECK: %[[cond:.*]] = icmp sle i64 %[[count]], %
-  // CHECK: %[[and:.*]] = and i1 %[[exit]], %[[cond]]
+  // CHECK: %[[and:.*]] = arith.andi i1 %[[exit]], %[[cond]]
   // CHECK: br i1 %[[and]]
   %unused = fir.iterate_while (%i = %lo to %up step %c1) and (%ok1 = %ok) {
     %ok2 = fir.call @f2() : () -> i1
@@ -81,10 +81,10 @@ func private @f3(i16)
 // FIROPT:     %[[VAL_8:.*]] = arith.cmpi sle, %[[VAL_4]], %[[VAL_1]] : index
 // FIROPT:     %[[VAL_9:.*]] = arith.cmpi slt, %[[VAL_3]], %[[VAL_6]] : index
 // FIROPT:     %[[VAL_10:.*]] = arith.cmpi sle, %[[VAL_1]], %[[VAL_4]] : index
-// FIROPT:     %[[VAL_11:.*]] = and %[[VAL_7]], %[[VAL_8]] : i1
-// FIROPT:     %[[VAL_12:.*]] = and %[[VAL_9]], %[[VAL_10]] : i1
-// FIROPT:     %[[VAL_13:.*]] = or %[[VAL_11]], %[[VAL_12]] : i1
-// FIROPT:     %[[VAL_14:.*]] = and %[[VAL_5]], %[[VAL_13]] : i1
+// FIROPT:     %[[VAL_11:.*]] = arith.andi %[[VAL_7]], %[[VAL_8]] : i1
+// FIROPT:     %[[VAL_12:.*]] = arith.andi %[[VAL_9]], %[[VAL_10]] : i1
+// FIROPT:     %[[VAL_13:.*]] = arith.ori %[[VAL_11]], %[[VAL_12]] : i1
+// FIROPT:     %[[VAL_14:.*]] = arith.andi %[[VAL_5]], %[[VAL_13]] : i1
 // FIROPT:     cond_br %[[VAL_14]], ^bb2, ^bb3
 // FIROPT:   ^bb2:
 // FIROPT:     %[[VAL_15:.*]] = fir.call @f2() : () -> i1
@@ -121,7 +121,7 @@ func @x3(%lo : index, %up : index) -> i1 {
 // FIROPT:           %[[VAL_3:.*]] = arith.constant true
 // FIROPT:           %[[VAL_4:.*]] = arith.subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_5:.*]] = arith.addi %[[VAL_4]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_6:.*]] = divi_signed %[[VAL_5]], %[[VAL_2]] : index
+// FIROPT:           %[[VAL_6:.*]] = arith.divsi %[[VAL_5]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]], %[[VAL_6]] : index, i1, index)
 // FIROPT:         ^bb1(%[[VAL_7:.*]]: index, %[[VAL_8:.*]]: i1, %[[VAL_9:.*]]: index):
 // FIROPT:           %[[VAL_10:.*]] = arith.constant 0 : index
@@ -150,14 +150,14 @@ func @y3(%lo : index, %up : index) -> i1 {
   // CHECK-DAG: %[[ok3:.*]] = phi i1 {{.*}}[ true
   // CHECK-DAG: %[[j:.*]] = phi i1 {{.*}}[ %[[ok4]]
   // CHECK: %[[prev:.*]] = icmp sle i64 %[[count]],
-  // CHECK: = and i1 %[[ok3]], %[[prev]]
+  // CHECK: = arith.andi i1 %[[ok3]], %[[prev]]
   %ok2:2 = fir.iterate_while (%i = %lo to %up step %c1) and (%ok3 = %ok1) iter_args(%j = %ok4) -> i1 {
     %ok = fir.call @f2() : () -> i1
     fir.result %ok3, %ok : i1, i1
     // CHECK: = add i64 %[[count]], 1
   }
-  // CHECK: %[[result:.*]] = and i1 %[[ok3]], %[[j]]
-  %andok = and %ok2#0, %ok2#1 : i1
+  // CHECK: %[[result:.*]] = arith.andi i1 %[[ok3]], %[[j]]
+  %andok = arith.andi %ok2#0, %ok2#1 : i1
   // CHECK: ret i1 %[[result]]
   return %andok : i1
 }
@@ -177,17 +177,17 @@ func private @f4(i32) -> i1
 // FIROPT:           %[[VAL_10:.*]] = arith.cmpi sle, %[[VAL_5]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_11:.*]] = arith.cmpi slt, %[[VAL_2]], %[[VAL_8]] : index
 // FIROPT:           %[[VAL_12:.*]] = arith.cmpi sle, %[[VAL_1]], %[[VAL_5]] : index
-// FIROPT:           %[[VAL_13:.*]] = and %[[VAL_9]], %[[VAL_10]] : i1
-// FIROPT:           %[[VAL_14:.*]] = and %[[VAL_11]], %[[VAL_12]] : i1
-// FIROPT:           %[[VAL_15:.*]] = or %[[VAL_13]], %[[VAL_14]] : i1
-// FIROPT:           %[[VAL_16:.*]] = and %[[VAL_6]], %[[VAL_15]] : i1
+// FIROPT:           %[[VAL_13:.*]] = arith.andi %[[VAL_9]], %[[VAL_10]] : i1
+// FIROPT:           %[[VAL_14:.*]] = arith.andi %[[VAL_11]], %[[VAL_12]] : i1
+// FIROPT:           %[[VAL_15:.*]] = arith.ori %[[VAL_13]], %[[VAL_14]] : i1
+// FIROPT:           %[[VAL_16:.*]] = arith.andi %[[VAL_6]], %[[VAL_15]] : i1
 // FIROPT:           cond_br %[[VAL_16]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_17:.*]] = fir.call @f2() : () -> i1
 // FIROPT:           %[[VAL_18:.*]] = arith.addi %[[VAL_5]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_18]], %[[VAL_6]], %[[VAL_17]] : index, i1, i1)
 // FIROPT:         ^bb3:
-// FIROPT:           %[[VAL_19:.*]] = and %[[VAL_6]], %[[VAL_7]] : i1
+// FIROPT:           %[[VAL_19:.*]] = arith.andi %[[VAL_6]], %[[VAL_7]] : i1
 // FIROPT:           return %[[VAL_19]] : i1
 // FIROPT:         }
 // FIROPT:         func private @f4(i32) -> i1
@@ -220,7 +220,7 @@ func @x4(%lo : index, %up : index) -> index {
 // FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_3:.*]] = arith.subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_4:.*]] = arith.addi %[[VAL_3]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_5:.*]] = divi_signed %[[VAL_4]], %[[VAL_2]] : index
+// FIROPT:           %[[VAL_5:.*]] = arith.divsi %[[VAL_4]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_5]] : index, index)
 // FIROPT:         ^bb1(%[[VAL_6:.*]]: index, %[[VAL_7:.*]]: index):
 // FIROPT:           %[[VAL_8:.*]] = arith.constant 0 : index
@@ -270,10 +270,10 @@ func @y4(%lo : index, %up : index) -> index {
 // FIROPT:           %[[VAL_8:.*]] = arith.cmpi sle, %[[VAL_4]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_9:.*]] = arith.cmpi slt, %[[VAL_2]], %[[VAL_6]] : index
 // FIROPT:           %[[VAL_10:.*]] = arith.cmpi sle, %[[VAL_1]], %[[VAL_4]] : index
-// FIROPT:           %[[VAL_11:.*]] = and %[[VAL_7]], %[[VAL_8]] : i1
-// FIROPT:           %[[VAL_12:.*]] = and %[[VAL_9]], %[[VAL_10]] : i1
-// FIROPT:           %[[VAL_13:.*]] = or %[[VAL_11]], %[[VAL_12]] : i1
-// FIROPT:           %[[VAL_14:.*]] = and %[[VAL_5]], %[[VAL_13]] : i1
+// FIROPT:           %[[VAL_11:.*]] = arith.andi %[[VAL_7]], %[[VAL_8]] : i1
+// FIROPT:           %[[VAL_12:.*]] = arith.andi %[[VAL_9]], %[[VAL_10]] : i1
+// FIROPT:           %[[VAL_13:.*]] = arith.ori %[[VAL_11]], %[[VAL_12]] : i1
+// FIROPT:           %[[VAL_14:.*]] = arith.andi %[[VAL_5]], %[[VAL_13]] : i1
 // FIROPT:           cond_br %[[VAL_14]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_15:.*]] = fir.convert %[[VAL_4]] : (index) -> i32
@@ -320,7 +320,7 @@ func @x5(%lo : index, %up : index) -> index {
 // FIROPT:           %[[VAL_3:.*]] = arith.constant 42 : i16
 // FIROPT:           %[[VAL_4:.*]] = arith.subi %[[VAL_1]], %[[VAL_0]] : index
 // FIROPT:           %[[VAL_5:.*]] = arith.addi %[[VAL_4]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_6:.*]] = divi_signed %[[VAL_5]], %[[VAL_2]] : index
+// FIROPT:           %[[VAL_6:.*]] = arith.divsi %[[VAL_5]], %[[VAL_2]] : index
 // FIROPT:           br ^bb1(%[[VAL_0]], %[[VAL_3]], %[[VAL_6]] : index, i16, index)
 // FIROPT:         ^bb1(%[[VAL_7:.*]]: index, %[[VAL_8:.*]]: i16, %[[VAL_9:.*]]: index):
 // FIROPT:           %[[VAL_10:.*]] = arith.constant 0 : index
@@ -385,10 +385,10 @@ func @y5(%lo : index, %up : index) -> index {
 // FIROPT:           %[[VAL_10:.*]] = arith.cmpi sle, %[[VAL_5]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_11:.*]] = arith.cmpi slt, %[[VAL_2]], %[[VAL_8]] : index
 // FIROPT:           %[[VAL_12:.*]] = arith.cmpi sle, %[[VAL_1]], %[[VAL_5]] : index
-// FIROPT:           %[[VAL_13:.*]] = and %[[VAL_9]], %[[VAL_10]] : i1
-// FIROPT:           %[[VAL_14:.*]] = and %[[VAL_11]], %[[VAL_12]] : i1
-// FIROPT:           %[[VAL_15:.*]] = or %[[VAL_13]], %[[VAL_14]] : i1
-// FIROPT:           %[[VAL_16:.*]] = and %[[VAL_6]], %[[VAL_15]] : i1
+// FIROPT:           %[[VAL_13:.*]] = arith.andi %[[VAL_9]], %[[VAL_10]] : i1
+// FIROPT:           %[[VAL_14:.*]] = arith.andi %[[VAL_11]], %[[VAL_12]] : i1
+// FIROPT:           %[[VAL_15:.*]] = arith.ori %[[VAL_13]], %[[VAL_14]] : i1
+// FIROPT:           %[[VAL_16:.*]] = arith.andi %[[VAL_6]], %[[VAL_15]] : i1
 // FIROPT:           cond_br %[[VAL_16]], ^bb2, ^bb3
 // FIROPT:         ^bb2:
 // FIROPT:           %[[VAL_17:.*]] = fir.call @f2() : () -> i1

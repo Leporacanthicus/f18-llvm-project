@@ -24,7 +24,7 @@ func private @y(%addr : !fir.ref<index>)
 // FIROPT:           %[[VAL_2:.*]] = arith.constant 1 : index
 // FIROPT:           %[[VAL_3:.*]] = arith.subi %[[VAL_1]], %[[VAL_1]] : index
 // FIROPT:           %[[VAL_4:.*]] = arith.addi %[[VAL_3]], %[[VAL_2]] : index
-// FIROPT:           %[[VAL_5:.*]] = divi_signed %[[VAL_4]], %[[VAL_2]] : index
+// FIROPT:           %[[VAL_5:.*]] = arith.divsi %[[VAL_4]], %[[VAL_2]] : index
 // FIROPT:           %[[VAL_6:.*]] = arith.constant 0 : index
 // FIROPT:           %[[VAL_7:.*]] = arith.cmpi sle, %[[VAL_5]], %[[VAL_6]] : index
 // FIROPT:           %[[VAL_8:.*]] = arith.constant 1 : index
@@ -51,7 +51,7 @@ func private @y(%addr : !fir.ref<index>)
 // NOOPT:           %[[VAL_2:.*]] = arith.constant 1 : index
 // NOOPT:           %[[VAL_3:.*]] = arith.subi %[[VAL_1]], %[[VAL_1]] : index
 // NOOPT:           %[[VAL_4:.*]] = arith.addi %[[VAL_3]], %[[VAL_2]] : index
-// NOOPT:           %[[VAL_5:.*]] = divi_signed %[[VAL_4]], %[[VAL_2]] : index
+// NOOPT:           %[[VAL_5:.*]] = arith.divsi %[[VAL_4]], %[[VAL_2]] : index
 // NOOPT:           br ^bb1(%[[VAL_1]], %[[VAL_5]] : index, index)
 // NOOPT:         ^bb1(%[[VAL_6:.*]]: index, %[[VAL_7:.*]]: index):
 // NOOPT:           %[[VAL_8:.*]] = arith.constant 0 : index

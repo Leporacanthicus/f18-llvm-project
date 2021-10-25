@@ -93,7 +93,7 @@ subroutine slice_with_explicit_iters
   ! CHECK:           %[[VAL_22:.*]] = fir.convert %[[VAL_17]] : (i64) -> index
   ! CHECK:           %[[VAL_23:.*]] = arith.subi %[[VAL_22]], %[[VAL_21]] : index
   ! CHECK:           %[[VAL_24:.*]] = arith.addi %[[VAL_23]], %[[VAL_19]] : index
-  ! CHECK:           %[[VAL_25:.*]] = divi_signed %[[VAL_24]], %[[VAL_19]] : index
+  ! CHECK:           %[[VAL_25:.*]] = arith.divsi %[[VAL_24]], %[[VAL_19]] : index
   ! CHECK:           %[[VAL_26:.*]] = arith.cmpi sgt, %[[VAL_25]], %[[VAL_20]] : index
   ! CHECK:           %[[VAL_27:.*]] = select %[[VAL_26]], %[[VAL_25]], %[[VAL_20]] : index
   ! CHECK:           %[[VAL_28:.*]] = arith.constant 1 : index

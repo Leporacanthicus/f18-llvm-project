@@ -31,7 +31,7 @@ contains
     ! CHECK: %[[VAL_6:.*]] = fir.load %[[VAL_7:.*]] : !fir.ref<i32>
     ! CHECK: %[[VAL_8:.*]] = arith.cmpi sge, %[[VAL_6]], %[[VAL_0]] : i32
     ! CHECK: %[[VAL_9:.*]] = arith.cmpi sle, %[[VAL_6]], %[[VAL_1]] : i32
-    ! CHECK: %[[VAL_10:.*]] = and %[[VAL_8]], %[[VAL_9]] : i1
+    ! CHECK: %[[VAL_10:.*]] = arith.andi %[[VAL_8]], %[[VAL_9]] : i1
     ! CHECK: cond_br %[[VAL_10]], ^bb1, ^bb2
     ! CHECK: ^bb1:
     ! CHECK: %[[VAL_11:.*]] = fir.field_index h2, !fir.type<_QMcomponents_testTt3{h1:!fir.array<3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,h2:!fir.array<4x!fir.type<_QMcomponents_testTt2{g1:!fir.array<3x3x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g2:!fir.array<4x4x4x!fir.type<_QMcomponents_testTt1{i:!fir.array<6xi32>,r:!fir.array<5xf32>}>>,g3:!fir.array<5xi32>}>>}>

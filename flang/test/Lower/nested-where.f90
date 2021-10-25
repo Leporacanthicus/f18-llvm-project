@@ -54,7 +54,7 @@ program nested_where
   ! CHECK: %[[VAL_44:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
   ! CHECK: %[[VAL_45:.*]] = arith.subi %[[VAL_43]], %[[VAL_42]] : i64
   ! CHECK: %[[VAL_46:.*]] = arith.addi %[[VAL_45]], %[[VAL_44]] : i64
-  ! CHECK: %[[VAL_47:.*]] = divi_signed %[[VAL_46]], %[[VAL_44]] : i64
+  ! CHECK: %[[VAL_47:.*]] = arith.divsi %[[VAL_46]], %[[VAL_44]] : i64
   ! CHECK: %[[VAL_48:.*]] = arith.cmpi sgt, %[[VAL_47]], %[[VAL_41]] : i64
   ! CHECK: %[[VAL_49:.*]] = select %[[VAL_48]], %[[VAL_47]], %[[VAL_41]] : i64
   ! CHECK: %[[VAL_50:.*]] = arith.constant 1 : i32
@@ -75,7 +75,7 @@ program nested_where
   ! CHECK: %[[VAL_63:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_61]], %[[VAL_56]], %[[VAL_57]], %[[VAL_40]], %[[VAL_62]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
   ! CHECK: }
   ! CHECK: %[[VAL_64:.*]] = arith.subi %[[VAL_37]], %[[VAL_30]] : index
-  ! CHECK: %[[VAL_65:.*]] = divi_signed %[[VAL_64]], %[[VAL_33]] : index
+  ! CHECK: %[[VAL_65:.*]] = arith.divsi %[[VAL_64]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_66:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_67:.*]] = arith.addi %[[VAL_65]], %[[VAL_66]] : index
   ! CHECK: %[[VAL_68:.*]] = arith.constant 1 : i32
@@ -138,7 +138,7 @@ program nested_where
   ! CHECK: %[[VAL_120:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
   ! CHECK: %[[VAL_121:.*]] = arith.subi %[[VAL_119]], %[[VAL_118]] : i64
   ! CHECK: %[[VAL_122:.*]] = arith.addi %[[VAL_121]], %[[VAL_120]] : i64
-  ! CHECK: %[[VAL_123:.*]] = divi_signed %[[VAL_122]], %[[VAL_120]] : i64
+  ! CHECK: %[[VAL_123:.*]] = arith.divsi %[[VAL_122]], %[[VAL_120]] : i64
   ! CHECK: %[[VAL_124:.*]] = arith.cmpi sgt, %[[VAL_123]], %[[VAL_117]] : i64
   ! CHECK: %[[VAL_125:.*]] = select %[[VAL_124]], %[[VAL_123]], %[[VAL_117]] : i64
   ! CHECK: %[[VAL_126:.*]] = arith.constant 1 : i32
@@ -159,7 +159,7 @@ program nested_where
   ! CHECK: %[[VAL_139:.*]] = fir.call @_FortranARaggedArrayAllocate(%[[VAL_137]], %[[VAL_132]], %[[VAL_133]], %[[VAL_116]], %[[VAL_138]]) : (!fir.llvm_ptr<i8>, i1, i64, i64, !fir.ref<i64>) -> !fir.llvm_ptr<i8>
   ! CHECK: }
   ! CHECK: %[[VAL_140:.*]] = arith.subi %[[VAL_113]], %[[VAL_30]] : index
-  ! CHECK: %[[VAL_141:.*]] = divi_signed %[[VAL_140]], %[[VAL_33]] : index
+  ! CHECK: %[[VAL_141:.*]] = arith.divsi %[[VAL_140]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_142:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_143:.*]] = arith.addi %[[VAL_141]], %[[VAL_142]] : index
   ! CHECK: %[[VAL_144:.*]] = arith.constant 1 : i32
@@ -221,11 +221,11 @@ program nested_where
   ! CHECK: %[[VAL_195:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
   ! CHECK: %[[VAL_196:.*]] = arith.subi %[[VAL_194]], %[[VAL_193]] : i64
   ! CHECK: %[[VAL_197:.*]] = arith.addi %[[VAL_196]], %[[VAL_195]] : i64
-  ! CHECK: %[[VAL_198:.*]] = divi_signed %[[VAL_197]], %[[VAL_195]] : i64
+  ! CHECK: %[[VAL_198:.*]] = arith.divsi %[[VAL_197]], %[[VAL_195]] : i64
   ! CHECK: %[[VAL_199:.*]] = arith.cmpi sgt, %[[VAL_198]], %[[VAL_192]] : i64
   ! CHECK: %[[VAL_200:.*]] = select %[[VAL_199]], %[[VAL_198]], %[[VAL_192]] : i64
   ! CHECK: %[[VAL_201:.*]] = arith.subi %[[VAL_189]], %[[VAL_30]] : index
-  ! CHECK: %[[VAL_202:.*]] = divi_signed %[[VAL_201]], %[[VAL_33]] : index
+  ! CHECK: %[[VAL_202:.*]] = arith.divsi %[[VAL_201]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_203:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_204:.*]] = arith.addi %[[VAL_202]], %[[VAL_203]] : index
   ! CHECK: %[[VAL_205:.*]] = arith.constant 1 : i32
@@ -252,11 +252,11 @@ program nested_where
   ! CHECK: %[[VAL_226:.*]] = fir.convert %[[VAL_33]] : (index) -> i64
   ! CHECK: %[[VAL_227:.*]] = arith.subi %[[VAL_225]], %[[VAL_224]] : i64
   ! CHECK: %[[VAL_228:.*]] = arith.addi %[[VAL_227]], %[[VAL_226]] : i64
-  ! CHECK: %[[VAL_229:.*]] = divi_signed %[[VAL_228]], %[[VAL_226]] : i64
+  ! CHECK: %[[VAL_229:.*]] = arith.divsi %[[VAL_228]], %[[VAL_226]] : i64
   ! CHECK: %[[VAL_230:.*]] = arith.cmpi sgt, %[[VAL_229]], %[[VAL_223]] : i64
   ! CHECK: %[[VAL_231:.*]] = select %[[VAL_230]], %[[VAL_229]], %[[VAL_223]] : i64
   ! CHECK: %[[VAL_232:.*]] = arith.subi %[[VAL_189]], %[[VAL_30]] : index
-  ! CHECK: %[[VAL_233:.*]] = divi_signed %[[VAL_232]], %[[VAL_33]] : index
+  ! CHECK: %[[VAL_233:.*]] = arith.divsi %[[VAL_232]], %[[VAL_33]] : index
   ! CHECK: %[[VAL_234:.*]] = arith.constant 1 : index
   ! CHECK: %[[VAL_235:.*]] = arith.addi %[[VAL_233]], %[[VAL_234]] : index
   ! CHECK: %[[VAL_236:.*]] = arith.constant 1 : i32

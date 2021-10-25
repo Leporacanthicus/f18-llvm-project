@@ -8,11 +8,11 @@ function ishft_test(i, j)
   ! CHECK-DAG:  %[[VAL_5:.*]] = arith.constant 32 : i32
   ! CHECK-DAG:  %[[VAL_6:.*]] = arith.constant 0 : i32
   ! CHECK-DAG:  %[[VAL_7:.*]] = arith.constant 31 : i32
-  ! CHECK:  %[[VAL_8:.*]] = shift_right_signed %[[j]], %[[VAL_7]] : i32
-  ! CHECK:  %[[VAL_9:.*]] = xor %[[j]], %[[VAL_8]] : i32
+  ! CHECK:  %[[VAL_8:.*]] = arith.shrsi %[[j]], %[[VAL_7]] : i32
+  ! CHECK:  %[[VAL_9:.*]] = arith.xori %[[j]], %[[VAL_8]] : i32
   ! CHECK:  %[[VAL_10:.*]] = arith.subi %[[VAL_9]], %[[VAL_8]] : i32
-  ! CHECK:  %[[VAL_11:.*]] = shift_left %[[i]], %[[VAL_10]] : i32
-  ! CHECK:  %[[VAL_12:.*]] = shift_right_unsigned %[[i]], %[[VAL_10]] : i32
+  ! CHECK:  %[[VAL_11:.*]] = arith.shli %[[i]], %[[VAL_10]] : i32
+  ! CHECK:  %[[VAL_12:.*]] = arith.shrui %[[i]], %[[VAL_10]] : i32
   ! CHECK:  %[[VAL_13:.*]] = arith.cmpi sge, %[[VAL_10]], %[[VAL_5]] : i32
   ! CHECK:  %[[VAL_14:.*]] = arith.cmpi slt, %[[j]], %[[VAL_6]] : i32
   ! CHECK:  %[[VAL_15:.*]] = select %[[VAL_14]], %[[VAL_12]], %[[VAL_11]] : i32

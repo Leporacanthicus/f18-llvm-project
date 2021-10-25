@@ -36,7 +36,7 @@ LOGICAL(1) :: x1
 ! CHECK-DAG:[[reg2:%[0-9]+]] = fir.load %arg1
 ! CHECK-DAG:[[reg3:%[0-9]+]] = fir.convert [[reg1]] {{.*}} -> i1
 ! CHECK-DAG:[[reg4:%[0-9]+]] = fir.convert [[reg2]] {{.*}} -> i1
-! CHECK:[[reg5:%[0-9]+]] = or [[reg3]], [[reg4]]
+! CHECK:[[reg5:%[0-9]+]] = arith.ori [[reg3]], [[reg4]]
 ! CHECK:fir.convert [[reg5]] {{.*}} -> !fir.logical<1>
 or2_test = x0 .OR. x1
 END FUNCTION
@@ -49,7 +49,7 @@ LOGICAL(1) :: x1
 ! CHECK-DAG:[[reg2:%[0-9]+]] = fir.load %arg1
 ! CHECK-DAG:[[reg3:%[0-9]+]] = fir.convert [[reg1]] {{.*}} -> i1
 ! CHECK-DAG:[[reg4:%[0-9]+]] = fir.convert [[reg2]] {{.*}} -> i1
-! CHECK:[[reg5:%[0-9]+]] = and [[reg3]], [[reg4]]
+! CHECK:[[reg5:%[0-9]+]] = arith.andi [[reg3]], [[reg4]]
 ! CHECK:fir.convert [[reg5]] {{.*}} -> !fir.logical<1>
 and3_test = x0 .AND. x1
 END FUNCTION
@@ -59,7 +59,7 @@ LOGICAL(1) FUNCTION not4_test(x0)
 LOGICAL(1) :: x0
 ! CHECK:[[reg1:%[0-9]+]] = fir.load %arg0
 ! CHECK:[[reg2:%[0-9]+]] = fir.convert [[reg1]] {{.*}} -> i1
-! CHECK:[[reg3:%[0-9]+]] = xor [[reg2]], %true
+! CHECK:[[reg3:%[0-9]+]] = arith.xori [[reg2]], %true
 ! CHECK:fir.convert [[reg3]] {{.*}} -> !fir.logical<1>
 not4_test = .NOT. x0
 END FUNCTION
