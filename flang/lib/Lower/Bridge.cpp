@@ -1018,7 +1018,7 @@ private:
       }
       if (forceLoopToExecuteOnce) { // minimum tripCount is 1
         auto one = builder->createIntegerConstant(loc, controlType, 1);
-        auto cond = builder->create<mlir::arith::CmpIOp>(loc, CmpIPredicate::slt,
+        auto cond = builder->create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt,
                                                   tripCount, one);
         tripCount = builder->create<mlir::SelectOp>(loc, cond, one, tripCount);
       }
