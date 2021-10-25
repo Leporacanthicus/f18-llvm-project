@@ -73,7 +73,7 @@ using OpRewritePattern::OpRewritePattern;
     if (forceLoopToExecuteOnce) {
       auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
       auto cond =
-          rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sle, iters, zero);
+          rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sle, iters, zero);
       auto one = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 1);
       iters = rewriter.create<mlir::SelectOp>(loc, cond, one, iters);
     }
@@ -111,7 +111,7 @@ using OpRewritePattern::OpRewritePattern;
     rewriter.setInsertionPointToEnd(conditionalBlock);
     auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
     auto comparison =
-        rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sgt, itersLeft, zero);
+        rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sgt, itersLeft, zero);
 
     rewriter.create<mlir::CondBranchOp>(loc, comparison, firstBlock,
                                         llvm::ArrayRef<mlir::Value>(), endBlock,
@@ -264,13 +264,13 @@ public:
     // is written this way so that `step == 0` always returns `false`.
     auto zero = rewriter.create<mlir::arith::ConstantIndexOp>(loc, 0);
     auto compl0 =
-        rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::slt, zero, step);
+        rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt, zero, step);
     auto compl1 =
-        rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sle, iv, upperBound);
+        rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sle, iv, upperBound);
     auto compl2 =
-        rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::slt, step, zero);
+        rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::slt, step, zero);
     auto compl3 =
-        rewriter.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::sle, upperBound, iv);
+        rewriter.create<mlir::arith::CmpIOp>(loc, mlir::arith::CmpIPredicate::sle, upperBound, iv);
     auto cmp0 = rewriter.create<mlir::AndOp>(loc, compl0, compl1);
     auto cmp1 = rewriter.create<mlir::AndOp>(loc, compl2, compl3);
     auto cmp2 = rewriter.create<mlir::OrOp>(loc, cmp0, cmp1);
