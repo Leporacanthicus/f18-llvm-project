@@ -40,7 +40,8 @@ void IDFCalculator<NodeTy, IsPostDom>::calculate(
   if (DefBlocks->empty())
     return;
 
-  DT.updateDFSNumbers();
+  // FIXME: rebase update needed here !
+  // DT.updateDFSNumbers();
 
   for (NodeTy *BB : *DefBlocks) {
     if (DomTreeNode *Node = DT.getNode(BB))
