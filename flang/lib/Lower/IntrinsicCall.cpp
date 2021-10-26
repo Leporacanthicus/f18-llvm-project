@@ -34,6 +34,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include <algorithm>
 #include <string_view>
 #include <utility>
@@ -1466,7 +1467,9 @@ mlir::FuncOp IntrinsicLibrary::getWrapper(GeneratorType generator,
     // First time this wrapper is needed, build it.
     function = builder.createFunction(loc, wrapperName, funcType);
     function->setAttr("fir.intrinsic", builder.getUnitAttr());
-    function->setAttr("linkName", builder.createInternalLinkage());
+    auto internalLinkage = mlir::LLVM::linkage::Linkage::Internal;
+    auto linkage = mlir::LLVM::LinkageAttr::get(builder.getContext(), internalLinkage);
+    function->setAttr("llvm.linkage", linkage);
     function.addEntryBlock();
 
     // Create local context to emit code into the newly created function
