@@ -572,7 +572,7 @@ subroutine iostat_in_io_loop(k, j, stat)
 ! CHECK:   %[[VAL_387:.*]] = fir.shape %[[VAL_368]], %[[VAL_365]] : (index, index) -> !fir.shape<2>
 ! CHECK:   %[[VAL_388:.*]] = fir.undefined index
 ! CHECK:   %[[VAL_389:.*]] = fir.slice %[[VAL_386]], %[[VAL_388]], %[[VAL_388]], %[[VAL_371]], %[[VAL_368]], %[[VAL_371]] : (i64, index, index, index, index, index) -> !fir.slice<2>
-! CHECK:   br ^bb4(%[[VAL_372]], %[[VAL_381]] : index, i1)
+! CHECK:   br ^bb4(%[[VAL_372]], %[[VAL_369]] : index, i1)
 ! CHECK: ^bb4(%[[VAL_390:.*]]: index, %[[VAL_391:.*]]: i1):
 ! CHECK:   %[[VAL_392:.*]] = arith.cmpi sle, %[[VAL_390]], %[[VAL_373]] : index
 ! CHECK:   %[[VAL_393:.*]] = arith.andi %[[VAL_391]], %[[VAL_392]] : i1
