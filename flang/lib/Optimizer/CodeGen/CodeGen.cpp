@@ -2108,8 +2108,9 @@ struct CoordinateOpConversion
               rewriter.create<mlir::LLVM::BitcastOp>(loc, seqRefTy, addr);
           llvm::SmallVector<mlir::Value> args = {memObj, c0, nxtOpnd};
           cty = seqTy.getType(getFieldNumber(seqTy, nxtOpnd));
+          auto llvmCty = lowerTy().convertType(cty);
           auto gep = rewriter.create<mlir::LLVM::GEPOp>(
-              loc, mlir::LLVM::LLVMPointerType::get(cty), args);
+              loc, mlir::LLVM::LLVMPointerType::get(llvmCty), args);
           addr = rewriter.create<mlir::LLVM::BitcastOp>(loc, voidPtrTy, gep);
         } else {
           fir::emitFatalError(loc, "unexpected type in coordinate_of");
