@@ -891,11 +891,11 @@ genACCUpdateOp(Fortran::lower::AbstractConverter &converter,
   // Prepare the operand segement size attribute and the operands value range.
   SmallVector<mlir::Value, 14> operands;
   SmallVector<int32_t, 7> operandSegments;
+  addOperand(operands, operandSegments, ifCond);
   addOperand(operands, operandSegments, async);
   addOperand(operands, operandSegments, waitDevnum);
   addOperands(operands, operandSegments, waitOperands);
   addOperands(operands, operandSegments, deviceTypeOperands);
-  addOperand(operands, operandSegments, ifCond);
   addOperands(operands, operandSegments, hostOperands);
   addOperands(operands, operandSegments, deviceOperands);
 
