@@ -95,15 +95,9 @@ tools = [
     unresolved='fatal')
 ]
 
-if config.include_flang_new_driver_test:
-   tools.append(ToolSubst('%flang', command=FindTool('flang-new'), unresolved='fatal'))
-   tools.append(ToolSubst('%flang_fc1', command=FindTool('flang-new'),
-    extra_args=['-fc1'], unresolved='fatal'))
-else:
-   tools.append(ToolSubst('%flang', command=FindTool('f18'),
-    unresolved='fatal'))
-   tools.append(ToolSubst('%flang_fc1', command=FindTool('f18'),
-    unresolved='fatal'))
+tools.append(ToolSubst('%flang', command=FindTool('flang-new'), unresolved='fatal'))
+tools.append(ToolSubst('%flang_fc1', command=FindTool('flang-new'),
+ extra_args=['-fc1'], unresolved='fatal'))
 
 # Define some variables to help us test that the flang runtime doesn't depend on
 # the C++ runtime libraries. For this we need a C compiler. If for some reason

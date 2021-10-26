@@ -22,11 +22,6 @@ config.cplusplus_executable = "@CMAKE_CXX_COMPILER@"
 config.macos_sysroot = "@CMAKE_OSX_SYSROOT@"
 config.flang_standalone_build = "@FLANG_STANDALONE_BUILD@"
 
-# Control the regression test for flang-new driver
-import lit.util
-config.include_flang_new_driver_test = \
-    lit.util.pythonize_bool("@FLANG_BUILD_NEW_DRIVER@")
-
 # Support substitution of the tools_dir with user parameters. This is
 # used when we can't determine the tool dir at configuration time.
 try:
