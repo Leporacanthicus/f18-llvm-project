@@ -406,12 +406,38 @@ parseLinearClause(OpAsmParser &parser,
   return success();
 }
 
+static ParseResult
+validateModifiers(OpAsmParser &parser,
+                  SmallVectorImpl<SmallString<12>> &modifiers) {
+  if (modifiers.size() > 2)
+    return parser.emitError(parser.getNameLoc()) << " unexpected modifier(s)";
+  // If we have one modifier that is "simd", then stick a "none" modiifer in
+  // index 0.
+  if (modifiers.size() == 1) {
+    if (modifiers[0] == "simd") {
+      modifiers.push_back(modifiers[0]);
+      modifiers[0] = "none";
+    }
+  } else if (modifiers.size() == 2 &&
+             (modifiers[0] == "simd" ||
+              (modifiers[1] != "simd" && modifiers[1] != "none")))
+    return parser.emitError(parser.getNameLoc()) << " incorrect modifier order";
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
+// Parser and printer for Schedule Clause
+//===----------------------------------------------------------------------===//
+
 /// schedule ::= `schedule` `(` sched-list `)`
-/// sched-list ::= sched-val | sched-val sched-list
-/// sched-val ::= sched-with-chunk | sched-wo-chunk
+/// sched-list ::= sched-val | sched-val sched-list | sched-val `,`
+/// sched-modifier sched-val ::= sched-with-chunk | sched-wo-chunk
 /// sched-with-chunk ::= sched-with-chunk-types (`=` ssa-id-and-type)?
 /// sched-with-chunk-types ::= `static` | `dynamic` | `guided`
 /// sched-wo-chunk ::=  `auto` | `runtime`
+/// sched-modifier ::=  sched-modifier-val | sched-modifier-val `,`
+/// sched-modifier-val sched-modifier ::=  `monotonic` | `nonmonotonic` | `simd`
+/// | `none`
 static ParseResult
 parseScheduleClause(OpAsmParser &parser, SmallString<8> &schedule,
                     SmallVectorImpl<SmallString<12>> &modifiers,
@@ -443,8 +469,15 @@ parseScheduleClause(OpAsmParser &parser, SmallString<8> &schedule,
     StringRef mod;
     if (parser.parseKeyword(&mod))
       return failure();
+    if (mod != "none" && mod != "monotonic" && mod != "nonmonotonic" &&
+        mod != "simd")
+      return parser.emitError(parser.getNameLoc())
+             << " unknown modifier type: " << mod;
     modifiers.push_back(mod);
   }
+
+  if (validateModifiers(parser, modifiers))
+    return failure();
 
   if (parser.parseRParen())
     return failure();
