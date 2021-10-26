@@ -495,7 +495,7 @@ struct FreeMemOpConversion : public FIROpConversion<fir::FreeMemOp> {
         freemem.getLoc(), voidPtrTy(), operands[0]);
     freemem->setAttr("callee", mlir::SymbolRefAttr::get(freeFunc));
     rewriter.create<mlir::LLVM::CallOp>(
-        loc, mlir::LLVM::LLVMVoidType::get(freemem.getContext()),
+        loc, mlir::TypeRange{},
         mlir::ValueRange{bitcast}, freemem->getAttrs());
     rewriter.eraseOp(freemem);
     return success();
