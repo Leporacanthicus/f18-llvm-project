@@ -609,30 +609,12 @@ static ParseResult parseWsLoopOp(OpAsmParser &parser, OperationState &result) {
         return allowedOnce(parser, "linear", opName);
       if (parseLinearClause(parser, linears, linearTypes, linearSteps))
         return failure();
-<<<<<<< HEAD
       segments[linearClausePos] = linears.size();
       segments[linearStepPos] = linearSteps.size();
     } else if (keyword == "schedule") {
       if (!schedule.empty())
         return allowedOnce(parser, "schedule", opName);
-      if (parseScheduleClause(parser, schedule, scheduleChunkSize))
-=======
-      clauseSegments[pos[reductionClause]] = reductionVars.size();
-    } else if (clauseKeyword == "nowait") {
-      if (checkAllowed(nowaitClause))
-        return failure();
-      auto attr = UnitAttr::get(parser.getBuilder().getContext());
-      result.addAttribute("nowait", attr);
-    } else if (clauseKeyword == "linear") {
-      if (checkAllowed(linearClause) ||
-          parseLinearClause(parser, linears, linearTypes, linearSteps))
-        return failure();
-      clauseSegments[pos[linearClause]] = linears.size();
-      clauseSegments[pos[linearClause] + 1] = linearSteps.size();
-    } else if (clauseKeyword == "schedule") {
-      if (checkAllowed(scheduleClause) ||
-          parseScheduleClause(parser, schedule, modifiers, scheduleChunkSize))
->>>>>>> 9eedc8377d49... [mlir][OpenMP]Support for modifiers in workshare loops
+      if (parseScheduleClause(parser, schedule, modifiers, scheduleChunkSize))
         return failure();
       if (scheduleChunkSize) {
         segments[scheduleClausePos] = 1;
@@ -780,7 +762,7 @@ static void printWsLoopOp(OpAsmPrinter &p, WsLoopOp op) {
   }
 
   if (auto sched = op.schedule_val()) {
-    p << "schedule";
+    p << " schedule";
     printScheduleClause(p, sched.getValue(), op.schedule_modifiers(),
                         op.simd_modifier(), op.schedule_chunk_var());
     p << " ";

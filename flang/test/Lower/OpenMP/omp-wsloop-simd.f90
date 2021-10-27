@@ -27,17 +27,15 @@ program wsloop_dynamic
 !FIRDialect:     %[[WS_LB:.*]] = arith.constant 1 : i32
 !FIRDialect:     %[[WS_UB:.*]] = arith.constant 9 : i32
 !FIRDialect:     %[[WS_STEP:.*]] = arith.constant 1 : i32
-!FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(runtime, none, simd) nowait inclusive
+!FIRDialect:     omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB]]) to (%[[WS_UB]]) step (%[[WS_STEP]]) schedule(runtime, simd) nowait inclusive
 
 !LLVMIRDialect-DAG:  %[[WS_UB:.*]] = llvm.mlir.constant(9 : i32) : i32
 !LLVMIRDialect-DAG:  %[[WS_LB_STEP:.*]] = llvm.mlir.constant(1 : i32) : i32
-!LLVMIRDialect:  omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB_STEP]]) to (%[[WS_UB]]) step (%[[WS_LB_STEP]]) schedule(runtime, none, simd) nowait inclusive
+!LLVMIRDialect:  omp.wsloop (%[[I:.*]]) : i32 = (%[[WS_LB_STEP]]) to (%[[WS_UB]]) step (%[[WS_LB_STEP]]) schedule(runtime, simd) nowait inclusive
 
 !LLVMIR:  define internal void @_QQmain..omp_par
 !LLVMIR:  omp.par.entry:
 !LLVMIR:    br label %omp.par.region
-!LLVMIR:  omp.par.outlined.exit.exitStub:                   ; preds = %omp.par.pre_finalize
-!LLVMIR:    ret void
 !LLVMIR:  omp.par.region:                                   ; preds = %omp.par.entry
 !LLVMIR:    br label %omp.par.region1
 !LLVMIR:  omp.par.region1:                                  ; preds = %omp.par.region
