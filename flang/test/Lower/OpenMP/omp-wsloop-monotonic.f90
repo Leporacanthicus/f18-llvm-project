@@ -36,8 +36,6 @@ program wsloop_dynamic
 !LLVMIR:  define internal void @_QQmain..omp_par
 !LLVMIR:  omp.par.entry:
 !LLVMIR:    br label %omp.par.region
-!LLVMIR:  omp.par.outlined.exit.exitStub:                   ; preds = %omp.par.pre_finalize
-!LLVMIR:    ret void
 !LLVMIR:  omp.par.region:                                   ; preds = %omp.par.entry
 !LLVMIR:    br label %omp.par.region1
 !LLVMIR:  omp.par.region1:                                  ; preds = %omp.par.region
