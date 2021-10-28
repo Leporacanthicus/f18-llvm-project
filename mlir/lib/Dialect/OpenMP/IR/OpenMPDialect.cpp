@@ -286,6 +286,12 @@ parseScheduleClause(OpAsmParser &parser, SmallString<8> &schedule,
     modifiers.push_back(mod);
   }
 
+  // Fix up "only simd specified"
+  if (modifiers.size() == 1 && modifiers[0] == "simd") {
+    modifiers[0] = "none";
+    modifiers.push_back(StringRef("simd"));
+  }
+
   if (parser.parseRParen())
     return failure();
 
