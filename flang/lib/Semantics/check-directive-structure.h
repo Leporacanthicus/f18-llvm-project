@@ -72,7 +72,7 @@ public:
       default:
         break;
       }
-      CheckConstructNameBranching("CYCLE");
+//      CheckConstructNameBranching("CYCLE");
     }
   }
 
