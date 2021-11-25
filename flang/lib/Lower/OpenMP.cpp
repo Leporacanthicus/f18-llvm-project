@@ -22,6 +22,7 @@
 #include "flang/Semantics/tools.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
 #include "llvm/Frontend/OpenMP/OMPConstants.h"
+#include "flang/Lower/ConvertExpr.h"
 
 static const Fortran::parser::Name *
 getDesignatorNameIfDataRef(const Fortran::parser::Designator &designator) {
@@ -150,6 +151,7 @@ static void createBodyOfOp(
   // argument. Also update the symbol's address with the mlir argument value.
   // e.g. For loops the argument is the induction variable. And all further
   // uses of the induction variable should use this mlir value.
+  mlir::Operation* storeOp = nullptr;
   if (args.size()) {
     SmallVector<Type> tiv;
     int argIndex = 0;
@@ -159,7 +161,13 @@ static void createBodyOfOp(
     firOpBuilder.createBlock(&op.getRegion(), {}, tiv);
     for (auto &arg : args) {
       fir::ExtendedValue exval = op.getRegion().front().getArgument(argIndex);
-      [[maybe_unused]] bool success = converter.bindSymbol(*arg, exval);
+      auto val = fir::getBase(exval);
+      auto temp = firOpBuilder.createTemporary(
+              loc, val.getType(),
+              llvm::ArrayRef<mlir::NamedAttribute>{
+		      Fortran::lower::getAdaptToByRefAttr(firOpBuilder)});
+      storeOp = firOpBuilder.create<fir::StoreOp>(loc, val, temp);
+      [[maybe_unused]] bool success = converter.bindSymbol(*arg, temp);
       assert(success && "Existing binding prevents setting MLIR value for the "
                         "index variable");
       argIndex++;
@@ -168,7 +176,8 @@ static void createBodyOfOp(
     firOpBuilder.createBlock(&op.getRegion());
   }
   auto &block = op.getRegion().back();
-  firOpBuilder.setInsertionPointToStart(&block);
+  firOpBuilder.setInsertionPointToEnd(&block);
+
   if (eval.lowerAsUnstructured())
     createEmptyRegionBlocks(firOpBuilder, eval.getNestedEvaluations());
   // Ensure the block is well-formed by inserting terminators.
@@ -179,7 +188,10 @@ static void createBodyOfOp(
     firOpBuilder.create<mlir::omp::TerminatorOp>(loc);
   }
   // Reset the insertion point to the start of the first block.
-  firOpBuilder.setInsertionPointToStart(&block);
+  if (storeOp) 
+	  firOpBuilder.setInsertionPointAfter(storeOp);
+  else
+	  firOpBuilder.setInsertionPointToStart(&block);
   if (clauses)
     privatizeVars(converter, *clauses);
 }
