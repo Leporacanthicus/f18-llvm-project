@@ -145,4 +145,13 @@ def LinalgDetensorize : InterfacePass<"linalg-detensorize", "FunctionOpInterface
   ];
 }
 
+def LinalgFlattenVectors : Pass<"linalg-flatten-vectors", "func::FuncOp"> {
+  let summary = "Flatten channel dimension for 1D convolutions";
+  let constructor = "mlir::createLinalgFlattenVectors()";
+  let dependentDialects = [
+    "linalg::LinalgDialect", "memref::MemRefDialect"
+  ];
+}
+
+
 #endif // MLIR_DIALECT_LINALG_PASSES

@@ -65,6 +65,9 @@ std::unique_ptr<Pass> createLinalgGeneralizationPass();
 /// work on primitive types, if possible.
 std::unique_ptr<Pass> createLinalgDetensorizePass();
 
+/// Create a pass to Flatten the dimensions on some vectors.
+std::unique_ptr<Pass> createLinalgFlattenVectors();
+
 //===----------------------------------------------------------------------===//
 // Registration
 //===----------------------------------------------------------------------===//
