@@ -724,6 +724,13 @@ void CodeGenAction::generateLLVMIR() {
   config.LoopVersioning = opts.LoopVersioning;
   config.DebugInfo = opts.getDebugInfo();
 
+  // Only get the vscale range if AArch64.
+  if (triple.isAArch64()) {
+    auto langOpts = ci.getInvocation().getLangOpts();
+    config.VScaleMin = langOpts.VScaleMin;
+    config.VScaleMax = langOpts.VScaleMax;
+  }
+
   // Create the pass pipeline
   fir::createMLIRToLLVMPassPipeline(pm, config);
   (void)mlir::applyPassManagerCLOptions(pm);

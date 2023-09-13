@@ -29,12 +29,16 @@ struct MLIRToLLVMPassPipelineConfig {
     Underscoring = true;
     LoopVersioning = false;
     DebugInfo = llvm::codegenoptions::NoDebugInfo;
+    VScaleMin = 0;
+    VScaleMax = 0;
   }
   llvm::OptimizationLevel OptLevel; ///< optimisation level
   bool StackArrays; ///< convert memory allocations to alloca.
   bool Underscoring; ///< add underscores to function names.
   bool LoopVersioning; ///< Run the version loop pass.
   llvm::codegenoptions::DebugInfoKind DebugInfo; ///< Debug info generation.
+  unsigned VScaleMin; ///< SVE vector range minimum.
+  unsigned VScaleMax; ///< SVE vector range minimum.
 };
 
 struct OffloadModuleOpts {
