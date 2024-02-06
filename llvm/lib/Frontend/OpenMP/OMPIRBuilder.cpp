@@ -2152,17 +2152,14 @@ OpenMPIRBuilder::InsertPointTy OpenMPIRBuilder::createReductions(
   for (auto En : enumerate(ReductionInfos)) {
     const ReductionInfo &RI = En.value();
     Type *ValueType = RI.ElementType;
-    Value *RedValue = Builder.CreateLoad(ValueType, RI.Variable,
-                                         "red.value." + Twine(En.index()));
     Value *PrivateRedValue =
         Builder.CreateLoad(ValueType, RI.PrivateVariable,
                            "red.private.value." + Twine(En.index()));
     Value *Reduced;
-    Builder.restoreIP(
-        RI.ReductionGen(Builder.saveIP(), RedValue, PrivateRedValue, Reduced));
+    Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), RI.Variable,
+                                      PrivateRedValue, Reduced));
     if (!Builder.GetInsertBlock())
       return InsertPointTy();
-    Builder.CreateStore(Reduced, RI.Variable);
   }
   Function *EndReduceFunc = getOrCreateRuntimeFunctionPtr(
       IsNoWait ? RuntimeFunction::OMPRTL___kmpc_end_reduce_nowait
@@ -2212,7 +2209,6 @@ OpenMPIRBuilder::InsertPointTy OpenMPIRBuilder::createReductions(
     Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), LHS, RHS, Reduced));
     if (!Builder.GetInsertBlock())
       return InsertPointTy();
-    Builder.CreateStore(Reduced, LHSPtr);
   }
   Builder.CreateRetVoid();
 
