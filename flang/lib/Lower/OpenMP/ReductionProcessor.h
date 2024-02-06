@@ -14,6 +14,7 @@
 #define FORTRAN_LOWER_REDUCTIONPROCESSOR_H
 
 #include "flang/Optimizer/Builder/FIRBuilder.h"
+#include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Parser/parse-tree.h"
 #include "flang/Semantics/symbol.h"
 #include "flang/Semantics/type.h"
@@ -124,6 +125,7 @@ mlir::Value
 ReductionProcessor::getReductionOperation(fir::FirOpBuilder &builder,
                                           mlir::Type type, mlir::Location loc,
                                           mlir::Value op1, mlir::Value op2) {
+  type = fir::unwrapRefType(type);
   assert(type.isIntOrIndexOrFloat() &&
          "only integer and float types are currently supported");
   if (type.isIntOrIndex())

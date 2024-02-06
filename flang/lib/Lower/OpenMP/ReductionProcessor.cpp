@@ -14,6 +14,7 @@
 
 #include "flang/Lower/AbstractConverter.h"
 #include "flang/Optimizer/Builder/Todo.h"
+#include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Optimizer/HLFIR/HLFIROps.h"
 #include "flang/Parser/tools.h"
 #include "mlir/Dialect/OpenMP/OpenMPDialect.h"
@@ -77,6 +78,7 @@ bool ReductionProcessor::supportedIntrinsicProcReduction(
 
 std::string ReductionProcessor::getReductionName(llvm::StringRef name,
                                                  mlir::Type ty) {
+  ty = fir::unwrapRefType(ty);
   return (llvm::Twine(name) +
           (ty.isIntOrIndex() ? llvm::Twine("_i_") : llvm::Twine("_f_")) +
           llvm::Twine(ty.getIntOrFloatBitWidth()))
@@ -115,6 +117,7 @@ mlir::Value
 ReductionProcessor::getReductionInitValue(mlir::Location loc, mlir::Type type,
                                           ReductionIdentifier redId,
                                           fir::FirOpBuilder &builder) {
+  type = fir::unwrapRefType(type);
   assert((fir::isa_integer(type) || fir::isa_real(type) ||
           type.isa<fir::LogicalType>()) &&
          "only integer, logical and real types are currently supported");
@@ -278,6 +281,7 @@ mlir::omp::ReductionDeclareOp ReductionProcessor::createReductionDecl(
     return decl;
 
   mlir::OpBuilder modBuilder(module.getBodyRegion());
+  mlir::Type valTy = fir::unwrapRefType(type);
 
   decl = modBuilder.create<mlir::omp::ReductionDeclareOp>(loc, reductionOpName,
                                                           type);
@@ -285,7 +289,9 @@ mlir::omp::ReductionDeclareOp ReductionProcessor::createReductionDecl(
                       decl.getInitializerRegion().end(), {type}, {loc});
   builder.setInsertionPointToEnd(&decl.getInitializerRegion().back());
   mlir::Value init = getReductionInitValue(loc, type, redId, builder);
-  builder.create<mlir::omp::YieldOp>(loc, init);
+  mlir::Value alloca = builder.create<fir::AllocaOp>(loc, valTy);
+  builder.createStoreWithConvert(loc, init, alloca);
+  builder.create<mlir::omp::YieldOp>(loc, alloca);
 
   builder.createBlock(&decl.getReductionRegion(),
                       decl.getReductionRegion().end(), {type, type},
@@ -294,10 +300,15 @@ mlir::omp::ReductionDeclareOp ReductionProcessor::createReductionDecl(
   builder.setInsertionPointToEnd(&decl.getReductionRegion().back());
   mlir::Value op1 = decl.getReductionRegion().front().getArgument(0);
   mlir::Value op2 = decl.getReductionRegion().front().getArgument(1);
+  mlir::Value outAddr = op1;
+
+  op1 = builder.loadIfRef(loc, op1);
+  op2 = builder.loadIfRef(loc, op2);
 
   mlir::Value reductionOp =
       createScalarCombiner(builder, loc, redId, type, op1, op2);
-  builder.create<mlir::omp::YieldOp>(loc, reductionOp);
+  builder.create<fir::StoreOp>(loc, reductionOp, outAddr);
+  builder.create<mlir::omp::YieldOp>(loc, outAddr);
 
   return decl;
 }
@@ -343,15 +354,14 @@ void ReductionProcessor::addReductionDecl(
           mlir::Value symVal = converter.getSymbolAddress(*symbol);
           if (auto declOp = symVal.getDefiningOp<hlfir::DeclareOp>())
             symVal = declOp.getBase();
-          mlir::Type redType =
-              symVal.getType().cast<fir::ReferenceType>().getEleTy();
+          auto redType = symVal.getType().cast<fir::ReferenceType>();
           reductionVars.push_back(symVal);
-          if (redType.isa<fir::LogicalType>())
+          if (redType.getEleTy().isa<fir::LogicalType>())
             decl = createReductionDecl(
                 firOpBuilder,
                 getReductionName(intrinsicOp, firOpBuilder.getI1Type()), redId,
                 redType, currentLocation);
-          else if (redType.isIntOrIndexOrFloat()) {
+          else if (redType.getEleTy().isIntOrIndexOrFloat()) {
             decl = createReductionDecl(firOpBuilder,
                                        getReductionName(intrinsicOp, redType),
                                        redId, redType, currentLocation);
@@ -379,10 +389,9 @@ void ReductionProcessor::addReductionDecl(
             mlir::Value symVal = converter.getSymbolAddress(*symbol);
             if (auto declOp = symVal.getDefiningOp<hlfir::DeclareOp>())
               symVal = declOp.getBase();
-            mlir::Type redType =
-                symVal.getType().cast<fir::ReferenceType>().getEleTy();
+            auto redType = symVal.getType().cast<fir::ReferenceType>();
             reductionVars.push_back(symVal);
-            assert(redType.isIntOrIndexOrFloat() &&
+            assert(redType.getEleTy().isIntOrIndexOrFloat() &&
                    "Unsupported reduction type");
             decl = createReductionDecl(
                 firOpBuilder,
