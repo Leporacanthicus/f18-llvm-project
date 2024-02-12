@@ -21,6 +21,7 @@
 #include "flang/Lower/SymbolMap.h"
 #include "flang/Optimizer/Builder/BoxValue.h"
 #include "flang/Optimizer/Builder/FIRBuilder.h"
+#include "flang/Optimizer/Builder/HLFIRTools.h"
 #include "flang/Optimizer/Builder/Todo.h"
 #include "flang/Optimizer/Dialect/FIRType.h"
 #include "flang/Optimizer/HLFIR/HLFIROps.h"
@@ -816,11 +817,46 @@ public:
   }
 
   static std::string getReductionName(llvm::StringRef name, mlir::Type ty) {
+    // TODO: if we ever let value and by-ref reductions co-exist, they need
+    // different names
     ty = fir::unwrapRefType(ty);
-    return (llvm::Twine(name) +
-            (ty.isIntOrIndex() ? llvm::Twine("_i_") : llvm::Twine("_f_")) +
-            llvm::Twine(ty.getIntOrFloatBitWidth()))
-        .str();
+    if (fir::isa_trivial(ty))
+      return (llvm::Twine(name) +
+              (ty.isIntOrIndex() ? llvm::Twine("_i_") : llvm::Twine("_f_")) +
+              llvm::Twine(ty.getIntOrFloatBitWidth()))
+          .str();
+
+    // creates a name like reduction_i_64_box_ux4x3
+    if (auto boxTy = mlir::dyn_cast_or_null<fir::BaseBoxType>(ty)) {
+      // TODO: support for allocatable boxes:
+      // !fir.box<!fir.heap<!fir.array<...>>>
+      fir::SequenceType seqTy = fir::unwrapRefType(boxTy.getEleTy())
+                                    .dyn_cast_or_null<fir::SequenceType>();
+      assert(seqTy && "Only boxes of arrays are supported");
+      if (!seqTy)
+        return {};
+
+      std::string prefix =
+          getReductionName(name, fir::unwrapSeqOrBoxedSeqType(ty));
+      if (prefix.empty())
+        return {};
+      std::stringstream tyStr;
+      tyStr << prefix << "_box_";
+      bool first = true;
+      for (std::int64_t extent : seqTy.getShape()) {
+        if (first)
+          first = false;
+        else
+          tyStr << "x";
+        if (extent == seqTy.getUnknownExtent())
+          tyStr << 'u'; // I'm not sure that '?' is safe in symbol names
+        else
+          tyStr << extent;
+      }
+      return tyStr.str();
+    }
+
+    return {};
   }
 
   static std::string getReductionName(
@@ -1042,15 +1078,157 @@ public:
     return reductionOp;
   }
 
+  /// Create reduction combiner region for reduction variables which are boxed
+  /// arrays
+  static void genBoxCombiner(fir::FirOpBuilder &builder, mlir::Location loc,
+                             ReductionIdentifier redId, fir::BaseBoxType boxTy,
+                             mlir::Value lhs, mlir::Value rhs) {
+    fir::SequenceType seqTy =
+        mlir::dyn_cast_or_null<fir::SequenceType>(boxTy.getEleTy());
+    // TODO: support allocatable arrays: !fir.box<!fir.heap<!fir.array<...>>>
+    if (!seqTy || seqTy.hasUnknownShape())
+      TODO(loc, "Unsupported boxed type in OpenMP reduction");
+
+    // load fir.ref<fir.box<...>>
+    mlir::Value lhsAddr = lhs;
+    lhs = builder.create<fir::LoadOp>(loc, lhs);
+    rhs = builder.create<fir::LoadOp>(loc, rhs);
+
+    const unsigned rank = seqTy.getDimension();
+    llvm::SmallVector<mlir::Value> extents;
+    extents.reserve(rank);
+    llvm::SmallVector<mlir::Value> lbAndExtents;
+    lbAndExtents.reserve(rank * 2);
+
+    // Get box lowerbounds and extents:
+    mlir::Type idxTy = builder.getIndexType();
+    for (unsigned i = 0; i < rank; ++i) {
+      // TODO: ideally we want to hoist box reads out of the critical section.
+      // We could do this by having box dimensions in block arguments like
+      // OpenACC does
+      mlir::Value dim = builder.createIntegerConstant(loc, idxTy, i);
+      auto dimInfo =
+          builder.create<fir::BoxDimsOp>(loc, idxTy, idxTy, idxTy, lhs, dim);
+      extents.push_back(dimInfo.getExtent());
+      lbAndExtents.push_back(dimInfo.getLowerBound());
+      lbAndExtents.push_back(dimInfo.getExtent());
+    }
+
+    auto shapeShiftTy = fir::ShapeShiftType::get(builder.getContext(), rank);
+    auto shapeShift =
+        builder.create<fir::ShapeShiftOp>(loc, shapeShiftTy, lbAndExtents);
+
+    // Iterate over array elements, applying the equivalent scalar reduction:
+
+    // A hlfir::elemental here gets inlined with a temporary so create the
+    // loop nest directly.
+    // This function already controls all of the code in this region so we
+    // know this won't miss any opportuinties for clever elemental inlining
+    hlfir::LoopNest nest =
+        hlfir::genLoopNest(loc, builder, extents, /*isUnordered=*/true);
+    builder.setInsertionPointToStart(nest.innerLoop.getBody());
+    mlir::Type refTy = fir::ReferenceType::get(seqTy.getEleTy());
+    auto lhsEleAddr = builder.create<fir::ArrayCoorOp>(
+        loc, refTy, lhs, shapeShift, /*slice=*/mlir::Value{},
+        nest.oneBasedIndices, /*typeparms=*/mlir::ValueRange{});
+    auto rhsEleAddr = builder.create<fir::ArrayCoorOp>(
+        loc, refTy, rhs, shapeShift, /*slice=*/mlir::Value{},
+        nest.oneBasedIndices, /*typeparms=*/mlir::ValueRange{});
+    auto lhsEle = builder.create<fir::LoadOp>(loc, lhsEleAddr);
+    auto rhsEle = builder.create<fir::LoadOp>(loc, rhsEleAddr);
+    mlir::Value scalarReduction =
+        createScalarCombiner(builder, loc, redId, refTy, lhsEle, rhsEle);
+    builder.create<fir::StoreOp>(loc, scalarReduction, lhsEleAddr);
+
+    builder.setInsertionPointAfter(nest.outerLoop);
+    builder.create<mlir::omp::YieldOp>(loc, lhsAddr);
+  }
+
+  // generate combiner region for reduction operations
+  static void genCombiner(fir::FirOpBuilder &builder, mlir::Location loc,
+                          ReductionIdentifier redId, mlir::Type ty,
+                          mlir::Value lhs, mlir::Value rhs) {
+    ty = fir::unwrapRefType(ty);
+
+    if (fir::isa_trivial(ty)) {
+      mlir::Value lhsLoaded = builder.loadIfRef(loc, lhs);
+      mlir::Value rhsLoaded = builder.loadIfRef(loc, rhs);
+
+      mlir::Value result =
+          createScalarCombiner(builder, loc, redId, ty, lhsLoaded, rhsLoaded);
+      builder.create<fir::StoreOp>(loc, result, lhs);
+      builder.create<mlir::omp::YieldOp>(loc, lhs);
+      return;
+    }
+    // all arrays should have been boxed
+    if (auto boxTy = mlir::dyn_cast<fir::BaseBoxType>(ty)) {
+      genBoxCombiner(builder, loc, redId, boxTy, lhs, rhs);
+      return;
+    }
+
+    TODO(loc, "OpenMP genCombiner for unsupported reduction variable type");
+  }
+
+  static mlir::Value createReductionInitRegion(fir::FirOpBuilder &builder,
+                                               mlir::Location loc,
+                                               const ReductionIdentifier redId,
+                                               mlir::Type type) {
+    mlir::Type ty = fir::unwrapRefType(type);
+    mlir::Value initValue = getReductionInitValue(
+        loc, fir::unwrapSeqOrBoxedSeqType(ty), redId, builder);
+
+    if (fir::isa_trivial(ty)) {
+      mlir::Value alloca = builder.create<fir::AllocaOp>(loc, ty);
+      builder.createStoreWithConvert(loc, initValue, alloca);
+      return alloca;
+    }
+
+    // all arrays are boxed
+    if (auto boxTy = mlir::dyn_cast_or_null<fir::BaseBoxType>(ty)) {
+      // TODO: support allocatable arrays: !fir.box<!fir.heap<!fir.array<...>>>
+      mlir::Type innerTy = fir::extractSequenceType(boxTy);
+      if (!mlir::isa<fir::SequenceType>(innerTy))
+        TODO(loc, "Unsupported boxed type for reduction");
+      // Create the private copy from the initial fir.box:
+      hlfir::Entity source = hlfir::Entity{builder.getBlock()->getArgument(0)};
+
+      // from hlfir::createTempFromMold() but with the allocation changed to
+      // use alloca so that we don't have to free it
+      assert(source.isArray());
+      mlir::Type sequenceType =
+          hlfir::getFortranElementOrSequenceType(source.getType());
+      const char *tmpName = "omp.reduction.array.init";
+      mlir::Value shape = hlfir::genShape(loc, builder, source);
+      auto extents = hlfir::getIndexExtents(loc, builder, shape);
+      mlir::Value alloc = builder.createTemporary(loc, sequenceType, tmpName,
+                                                  extents, /*lenParams=*/{});
+      auto declareOp =
+          builder.create<hlfir::DeclareOp>(loc, alloc, tmpName, shape);
+      hlfir::Entity temp = hlfir::Entity{declareOp.getBase()};
+
+      // Put the temporary inside of a box:
+      hlfir::Entity box = hlfir::genVariableBox(loc, builder, temp);
+      builder.create<hlfir::AssignOp>(loc, initValue, box);
+      mlir::Value boxAlloca = builder.create<fir::AllocaOp>(loc, ty);
+      builder.create<fir::StoreOp>(loc, box, boxAlloca);
+      return boxAlloca;
+    }
+
+    TODO(loc, "createReductionInitRegion for unsupported type");
+  }
+
   /// Creates an OpenMP reduction declaration and inserts it into the provided
   /// symbol table. The declaration has a constant initializer with the neutral
   /// value `initValue`, and the reduction combiner carried over from `reduce`.
-  /// TODO: Generalize this for non-integer types, add atomic region.
+  /// TODO: add atomic region.
   static mlir::omp::ReductionDeclareOp createReductionDecl(
       fir::FirOpBuilder &builder, llvm::StringRef reductionOpName,
       const ReductionIdentifier redId, mlir::Type type, mlir::Location loc) {
     mlir::OpBuilder::InsertionGuard guard(builder);
     mlir::ModuleOp module = builder.getModule();
+
+    if (reductionOpName.empty())
+      TODO(loc, "Unsupported reduction type");
 
     auto decl =
         module.lookupSymbol<mlir::omp::ReductionDeclareOp>(reductionOpName);
@@ -1058,17 +1236,14 @@ public:
       return decl;
 
     mlir::OpBuilder modBuilder(module.getBodyRegion());
-    mlir::Type valTy = fir::unwrapRefType(type);
 
     decl = modBuilder.create<mlir::omp::ReductionDeclareOp>(
         loc, reductionOpName, type);
     builder.createBlock(&decl.getInitializerRegion(),
                         decl.getInitializerRegion().end(), {type}, {loc});
     builder.setInsertionPointToEnd(&decl.getInitializerRegion().back());
-    mlir::Value init = getReductionInitValue(loc, type, redId, builder);
-    mlir::Value alloca = builder.create<fir::AllocaOp>(loc, valTy);
-    builder.createStoreWithConvert(loc, init, alloca);
-    builder.create<mlir::omp::YieldOp>(loc, alloca);
+    mlir::Value alloc = createReductionInitRegion(builder, loc, redId, type);
+    builder.create<mlir::omp::YieldOp>(loc, alloc);
 
     builder.createBlock(&decl.getReductionRegion(),
                         decl.getReductionRegion().end(), {type, type},
@@ -1077,15 +1252,7 @@ public:
     builder.setInsertionPointToEnd(&decl.getReductionRegion().back());
     mlir::Value op1 = decl.getReductionRegion().front().getArgument(0);
     mlir::Value op2 = decl.getReductionRegion().front().getArgument(1);
-    mlir::Value outAddr = op1;
-
-    op1 = builder.loadIfRef(loc, op1);
-    op2 = builder.loadIfRef(loc, op2);
-
-    mlir::Value reductionOp =
-        createScalarCombiner(builder, loc, redId, type, op1, op2);
-    builder.create<fir::StoreOp>(loc, reductionOp, outAddr);
-    builder.create<mlir::omp::YieldOp>(loc, outAddr);
+    genCombiner(builder, loc, redId, type, op1, op2);
 
     return decl;
   }
@@ -1125,6 +1292,7 @@ public:
              "Reduction of some intrinsic operators is not supported");
         break;
       }
+      fir::FirOpBuilder &builder = converter.getFirOpBuilder();
       for (const Fortran::parser::OmpObject &ompObject : objectList.v) {
         if (const auto *name{
                 Fortran::parser::Unwrap<Fortran::parser::Name>(ompObject)}) {
@@ -1132,23 +1300,37 @@ public:
             if (reductionSymbols)
               reductionSymbols->push_back(symbol);
             mlir::Value symVal = converter.getSymbolAddress(*symbol);
-            if (auto declOp = symVal.getDefiningOp<hlfir::DeclareOp>())
+            auto redType = symVal.getType().cast<fir::ReferenceType>();
+
+            // all arrays must be boxed so that we have convenient access to
+            // all the information needed to iterate over the array
+            if (mlir::isa<fir::SequenceType>(redType.getEleTy())) {
+              hlfir::Entity entity{symVal};
+              entity = genVariableBox(currentLocation, builder, entity);
+              mlir::Value box = entity.getBase();
+
+              // Always pass the box by reference so that the OpenMP dialect
+              // doesn't need to know anything about fir.box
+              auto alloca =
+                  builder.create<fir::AllocaOp>(currentLocation, box.getType());
+              builder.create<fir::StoreOp>(currentLocation, box, alloca);
+
+              symVal = alloca;
+              redType = alloca.getType().cast<fir::ReferenceType>();
+            } else if (auto declOp = symVal.getDefiningOp<hlfir::DeclareOp>()) {
               symVal = declOp.getBase();
-            auto redType =
-                symVal.getType().cast<fir::ReferenceType>();
+            }
+
             reductionVars.push_back(symVal);
             if (redType.getEleTy().isa<fir::LogicalType>())
               decl = createReductionDecl(
                   firOpBuilder,
                   getReductionName(intrinsicOp, firOpBuilder.getI1Type()),
                   redId, redType, currentLocation);
-            else if (redType.getEleTy().isIntOrIndexOrFloat()) {
+            else
               decl = createReductionDecl(firOpBuilder,
                                          getReductionName(intrinsicOp, redType),
                                          redId, redType, currentLocation);
-            } else {
-              TODO(currentLocation, "Reduction of some types is not supported");
-            }
             reductionDeclSymbols.push_back(mlir::SymbolRefAttr::get(
                 firOpBuilder.getContext(), decl.getSymName()));
           }
@@ -1173,6 +1355,7 @@ public:
               auto redType =
                   symVal.getType().cast<fir::ReferenceType>();
               reductionVars.push_back(symVal);
+              // TODO: array reductions
               assert(redType.getEleTy().isIntOrIndexOrFloat() &&
                      "Unsupported reduction type");
               decl = createReductionDecl(
