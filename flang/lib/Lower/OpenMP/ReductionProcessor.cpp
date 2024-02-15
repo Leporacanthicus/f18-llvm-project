@@ -191,6 +191,7 @@ mlir::Value ReductionProcessor::createScalarCombiner(
     fir::FirOpBuilder &builder, mlir::Location loc, ReductionIdentifier redId,
     mlir::Type type, mlir::Value op1, mlir::Value op2) {
   mlir::Value reductionOp;
+  type = fir::unwrapRefType(type);
   switch (redId) {
   case ReductionIdentifier::MAX:
     reductionOp =
