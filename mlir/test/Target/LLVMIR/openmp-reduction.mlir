@@ -130,8 +130,8 @@ llvm.func @reuse_declaration(%lb : i64, %ub : i64, %step : i64) {
 
 // Private reduction variable and its initialization.
 // CHECK: %[[PRIVATE1:.+]] = alloca float
-// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 0.000000e+00, ptr %[[PRIVATE1]]
+// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 0.000000e+00, ptr %[[PRIVATE2]]
 
 // Call to the reduction function.
@@ -217,8 +217,8 @@ llvm.func @missing_omp_reduction(%lb : i64, %ub : i64, %step : i64) {
 
 // Private reduction variable and its initialization.
 // CHECK: %[[PRIVATE1:.+]] = alloca float
-// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 0.000000e+00, ptr %[[PRIVATE1]]
+// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 0.000000e+00, ptr %[[PRIVATE2]]
 
 // Call to the reduction function.
@@ -399,8 +399,8 @@ llvm.func @no_atomic(%lb : i64, %ub : i64, %step : i64) {
 
 // Private reduction variable and its initialization.
 // CHECK: %[[PRIVATE1:.+]] = alloca float
-// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 0.000000e+00, ptr %[[PRIVATE1]]
+// CHECK: %[[PRIVATE2:.+]] = alloca float
 // CHECK: store float 1.000000e+00, ptr %[[PRIVATE2]]
 
 // Call to the reduction function.

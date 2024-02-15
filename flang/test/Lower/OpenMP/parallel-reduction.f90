@@ -1,14 +1,19 @@
 ! RUN: bbc -emit-hlfir -fopenmp -o - %s 2>&1 | FileCheck %s
 ! RUN: %flang_fc1 -emit-hlfir -fopenmp -o - %s 2>&1 | FileCheck %s
 
-!CHECK:  omp.reduction.declare @[[REDUCTION_DECLARE:[_a-z0-9]+]] : i32 init {
-!CHECK:  ^bb0(%{{.*}}: i32):
+!CHECK:  omp.reduction.declare @[[REDUCTION_DECLARE:[_a-z0-9]+]] : !fir.ref<i32> init {
+!CHECK:  ^bb0(%{{.*}}: !fir.ref<i32>):
 !CHECK:    %[[I0:[_a-z0-9]+]] = arith.constant 0 : i32
-!CHECK:    omp.yield(%[[I0]] : i32)
+!CHECK:  %[[REF:.*]] = fir.alloca i32
+!CHECKL  fir.store [[%I0]] to %[[REF]] : !fir.ref<i32>
+!CHECK:    omp.yield(%[[REF]] : !fir.ref<i32>)
 !CHECK:  } combiner {
-!CHECK:  ^bb0(%[[C0:[_a-z0-9]+]]: i32, %[[C1:[_a-z0-9]+]]: i32):
-!CHECK:    %[[CR:[_a-z0-9]+]] = arith.addi %[[C0]], %[[C1]] : i32
-!CHECK:    omp.yield(%[[CR]] : i32)
+!CHECK:  ^bb0(%[[C0:[_a-z0-9]+]]: !fir.ref<i32>, %[[C1:[_a-z0-9]+]]: !fir.ref<i32>):
+!CHECK:    %[[LD0:.*]] = fir.load %[[C0]] : !fir.ref<i32>
+!CHECK:    %[[LD1:.*]] = fir.load %[[C1]] : !fir.ref<i32>
+!CHECK:    %[[CR:[_a-z0-9]+]] = arith.addi %[[LD0]], %[[LD1]] : i32
+!CHECK:    fir.store %[[CR]] to %[[C0]] : !fir.ref<i32>
+!CHECK:    omp.yield(%[[C0]] : !fir.ref<i32>)
 !CHECK:  }
 !CHECK:  func.func @_QQmain() attributes {fir.bindc_name = "mn"} {
 !CHECK:    %[[RED_ACCUM_REF:[_a-z0-9]+]] = fir.alloca i32 {bindc_name = "i", uniq_name = "_QFEi"}

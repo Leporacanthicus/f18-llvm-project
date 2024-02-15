@@ -1,13 +1,21 @@
 ! RUN: bbc -emit-hlfir -fopenmp %s -o - | FileCheck %s
 ! RUN: %flang_fc1 -emit-hlfir -fopenmp %s -o - | FileCheck %s
 
-!CHECK: omp.reduction.declare @[[IEOR_DECLARE_I:.*]] : i32 init {
-!CHECK: %[[ZERO_VAL_I:.*]] = arith.constant 0 : i32
-!CHECK: omp.yield(%[[ZERO_VAL_I]] : i32)
-!CHECK: combiner
-!CHECK: ^bb0(%[[ARG0_I:.*]]: i32, %[[ARG1_I:.*]]: i32):
-!CHECK: %[[IEOR_VAL_I:.*]] = arith.xori %[[ARG0_I]], %[[ARG1_I]] : i32
-!CHECK: omp.yield(%[[IEOR_VAL_I]] : i32)
+! CHECK-LABEL:   omp.reduction.declare @ieor_i_32 : !fir.ref<i32> init {
+! CHECK:         ^bb0(%[[VAL_0:.*]]: !fir.ref<i32>):
+! CHECK:            %[[C0_1:.*]] = arith.constant 0 : i32
+! CHECK:            %[[REF:.*]] = fir.alloca i32
+! CHECK:            fir.store %[[C0_1]] to %[[REF]] : !fir.ref<i32>
+! CHECK:            omp.yield(%[[REF]] : !fir.ref<i32>)
+
+! CHECK-LABEL:   } combiner {
+! CHECK:         ^bb0(%[[ARG0:.*]]: !fir.ref<i32>, %[[ARG1:.*]]: !fir.ref<i32>):
+! CHECK:           %[[LD0:.*]] = fir.load %[[ARG0]] : !fir.ref<i32>
+! CHECK:           %[[LD1:.*]] = fir.load %[[ARG1]] : !fir.ref<i32>
+! CHECK:           %[[RES:.*]] = arith.xori %[[LD0]], %[[LD1]] : i32
+! CHECK:           fir.store %[[RES]] to %[[ARG0]] : !fir.ref<i32>
+! CHECK:           omp.yield(%[[ARG0]] : !fir.ref<i32>)
+! CHECK:         }
 
 !CHECK-LABEL: @_QPreduction_ieor
 !CHECK-SAME: %[[Y_BOX:.*]]: !fir.box<!fir.array<?xi32>>
@@ -19,7 +27,7 @@
 !CHECK: omp.parallel
 !CHECK: %[[I_REF:.*]] = fir.alloca i32 {adapt.valuebyref, pinned}
 !CHECK: %[[I_DECL:.*]]:2 = hlfir.declare %[[I_REF]] {uniq_name = "_QFreduction_ieorEi"} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
-!CHECK: omp.wsloop reduction(@[[IEOR_DECLARE_I]] %[[X_DECL]]#0 -> %[[PRV:.+]] : !fir.ref<i32>) for
+!CHECK: omp.wsloop reduction(@ieor_i_32 %[[X_DECL]]#0 -> %[[PRV:.+]] : !fir.ref<i32>) for
 !CHECK: fir.store %{{.*}} to %[[I_DECL]]#1 : !fir.ref<i32>
 !CHECK: %[[PRV_DECL:.+]]:2 = hlfir.declare %[[PRV]] {{.*}} : (!fir.ref<i32>) -> (!fir.ref<i32>, !fir.ref<i32>)
 !CHECK: %[[I_32:.*]] = fir.load %[[I_DECL]]#0 : !fir.ref<i32>
