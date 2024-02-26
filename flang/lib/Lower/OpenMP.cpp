@@ -1063,6 +1063,7 @@ public:
 
     decl = modBuilder.create<mlir::omp::ReductionDeclareOp>(
         loc, reductionOpName, type);
+    decl->setAttr("omp_byref", builder.getUnitAttr());
     builder.createBlock(&decl.getInitializerRegion(),
                         decl.getInitializerRegion().end(), {type}, {loc});
     builder.setInsertionPointToEnd(&decl.getInitializerRegion().back());
@@ -2639,7 +2640,7 @@ genParallelOp(Fortran::lower::AbstractConverter &converter,
     return reductionSymbols;
   };
 
-  return genOpWithBody<mlir::omp::ParallelOp>(
+  auto resultOp = genOpWithBody<mlir::omp::ParallelOp>(
       OpWithBodyGenInfo(converter, semaCtx, currentLocation, eval)
           .setGenNested(genNested)
           .setOuterCombined(outerCombined)
@@ -2654,6 +2655,8 @@ genParallelOp(Fortran::lower::AbstractConverter &converter,
           : mlir::ArrayAttr::get(converter.getFirOpBuilder().getContext(),
                                  reductionDeclSymbols),
       procBindKindAttr);
+  resultOp->setAttr("omp_byref", converter.getFirOpBuilder().getUnitAttr());
+  return resultOp;
 }
 
 static mlir::omp::SectionOp

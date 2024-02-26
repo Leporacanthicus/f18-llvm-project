@@ -999,4 +999,22 @@ def LLVM_TargetFeaturesAttr : LLVM_Attr<"TargetFeatures", "target_features">
   let genVerifyDecl = 1;
 }
 
+def LLVM_OMPByRefAttr : LLVM_Attr<"OMPByRef", "omp_byref"> {
+  let builders = [
+    AttrBuilder<(ins), [{
+      return $_get($_ctxt, UnitAttr::get($_ctxt));
+    }]>
+  ];
+
+  let summary = "LLVM dialect OpenMP by refence indication";
+
+  let description = [{
+    When this unit attribute is attached to an OpenMP operation, the
+    operation arguments are by reference - in other words, the address of
+    the data rather than the value of the data. When not present, it is
+    assumed to be by value, so not the address of the data.
+  }];
+}
+
+
 #endif // LLVMIR_ATTRDEFS

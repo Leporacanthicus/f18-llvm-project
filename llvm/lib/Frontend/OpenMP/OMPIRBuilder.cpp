@@ -2065,7 +2065,7 @@ Function *getFreshReductionFunc(Module &M) {
 
 OpenMPIRBuilder::InsertPointTy OpenMPIRBuilder::createReductions(
     const LocationDescription &Loc, InsertPointTy AllocaIP,
-    ArrayRef<ReductionInfo> ReductionInfos, bool IsNoWait) {
+    ArrayRef<ReductionInfo> ReductionInfos, bool IsNoWait, bool IsByRef) {
   for (const ReductionInfo &RI : ReductionInfos) {
     (void)RI;
     assert(RI.Variable && "expected non-null variable");
@@ -2152,14 +2152,30 @@ OpenMPIRBuilder::InsertPointTy OpenMPIRBuilder::createReductions(
   for (auto En : enumerate(ReductionInfos)) {
     const ReductionInfo &RI = En.value();
     Type *ValueType = RI.ElementType;
-    Value *PrivateRedValue =
-        Builder.CreateLoad(ValueType, RI.PrivateVariable,
-                           "red.private.value." + Twine(En.index()));
+
     Value *Reduced;
-    Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), RI.Variable,
-                                      PrivateRedValue, Reduced));
+    if (IsByRef) {
+      // We have one less load, because the code generated elsewhere
+      // has that extra load.
+      Value *PrivateRedValue =
+          Builder.CreateLoad(ValueType, RI.PrivateVariable,
+                             "red.private.value." + Twine(En.index()));
+      Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), RI.Variable,
+                                        PrivateRedValue, Reduced));
+    } else {
+      Value *RedValue = Builder.CreateLoad(ValueType, RI.Variable,
+                                           "red.value." + Twine(En.index()));
+      Value *PrivateRedValue =
+          Builder.CreateLoad(ValueType, RI.PrivateVariable,
+                             "red.private.value." + Twine(En.index()));
+      Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), RedValue,
+                                        PrivateRedValue, Reduced));
+    }
     if (!Builder.GetInsertBlock())
       return InsertPointTy();
+    if (!IsByRef) {
+      Builder.CreateStore(Reduced, RI.Variable);
+    }
   }
   Function *EndReduceFunc = getOrCreateRuntimeFunctionPtr(
       IsNoWait ? RuntimeFunction::OMPRTL___kmpc_end_reduce_nowait
@@ -2194,17 +2210,33 @@ OpenMPIRBuilder::InsertPointTy OpenMPIRBuilder::createReductions(
 
   for (auto En : enumerate(ReductionInfos)) {
     const ReductionInfo &RI = En.value();
-    Value *LHSI8PtrPtr = Builder.CreateConstInBoundsGEP2_64(
-        RedArrayTy, LHSArrayPtr, 0, En.index());
-    Value *LHSI8Ptr = Builder.CreateLoad(Builder.getPtrTy(), LHSI8PtrPtr);
-    Value *LHSPtr = Builder.CreateBitCast(LHSI8Ptr, RI.Variable->getType());
-    Value *LHS = Builder.CreateLoad(RI.ElementType, LHSPtr);
-    Value *RHSI8PtrPtr = Builder.CreateConstInBoundsGEP2_64(
-        RedArrayTy, RHSArrayPtr, 0, En.index());
-    Value *RHSI8Ptr = Builder.CreateLoad(Builder.getPtrTy(), RHSI8PtrPtr);
-    Value *RHSPtr =
-        Builder.CreateBitCast(RHSI8Ptr, RI.PrivateVariable->getType());
-    Value *RHS = Builder.CreateLoad(RI.ElementType, RHSPtr);
+    Value *LHS;
+    Value *RHS;
+    if (IsByRef) {
+      Value *LHSI8Ptr = Builder.CreateConstInBoundsGEP2_64(
+          RedArrayTy, LHSArrayPtr, 0, En.index());
+      Value *LHSPtr = Builder.CreateBitCast(LHSI8Ptr, RI.Variable->getType());
+      LHS = Builder.CreateLoad(RI.ElementType, LHSPtr);
+      Value *RHSI8Ptr = Builder.CreateConstInBoundsGEP2_64(
+          RedArrayTy, RHSArrayPtr, 0, En.index());
+      Value *RHSPtr =
+          Builder.CreateBitCast(RHSI8Ptr, RI.PrivateVariable->getType());
+      RHS = Builder.CreateLoad(RI.ElementType, RHSPtr);
+    } else {
+      Value *LHSI8PtrPtr = Builder.CreateConstInBoundsGEP2_64(
+          RedArrayTy, LHSArrayPtr, 0, En.index());
+      Value *LHSI8Ptr = Builder.CreateLoad(Builder.getPtrTy(), LHSI8PtrPtr);
+      Value *LHSPtr = Builder.CreateBitCast(LHSI8Ptr, RI.Variable->getType());
+      LHS = Builder.CreateLoad(RI.ElementType, LHSPtr);
+
+      Value *RHSI8PtrPtr = Builder.CreateConstInBoundsGEP2_64(
+          RedArrayTy, RHSArrayPtr, 0, En.index());
+      Value *RHSI8Ptr = Builder.CreateLoad(Builder.getPtrTy(), RHSI8PtrPtr);
+      Value *RHSPtr =
+          Builder.CreateBitCast(RHSI8Ptr, RI.PrivateVariable->getType());
+      RHS = Builder.CreateLoad(RI.ElementType, RHSPtr);
+    }
+
     Value *Reduced;
     Builder.restoreIP(RI.ReductionGen(Builder.saveIP(), LHS, RHS, Reduced));
     if (!Builder.GetInsertBlock())

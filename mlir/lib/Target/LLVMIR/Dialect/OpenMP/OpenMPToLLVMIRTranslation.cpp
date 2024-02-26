@@ -873,8 +873,13 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
     builder.CreateStore(phis[0], var);
 
     privateReductionVariables.push_back(var);
-    moduleTranslation.mapValue(reductionArgs[i], phis[0]);
-    reductionVariableMap.try_emplace(loop.getReductionVars()[i], phis[0]);
+    if (loop->hasAttr("omp_byref")) {
+      moduleTranslation.mapValue(reductionArgs[i], phis[0]);
+      reductionVariableMap.try_emplace(loop.getReductionVars()[i], phis[0]);
+    } else {
+      moduleTranslation.mapValue(reductionArgs[i], var);
+      reductionVariableMap.try_emplace(loop.getReductionVars()[i], var);
+    }
   }
 
   // Store the mapping between reduction variables and their private copies on
@@ -986,7 +991,8 @@ convertOmpWsLoop(Operation &opInst, llvm::IRBuilderBase &builder,
   builder.SetInsertPoint(tempTerminator);
   llvm::OpenMPIRBuilder::InsertPointTy contInsertPoint =
       ompBuilder->createReductions(builder.saveIP(), allocaIP, reductionInfos,
-                                   loop.getNowait());
+                                   loop.getNowait(),
+                                   loop->hasAttr("omp_byref"));
   if (!contInsertPoint.getBlock())
     return loop->emitOpError() << "failed to convert reductions";
   auto nextInsertionPoint =
@@ -1040,8 +1046,8 @@ convertOmpParallel(omp::ParallelOp opInst, llvm::IRBuilderBase &builder,
       builder.CreateStore(phis[0], var);
 
       privateReductionVariables.push_back(var);
-      moduleTranslation.mapValue(reductionArgs[i], phis[0]);
-      reductionVariableMap.try_emplace(opInst.getReductionVars()[i], phis[0]);
+      moduleTranslation.mapValue(reductionArgs[i], var);
+      reductionVariableMap.try_emplace(opInst.getReductionVars()[i], var);
     }
 
     // Store the mapping between reduction variables and their private copies on
@@ -1080,7 +1086,8 @@ convertOmpParallel(omp::ParallelOp opInst, llvm::IRBuilderBase &builder,
 
       llvm::OpenMPIRBuilder::InsertPointTy contInsertPoint =
           ompBuilder->createReductions(builder.saveIP(), allocaIP,
-                                       reductionInfos, false);
+                                       reductionInfos, false,
+                                       opInst->hasAttr("omp_byref"));
       if (!contInsertPoint.getBlock()) {
         bodyGenStatus = opInst->emitOpError() << "failed to convert reductions";
         return;
