@@ -1,7 +1,9 @@
 ! RUN: bbc -emit-fir -hlfir=false -fopenmp %s -o - | FileCheck %s
 ! RUN: %flang_fc1 -emit-fir -flang-deprecated-no-hlfir -fopenmp %s -o - | FileCheck %s
 
-! CHECK-LABEL:   omp.reduction.declare @ieor_i_32 : !fir.ref<i32> init {
+! CHECK-LABEL:   omp.reduction.declare @ieor_i_32 : !fir.ref<i32>
+! CHECK-SAME:    attributes {omp_byref}
+! CHECK-SAME:    init {
 ! CHECK:         ^bb0(%[[VAL_0:.*]]: !fir.ref<i32>):
 ! CHECK:            %[[C0_1:.*]] = arith.constant 0 : i32
 ! CHECK:            %[[REF:.*]] = fir.alloca i32

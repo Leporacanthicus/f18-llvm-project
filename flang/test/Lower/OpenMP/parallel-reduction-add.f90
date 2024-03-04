@@ -2,7 +2,9 @@
 ! RUN: %flang_fc1 -emit-hlfir -fopenmp -o - %s 2>&1 | FileCheck %s
 
 !CHECK-LABEL: omp.reduction.declare
-!CHECK-SAME: @[[RED_F32_NAME:.*]] : !fir.ref<f32> init {
+!CHECK-SAME: @[[RED_F32_NAME:.*]] : !fir.ref<f32>
+!CHECK-SAME: attributes {omp_byref}
+!CHECK-SAME: init {
 !CHECK: ^bb0(%{{.*}}: !fir.ref<f32>):
 !CHECK:  %[[C0_1:.*]] = arith.constant 0.000000e+00 : f32
 !CHECK:  %[[REF:.*]] = fir.alloca f32
@@ -18,7 +20,9 @@
 !CHECK: }
 
 !CHECK-LABEL: omp.reduction.declare
-!CHECK-SAME: @[[RED_I32_NAME:.*]] : !fir.ref<i32> init {
+!CHECK-SAME: @[[RED_I32_NAME:.*]] : !fir.ref<i32>
+!CHECK-SAME: attributes {omp_byref}
+!CHECK-SAME: init {
 !CHECK: ^bb0(%{{.*}}: !fir.ref<i32>):
 !CHECK:  %[[C0_1:.*]] = arith.constant 0 : i32
 !CHECK:  %[[REF:.*]] = fir.alloca i32

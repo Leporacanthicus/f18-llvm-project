@@ -1,7 +1,9 @@
 ! RUN: bbc -emit-fir -hlfir=false -fopenmp -o - %s 2>&1 | FileCheck %s
 ! RUN: %flang_fc1 -emit-fir -flang-deprecated-no-hlfir -fopenmp -o - %s 2>&1 | FileCheck %s
 
-!CHECK: omp.reduction.declare @min_f_32 : !fir.ref<f32> init {
+!CHECK: omp.reduction.declare @min_f_32 : !fir.ref<f32>
+!CHECK-SAME: attributes {omp_byref}
+!CHECK-SAME: init {
 !CHECK:   %[[MAXIMUM_VAL:.*]] = arith.constant 3.40282347E+38 : f32
 !CHECK:   %[[REF:.*]] = fir.alloca f32
 !CHECK:   fir.store %[[MAXIMUM_VAL]] to %[[REF]] : !fir.ref<f32>
@@ -14,7 +16,9 @@
 !CHECK:   fir.store %[[RES]] to %[[ARG0]] : !fir.ref<f32>
 !CHECK:   omp.yield(%[[ARG0]] : !fir.ref<f32>)
 
-!CHECK-LABEL: omp.reduction.declare @min_i_32 : !fir.ref<i32> init {
+!CHECK-LABEL: omp.reduction.declare @min_i_32 : !fir.ref<i32>
+!CHECK-SAME: attributes {omp_byref}
+!CHECK-SAME: init {
 !CHECK:   %[[MAXIMUM_VAL:.*]] = arith.constant 2147483647 : i32
 !CHECK:   fir.store %[[MAXIMUM_VAL]] to %[[REF]] : !fir.ref<i32>
 !CHECK:   omp.yield(%[[REF]] : !fir.ref<i32>)
