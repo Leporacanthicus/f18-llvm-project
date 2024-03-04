@@ -22,7 +22,7 @@ end subroutine
 ! CHECK-SAME: @[[PRIVATIZER_SYM:.*]] : !fir.ref<i32> alloc {
 
 ! CHECK-LABEL: omp.reduction.declare
-! CHECK-SAME: @[[REDUCTION_SYM:.*]] : i32 init
+! CHECK-SAME: @[[REDUCTION_SYM:.*]] : !fir.ref<i32> init
 
 ! CHECK-LABEL: _QPred_and_delayed_private
 ! CHECK: omp.parallel
