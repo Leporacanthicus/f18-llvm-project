@@ -530,6 +530,12 @@ template <typename OpTy, typename... Args>
 static OpTy genOpWithBody(OpWithBodyGenInfo &info, Args &&...args) {
   auto op = info.converter.getFirOpBuilder().create<OpTy>(
       info.loc, std::forward<Args>(args)...);
+  if constexpr (std::is_same_v<OpTy, mlir::omp::ParallelOp> ||
+                std::is_same_v<OpTy, mlir::omp::WsLoopOp>) {
+    // TODO: do this conditionally
+    // TODO: put the string in a header somewhere
+    op->setAttr("omp_byref", info.converter.getFirOpBuilder().getUnitAttr());
+  }
   createBodyOfOp<OpTy>(op, info);
   return op;
 }
@@ -1572,6 +1578,10 @@ static void createWsLoop(Fortran::lower::AbstractConverter &converter,
       /*simd_modifier=*/nullptr, nowaitClauseOperand, orderedClauseOperand,
       orderClauseOperand,
       /*inclusive=*/firOpBuilder.getUnitAttr());
+
+  // TODO: put this in a header somewhere
+  // TODO: set this conditionally
+  wsLoopOp->setAttr("omp_byref", firOpBuilder.getUnitAttr());
 
   // Handle attribute based clauses.
   if (cp.processOrdered(orderedClauseOperand))

@@ -286,6 +286,9 @@ mlir::omp::ReductionDeclareOp ReductionProcessor::createReductionDecl(
 
   decl = modBuilder.create<mlir::omp::ReductionDeclareOp>(loc, reductionOpName,
                                                           type);
+  // TODO: put this string in a header somewhere
+  // TODO: use this conditionally depending if this is an array reduction or not
+  decl->setAttr("omp_byref", builder.getUnitAttr());
   builder.createBlock(&decl.getInitializerRegion(),
                       decl.getInitializerRegion().end(), {type}, {loc});
   builder.setInsertionPointToEnd(&decl.getInitializerRegion().back());
