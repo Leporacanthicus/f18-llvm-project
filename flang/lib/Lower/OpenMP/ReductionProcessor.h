@@ -75,10 +75,11 @@ public:
   static bool
   doReductionByRef(const llvm::SmallVectorImpl<mlir::Value> &reductionVars);
 
-  static std::string getReductionName(llvm::StringRef name, mlir::Type ty,
-                                      bool isByRef);
+  static std::string getReductionName(mlir::Location loc, llvm::StringRef name,
+                                      mlir::Type ty, bool isByRef);
 
   static std::string getReductionName(
+      mlir::Location loc,
       Fortran::parser::DefinedOperator::IntrinsicOperator intrinsicOp,
       mlir::Type ty, bool isByRef);
 
