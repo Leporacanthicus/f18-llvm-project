@@ -59,7 +59,8 @@ llvm.func @simple_reduction(%lb : i64, %ub : i64, %step : i64) {
 // CHECK: atomicrmw fadd ptr %{{.*}}, float %[[PARTIAL]]
 
 // Non-atomic reduction:
-// CHECK: fadd float
+// CHECK: %[[SUM:.+]] = fadd float
+// CHECK: store float %[[SUM]], ptr
 // CHECK: call void @__kmpc_end_reduce
 // CHECK: br label %[[FINALIZE:.+]]
 
