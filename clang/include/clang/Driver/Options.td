@@ -5368,7 +5368,8 @@ def module_file_info : Flag<["-"], "module-file-info">, Flags<[]>,
   Visibility<[ClangOption, CC1Option]>, Group<Action_Group>,
   HelpText<"Provide information about a particular module file">;
 def mthumb : Flag<["-"], "mthumb">, Group<m_Group>;
-def mtune_EQ : Joined<["-"], "mtune=">, Group<m_Group>,
+def mtune_EQ : Joined<["-"], "mtune=">,   Visibility<[ClangOption, FlangOption]>,
+Group<m_Group>,
   HelpText<"Only supported on AArch64, PowerPC, RISC-V, SPARC, SystemZ, and X86">;
 def multi__module : Flag<["-"], "multi_module">;
 def multiply__defined__unused : Separate<["-"], "multiply_defined_unused">;
