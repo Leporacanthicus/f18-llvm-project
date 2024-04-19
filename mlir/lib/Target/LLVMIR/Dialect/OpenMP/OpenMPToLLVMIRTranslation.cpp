@@ -1206,6 +1206,9 @@ convertOmpParallel(omp::ParallelOp opInst, llvm::IRBuilderBase &builder,
       assert(phis.size() == 1 &&
              "expected one value to be yielded from the "
              "reduction neutral element declaration region");
+      // Fixme: Is this the right thing?
+      auto b = allocaIP.getBlock()->begin();
+      allocaIP = llvm::IRBuilderBase::InsertPoint(allocaIP.getBlock(), b);
       builder.restoreIP(allocaIP);
 
       if (isByRef) {
