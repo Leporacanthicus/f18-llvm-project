@@ -1506,6 +1506,13 @@ public:
   void Post(const parser::OmpEndCriticalDirective &) {
     messageHandler().set_currStmtSource(std::nullopt);
   }
+
+  bool Pre(const parser::OpenMPDeclareMapperConstruct &) {
+    BeginDeclTypeSpec();
+    return true;
+  }
+
+  void Post(const parser::OpenMPDeclareMapperConstruct &) { EndDeclTypeSpec(); }
 };
 
 bool OmpVisitor::NeedsScope(const parser::OpenMPBlockConstruct &x) {

@@ -423,6 +423,8 @@ public:
   bool Pre(const parser::OpenMPDeclareTargetConstruct &);
   void Post(const parser::OpenMPDeclareTargetConstruct &) { PopContext(); }
 
+  bool Pre(const parser::OpenMPDeclareMapperConstruct &);
+
   bool Pre(const parser::OpenMPThreadprivate &);
   void Post(const parser::OpenMPThreadprivate &) { PopContext(); }
 
@@ -1909,6 +1911,21 @@ bool OmpAttributeVisitor::Pre(const parser::OpenMPDeclareTargetConstruct &x) {
       }
     }
   }
+  return true;
+}
+
+bool OmpAttributeVisitor::Pre(const parser::OpenMPDeclareMapperConstruct &x) {
+  const auto &spec{std::get<parser::OmpDeclareMapperSpecifier>(x.t)};
+  if (const auto &mapperName{
+          std::get<std::optional<Fortran::parser::Name>>(spec.t)}) {
+    Symbol *mapperSym{&context_.globalScope().MakeSymbol(
+        mapperName->source, Attrs{}, UnknownDetails{})};
+    mapperName->symbol = mapperSym;
+  }
+  const auto &varName{&std::get<Fortran::parser::ObjectName>(spec.t)};
+  Symbol *varSym{&context_.globalScope().MakeSymbol(
+      varName->source, Attrs{}, UnknownDetails{})};
+  varName->symbol = varSym;
   return true;
 }
 

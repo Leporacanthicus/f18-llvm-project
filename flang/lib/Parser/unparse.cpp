@@ -2554,6 +2554,11 @@ public:
               EndOpenMP();
               return false;
             },
+            [&](const OpenMPDeclareMapperConstruct &) {
+              Word("DECLARE MAPPER ");
+              // TODO: Add more details here.
+              return false;
+            },
             [&](const OpenMPDeclareReductionConstruct &) {
               Word("DECLARE REDUCTION ");
               return true;
