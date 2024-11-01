@@ -1462,6 +1462,10 @@ public:
     AddOmpSourceRange(x.source);
     return true;
   }
+
+  bool Pre(const parser::OpenMPDeclareMapperConstruct &);
+  void Post(const parser::OpenMPDeclareMapperConstruct &) { EndDeclTypeSpec(); }
+
   void Post(const parser::OmpBeginLoopDirective &) {
     messageHandler().set_currStmtSource(std::nullopt);
   }
@@ -1506,13 +1510,6 @@ public:
   void Post(const parser::OmpEndCriticalDirective &) {
     messageHandler().set_currStmtSource(std::nullopt);
   }
-
-  bool Pre(const parser::OpenMPDeclareMapperConstruct &) {
-    BeginDeclTypeSpec();
-    return true;
-  }
-
-  void Post(const parser::OpenMPDeclareMapperConstruct &) { EndDeclTypeSpec(); }
 };
 
 bool OmpVisitor::NeedsScope(const parser::OpenMPBlockConstruct &x) {
@@ -1544,6 +1541,30 @@ void OmpVisitor::Post(const parser::OpenMPBlockConstruct &x) {
   if (NeedsScope(x)) {
     PopScope();
   }
+}
+
+bool OmpVisitor::Pre(const parser::OpenMPDeclareMapperConstruct &x) {
+  AddOmpSourceRange(x.source);
+  BeginDeclTypeSpec();
+  const auto &spec{std::get<parser::OmpDeclareMapperSpecifier>(x.t)};
+  if (const auto &mapperName{
+          std::get<std::optional<Fortran::parser::Name>>(spec.t)}) {
+    Symbol *mapperSym{&context().globalScope().MakeSymbol(
+        mapperName->source, Attrs{}, UnknownDetails{})};
+    mapperName->symbol = mapperSym;
+  }
+  const auto varName{&std::get<Fortran::parser::ObjectName>(spec.t)};
+  const auto &type{std::get<Fortran::parser::TypeSpec>(spec.t)};
+  const auto &derType{std::get<Fortran::parser::DerivedTypeSpec>(type.u)};
+  //  const auto &derTypeSpec = derType.derivedTypeSpec;
+  //  const auto &ts{Fortran::semantics::DeclTypeSpec(
+  //        Fortran::semantics::DeclTypeSpec::TypeDerived, *derTypeSpec)};
+  Symbol *varSym{&context().globalScope().MakeSymbol(
+      varName->source, Attrs{}, UnknownDetails{})};
+  //  varSym->SetType(ts);
+  varName->symbol = varSym;
+
+  return true;
 }
 
 // Walk the parse tree and resolve names to symbols.

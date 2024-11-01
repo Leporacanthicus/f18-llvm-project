@@ -564,7 +564,8 @@ TYPE_PARSER(construct<OmpDeclareMapperSpecifier>(
 // ?.? (not 4.5) Declare Mapper Construct
 TYPE_PARSER(sourced(
     construct<OpenMPDeclareMapperConstruct>(verbatim("DECLARE MAPPER"_tok),
-        "(" >> Parser<OmpDeclareMapperSpecifier>{} / ")")))
+        "(" >> Parser<OmpDeclareMapperSpecifier>{} / ")",
+        many("MAP" >> parenthesized(many(Parser<OmpMapClause>{}))))))
 
 TYPE_PARSER(construct<OmpReductionCombiner>(Parser<AssignmentStmt>{}) ||
     construct<OmpReductionCombiner>(

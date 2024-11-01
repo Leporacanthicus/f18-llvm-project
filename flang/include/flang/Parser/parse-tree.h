@@ -3756,7 +3756,9 @@ struct OmpDeclareMapperSpecifier {
 struct OpenMPDeclareMapperConstruct {
   TUPLE_CLASS_BOILERPLATE(OpenMPDeclareMapperConstruct);
   CharBlock source;
-  std::tuple<Verbatim, OmpDeclareMapperSpecifier> t;
+  std::tuple<Verbatim, OmpDeclareMapperSpecifier,
+      std::list<std::list<OmpMapClause>>>
+      t;
 };
 
 // 2.16 declare-reduction -> DECLARE REDUCTION (reduction-identifier : type-list
